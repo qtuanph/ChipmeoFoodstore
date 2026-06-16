@@ -1,5 +1,5 @@
 @import 'tailwindcss';
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import '@fontsource/inter';
 @plugin 'flowbite/plugin';
 @plugin '@tailwindcss/forms';
 @plugin '@tailwindcss/typography';
@@ -14,7 +14,7 @@
 	--color-brand-brown: #5b3610;
 	--color-brand-gold: #dca840;
 	--color-brand-yellow: #ebd477;
-	--font-brand: 'Quicksand', sans-serif;
+	--font-brand: 'Inter';
 
 	/* Flowbite primary color (indigo-600 based) */
 	--color-primary-50: #f0f9ff;
@@ -47,7 +47,7 @@ html {
 
 body {
 	margin: 0;
-	font-family: 'Inter', sans-serif;
+	font-family: 'Inter';
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
 }

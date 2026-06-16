@@ -10,6 +10,7 @@
 		"fix": "prettier --write ."
 	},
 	"dependencies": {
+		"@fontsource/inter": "^5.2.8",
 		"@microsoft/signalr": "^10.0.0",
 		"@tiptap/core": "^3.26.1",
 		"@tiptap/extension-bubble-menu": "^3.26.1",
