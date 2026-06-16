@@ -1,0 +1,112 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ChipmeoFoodstore Quick Reference",
+  "description": "Quick reference guide for developers working on ChipmeoFoodstore",
+  "version": "1.1.0",
+  "repository": {
+    "url": "https://github.com/qtuanph/ChipmeoFoodstore.git",
+    "branch": "master"
+  },
+  "projects": {
+    "ChipmeoApis": {
+      "path": "ChipmeoApis",
+      "type": ".NET 10 Web API",
+      "description": "Clean Architecture backend — REST API, SignalR, JWT auth",
+      "commands": {
+        "run": "dotnet run --project ChipmeoApis.Web",
+        "build": "dotnet build",
+        "restore": "dotnet restore",
+        "publish": "dotnet publish -c Release",
+        "migration_add": "dotnet ef migrations add <Name> --project ChipmeoApis.Web",
+        "migration_apply": "dotnet ef database update --project ChipmeoApis.Web",
+        "migration_remove": "dotnet ef migrations remove --project ChipmeoApis.Web"
+      },
+      "port": 5142,
+      "startup": "ChipmeoApis.Web/Program.cs",
+      "solution": "ChipmeoApis.slnx"
+    },
+    "MediaStorageManagement": {
+      "path": "MediaStorageManagement",
+      "type": ".NET 10 Minimal API",
+      "description": "Standalone media file server (images uploads, static serving)",
+      "commands": {
+        "run": "dotnet run --project MediaStorageManagement",
+        "build": "dotnet build",
+        "publish": "dotnet publish -c Release"
+      },
+      "auth": "X-Api-Key header",
+      "solution": "MediaStorageManagement.slnx"
+    },
+    "ChipmeoPOS": {
+      "path": "ChipmeoPOS",
+      "type": "SvelteKit 2 + Svelte 5",
+      "description": "Frontend — POS, Admin Dashboard, Kitchen Display",
+      "commands": {
+        "dev": "npm run dev",
+        "build": "npm run build",
+        "preview": "npm run preview",
+        "prepare": "npm run prepare",
+        "check": "npm run check",
+        "format": "npm run format",
+        "lint": "npm run lint"
+      },
+      "port": 5173,
+      "proxy": {
+        "/api": "http://localhost:5142",
+        "/hubs": "http://localhost:5142 (ws)"
+      }
+    }
+  },
+  "environments": {
+    "development": {
+      "api_url": "http://localhost:5142",
+      "frontend_url": "http://localhost:5173",
+      "media_url": "http://localhost:5000"
+    },
+    "production": {
+      "api_url": "https://api.chipmeo.io.vn",
+      "frontend_url": "https://food.chipmeo.io.vn",
+      "media_url": "https://media.chipmeo.io.vn"
+    },
+    "demo": {
+      "frontend_url": "https://foodchipmeo.vercel.app"
+    }
+  },
+  "key_patterns": {
+    "api_auth": "JWT Bearer token from POST /api/auth/login",
+    "media_auth": "X-Api-Key header (configured in MediaStorageManagement/appsettings.json)",
+    "frontend_config": "ChipmeoPOS/src/lib/config/index.ts — auto-detects env",
+    "db_connection": "ChipmeoApis/ChipmeoApis.Web/appsettings.json → ConnectionStrings.DefaultConnection"
+  },
+  "architecture": {
+    "backend": "Clean Architecture (4 layers)",
+    "frontend": "SvelteKit file-based routing",
+    "realtime": "SignalR hub at /hubs/app (MessagePack protocol)",
+    "auth": "JWT Bearer tokens + custom permission-based RBAC",
+    "database": "SQL Server + EF Core 10",
+    "caching": "IMemoryCache (TTL: 60-300s)",
+    "rate_limiting": "Global 100 req/min, Auth 60 req/min",
+    "ml": "ML.NET TimeSeries for sales forecasting"
+  },
+  "tech_stack": {
+    "frontend": {
+      "language": "TypeScript 6",
+      "framework": "Svelte 5 + SvelteKit 2",
+      "build_tool": "Vite 8 (Rolldown/Oxc)",
+      "styling": "Tailwind CSS 4",
+      "editor": "TipTap 3",
+      "charts": "ApexCharts 5",
+      "realtime": "@microsoft/signalr 10",
+      "image_cropping": "Croppie 2"
+    },
+    "backend": {
+      "framework": "ASP.NET Core 10",
+      "orm": "Entity Framework Core 10",
+      "database": "SQL Server",
+      "auth": "JWT Bearer + BCrypt.Net",
+      "realtime": "SignalR + MessagePack",
+      "ftp": "FluentFTP 54",
+      "ml": "Microsoft.ML 5"
+    }
+  }
+}

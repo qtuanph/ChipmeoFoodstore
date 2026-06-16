@@ -106,10 +106,12 @@ export class AnalyticsState {
 	}) {
 		if (this.stats && containers.revenue) {
 			const options = {
-				series: [{
-					name: 'Doanh thu',
-					data: this.stats.revenueChart.map((d: any) => d.value)
-				}],
+				series: [
+					{
+						name: 'Doanh thu',
+						data: this.stats.revenueChart.map((d: any) => d.value)
+					}
+				],
 				chart: {
 					type: 'area',
 					height: 280,
@@ -154,10 +156,12 @@ export class AnalyticsState {
 
 		if (this.stats && containers.orders) {
 			const options = {
-				series: [{
-					name: 'Số đơn hàng',
-					data: this.stats.ordersChart.map((d: any) => d.value)
-				}],
+				series: [
+					{
+						name: 'Số đơn hàng',
+						data: this.stats.ordersChart.map((d: any) => d.value)
+					}
+				],
 				chart: {
 					type: 'bar',
 					height: 280,
@@ -192,10 +196,12 @@ export class AnalyticsState {
 
 		if (this.forecast && containers.forecast) {
 			const options = {
-				series: [{
-					name: 'Dự báo Doanh thu (AI)',
-					data: this.forecast.forecasts.map((d: any) => d.revenue)
-				}],
+				series: [
+					{
+						name: 'Dự báo Doanh thu (AI)',
+						data: this.forecast.forecasts.map((d: any) => d.revenue)
+					}
+				],
 				chart: {
 					type: 'line',
 					height: 280,

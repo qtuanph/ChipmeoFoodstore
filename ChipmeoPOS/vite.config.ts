@@ -1,10 +1,9 @@
-import devtoolsJson from 'vite-plugin-devtools-json';
 import tailwindcss from '@tailwindcss/vite';
 import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig } from 'vite';
 
 export default defineConfig({
-	plugins: [tailwindcss(), sveltekit(), devtoolsJson()],
+	plugins: [tailwindcss(), sveltekit()],
 	server: {
 		allowedHosts: ['demo.chipmeo.io.vn', 'localhost', 'api.chipmeo.io.vn', 'food.chipmeo.io.vn'],
 		// PROXY CONFIGURATION (LOCAL DEV ONLY)
@@ -27,17 +26,6 @@ export default defineConfig({
 		}
 	},
 	build: {
-		sourcemap: false,
-		rollupOptions: {
-			onwarn(warning, warn) {
-				if (
-					warning.code === 'INVALID_ANNOTATION' &&
-					warning.message.includes('@microsoft/signalr')
-				) {
-					return;
-				}
-				warn(warning);
-			}
-		}
+		sourcemap: false
 	}
 });

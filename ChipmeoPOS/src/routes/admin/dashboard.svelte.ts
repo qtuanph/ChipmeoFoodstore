@@ -37,10 +37,12 @@ export class DashboardState {
 		// Revenue Trend Chart (Last 7 Days)
 		if (containers.revenue) {
 			const options = {
-				series: [{
-					name: 'Doanh thu (7 ngày qua)',
-					data: this.stats.last7Days.map((d: any) => d.revenue)
-				}],
+				series: [
+					{
+						name: 'Doanh thu (7 ngày qua)',
+						data: this.stats.last7Days.map((d: any) => d.revenue)
+					}
+				],
 				chart: {
 					type: 'area',
 					height: 480,
@@ -84,10 +86,12 @@ export class DashboardState {
 		// Popular Items Chart
 		if (containers.popularItems) {
 			const options = {
-				series: [{
-					name: 'Số lượng bán',
-					data: this.stats.popularItems.map((i: any) => i.quantity)
-				}],
+				series: [
+					{
+						name: 'Số lượng bán',
+						data: this.stats.popularItems.map((i: any) => i.quantity)
+					}
+				],
 				chart: {
 					type: 'bar',
 					height: 250,
@@ -113,10 +117,12 @@ export class DashboardState {
 		// Popular Combos Chart
 		if (containers.popularCombos) {
 			const options = {
-				series: [{
-					name: 'Số lượng bán',
-					data: this.stats.popularCombos.map((i: any) => i.quantity)
-				}],
+				series: [
+					{
+						name: 'Số lượng bán',
+						data: this.stats.popularCombos.map((i: any) => i.quantity)
+					}
+				],
 				chart: {
 					type: 'bar',
 					height: 250,

@@ -164,7 +164,7 @@
 
 				<!-- Payment Method -->
 				<Card>
-					<div class="flex items-center justify-between mb-4">
+					<div class="mb-4 flex items-center justify-between">
 						<h2 class="text-lg font-semibold text-gray-900">Phương thức thanh toán</h2>
 						<div class="flex gap-2">
 							{#each paymentOptions as option (option.id)}
@@ -182,18 +182,22 @@
 					</div>
 
 					{#if paymentMethod === 'cash'}
-						<div class="space-y-4 animate-in slide-in-from-top-2 duration-300">
+						<div class="space-y-4 duration-300 animate-in slide-in-from-top-2">
 							<div>
-								<label for="cashReceived" class="mb-2 block text-sm font-medium text-gray-700">Khách đưa</label>
+								<label for="cashReceived" class="mb-2 block text-sm font-medium text-gray-700"
+									>Khách đưa</label
+								>
 								<div class="relative">
 									<input
 										id="cashReceived"
 										type="number"
 										bind:value={cashReceived}
-										class="w-full rounded-xl border-gray-200 bg-gray-50 py-3 pl-4 pr-12 text-2xl font-black text-indigo-600 focus:border-indigo-500 focus:ring-indigo-500"
+										class="w-full rounded-xl border-gray-200 bg-gray-50 py-3 pr-12 pl-4 text-2xl font-black text-indigo-600 focus:border-indigo-500 focus:ring-indigo-500"
 										placeholder="0"
 									/>
-									<span class="absolute right-4 top-1/2 -translate-y-1/2 font-bold text-gray-400">₫</span>
+									<span class="absolute top-1/2 right-4 -translate-y-1/2 font-bold text-gray-400"
+										>₫</span
+									>
 								</div>
 							</div>
 
@@ -203,7 +207,7 @@
 										onclick={() => (cashReceived = amount)}
 										class="rounded-lg border border-indigo-100 bg-white px-3 py-2 text-sm font-bold text-indigo-600 shadow-sm transition-all hover:bg-indigo-50 active:scale-95"
 									>
-										{amount >= 1000000 ? amount/1000000 + 'M' : amount/1000 + 'K'}
+										{amount >= 1000000 ? amount / 1000000 + 'M' : amount / 1000 + 'K'}
 									</button>
 								{/each}
 								<button
@@ -216,16 +220,24 @@
 
 							<div class="flex items-center justify-between rounded-xl bg-gray-900 p-4 text-white">
 								<span class="text-sm font-medium opacity-70">Tiền thừa trả khách</span>
-								<span class="text-2xl font-black text-emerald-400">{formatCurrency(changeAmount)}</span>
+								<span class="text-2xl font-black text-emerald-400"
+									>{formatCurrency(changeAmount)}</span
+								>
 							</div>
 						</div>
 					{:else}
-						<div class="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-200 p-10 text-center animate-in fade-in duration-500">
+						<div
+							class="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-200 p-10 text-center duration-500 animate-in fade-in"
+						>
 							<div class="mb-3 text-5xl">
 								{paymentMethod === 'banking' ? '🏦' : '📱'}
 							</div>
-							<p class="font-bold text-gray-900">Hệ thống sẽ tạo mã {paymentMethod.toUpperCase()}</p>
-							<p class="text-sm text-gray-500">Vui lòng hướng dẫn khách hàng quét mã hoặc chuyển khoản</p>
+							<p class="font-bold text-gray-900">
+								Hệ thống sẽ tạo mã {paymentMethod.toUpperCase()}
+							</p>
+							<p class="text-sm text-gray-500">
+								Vui lòng hướng dẫn khách hàng quét mã hoặc chuyển khoản
+							</p>
 						</div>
 					{/if}
 				</Card>

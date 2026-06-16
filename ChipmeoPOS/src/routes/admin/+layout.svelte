@@ -220,7 +220,7 @@
 					🍔
 				</div>
 				<div>
-					<h1 class="text-xl font-bold leading-none text-gray-900">Chipmeo</h1>
+					<h1 class="text-xl leading-none font-bold text-gray-900">Chipmeo</h1>
 					<p class="mt-0.5 text-[10px] font-medium tracking-wider text-gray-500 uppercase">Admin</p>
 				</div>
 			</div>
@@ -279,8 +279,6 @@
 				</div>
 			{/each}
 		</nav>
-
-
 	</aside>
 
 	<!-- Main Content -->
@@ -309,7 +307,12 @@
 						stroke="currentColor"
 						viewBox="0 0 24 24"
 					>
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							stroke-width="2"
+							d="M19 9l-7 7-7-7"
+						/>
 					</svg>
 				</button>
 

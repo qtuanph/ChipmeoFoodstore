@@ -55,7 +55,7 @@
 				>
 			</h2>
 			<div
-				class="scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent flex flex-1 flex-col gap-4 overflow-y-auto p-4"
+				class="flex flex-1 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent flex-col gap-4 overflow-y-auto p-4"
 			>
 				{#each vm.pendingOrders as order (order.id)}
 					<div
@@ -141,7 +141,7 @@
 				>
 			</h2>
 			<div
-				class="scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent flex flex-1 flex-col gap-4 overflow-y-auto p-4"
+				class="flex flex-1 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent flex-col gap-4 overflow-y-auto p-4"
 			>
 				{#each vm.preparingOrders as order (order.id)}
 					<div
@@ -221,7 +221,7 @@
 				>
 			</h2>
 			<div
-				class="scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent grid flex-1 grid-cols-[repeat(auto-fill,minmax(150px,1fr))] content-start gap-4 overflow-y-auto p-4"
+				class="grid flex-1 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent grid-cols-[repeat(auto-fill,minmax(150px,1fr))] content-start gap-4 overflow-y-auto p-4"
 			>
 				{#each vm.completedOrders as order (order.id)}
 					<div

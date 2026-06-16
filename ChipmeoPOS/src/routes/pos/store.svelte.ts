@@ -253,19 +253,23 @@ class POSStore {
 			this.editingOrder = { id: order.id, code: order.orderCode };
 
 			// 2. Load Source
-			const source = get(sources).find((s) => s.name === order.sourceName || s.id === order.sourceId);
+			const source = get(sources).find(
+				(s) => s.name === order.sourceName || s.id === order.sourceId
+			);
 			if (source) cartActions.setSource(source);
 
 			// Load Discount
 			if (order.discountId && order.discountCode) {
-				const discount = get(discounts).find(d => d.id === order.discountId);
+				const discount = get(discounts).find((d) => d.id === order.discountId);
 				if (discount) cartActions.setDiscount(discount);
 			}
 
 			// 3. Load Customer if possible
 			if (order.customerId) {
 				const { customerAPI } = await import('$lib/api/index.js');
-				this.selectedCustomer = await customerAPI.getCustomerById(order.customerId).catch(() => null);
+				this.selectedCustomer = await customerAPI
+					.getCustomerById(order.customerId)
+					.catch(() => null);
 			}
 
 			// 4. Load items back to cart
@@ -280,15 +284,16 @@ class POSStore {
 							menuItem,
 							quantity: item.quantity,
 							note: item.note,
-							selectedAddons: item.addons?.map((a) => ({
-								addon: {
-									id: a.addonId,
-									name: a.addonName,
-									// Map unitPrice from backend to price in frontend Addon
-									price: a.unitPrice || 0
-								} as Addon,
-								quantity: a.quantity
-							})) || [],
+							selectedAddons:
+								item.addons?.map((a) => ({
+									addon: {
+										id: a.addonId,
+										name: a.addonName,
+										// Map unitPrice from backend to price in frontend Addon
+										price: a.unitPrice || 0
+									} as Addon,
+									quantity: a.quantity
+								})) || [],
 							subtotal: item.totalPrice
 						});
 					}

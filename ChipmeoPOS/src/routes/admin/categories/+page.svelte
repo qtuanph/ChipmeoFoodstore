@@ -144,8 +144,7 @@
 				bind:value={vm.formData.description}
 				rows="3"
 				class="w-full rounded-lg border px-4 py-2 focus:ring-2 focus:ring-indigo-500"
-				placeholder="Mô tả ngắn về danh mục này"
-			></textarea>
+				placeholder="Mô tả ngắn về danh mục này"></textarea>
 		</div>
 		<!-- Image Upload -->
 		<div>

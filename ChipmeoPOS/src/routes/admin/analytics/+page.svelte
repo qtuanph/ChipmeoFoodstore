@@ -59,13 +59,14 @@
 
 <div class="space-y-6 p-6">
 	<div class="flex items-center justify-between">
-
 		<!-- Filters -->
-		<div class="flex items-center gap-3 rounded-2xl bg-white p-1.5 shadow-sm border border-gray-100">
+		<div
+			class="flex items-center gap-3 rounded-2xl border border-gray-100 bg-white p-1.5 shadow-sm"
+		>
 			<select
 				bind:value={vm.dateRange}
 				onchange={() => vm.dateRange !== 'custom' && vm.updateDatesFromRange(vm.dateRange)}
-				class="rounded-xl border-transparent bg-transparent text-sm font-bold text-gray-700 focus:ring-0 cursor-pointer hover:bg-gray-50 transition-colors px-4 py-2"
+				class="cursor-pointer rounded-xl border-transparent bg-transparent px-4 py-2 text-sm font-bold text-gray-700 transition-colors hover:bg-gray-50 focus:ring-0"
 			>
 				<option value="7days">7 ngày qua</option>
 				<option value="30days">30 ngày qua</option>
@@ -75,13 +76,21 @@
 			</select>
 
 			{#if vm.dateRange === 'custom'}
-				<div class="flex items-center gap-2 px-2 border-l border-gray-100">
-					<input type="date" bind:value={vm.fromDate} class="rounded-lg border-gray-100 text-xs font-medium py-1" />
+				<div class="flex items-center gap-2 border-l border-gray-100 px-2">
+					<input
+						type="date"
+						bind:value={vm.fromDate}
+						class="rounded-lg border-gray-100 py-1 text-xs font-medium"
+					/>
 					<span class="text-gray-300">/</span>
-					<input type="date" bind:value={vm.toDate} class="rounded-lg border-gray-100 text-xs font-medium py-1" />
+					<input
+						type="date"
+						bind:value={vm.toDate}
+						class="rounded-lg border-gray-100 py-1 text-xs font-medium"
+					/>
 					<button
 						onclick={onFilterApply}
-						class="rounded-lg bg-indigo-600 px-3 py-1 text-xs font-bold text-white hover:bg-indigo-700 transition-colors"
+						class="rounded-lg bg-indigo-600 px-3 py-1 text-xs font-bold text-white transition-colors hover:bg-indigo-700"
 					>
 						Lọc
 					</button>
@@ -101,35 +110,57 @@
 	{:else if vm.stats}
 		<!-- Key Metrics -->
 		<div class="grid grid-cols-1 gap-6 md:grid-cols-3">
-			<div class="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm group hover:shadow-md transition-all">
+			<div
+				class="group rounded-2xl border border-gray-100 bg-white p-6 shadow-sm transition-all hover:shadow-md"
+			>
 				<p class="text-[10px] font-bold tracking-widest text-gray-400 uppercase">Tổng doanh thu</p>
-				<p class="mt-2 text-3xl font-black text-indigo-600 transition-transform group-hover:scale-105 origin-left">
+				<p
+					class="mt-2 origin-left text-3xl font-black text-indigo-600 transition-transform group-hover:scale-105"
+				>
 					{formatCurrency(vm.stats.totalRevenue)}
 				</p>
 			</div>
-			<div class="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm group hover:shadow-md transition-all">
+			<div
+				class="group rounded-2xl border border-gray-100 bg-white p-6 shadow-sm transition-all hover:shadow-md"
+			>
 				<p class="text-[10px] font-bold tracking-widest text-gray-400 uppercase">Tổng thuế VAT</p>
-				<p class="mt-2 text-3xl font-black text-emerald-600 transition-transform group-hover:scale-105 origin-left">
+				<p
+					class="mt-2 origin-left text-3xl font-black text-emerald-600 transition-transform group-hover:scale-105"
+				>
 					{formatCurrency(vm.stats.totalVat || 0)}
 				</p>
 			</div>
-			<div class="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm group hover:shadow-md transition-all">
+			<div
+				class="group rounded-2xl border border-gray-100 bg-white p-6 shadow-sm transition-all hover:shadow-md"
+			>
 				<p class="text-[10px] font-bold tracking-widest text-gray-400 uppercase">Tổng đơn hàng</p>
-				<p class="mt-2 text-3xl font-black text-orange-600 transition-transform group-hover:scale-105 origin-left">{vm.stats.totalOrders}</p>
+				<p
+					class="mt-2 origin-left text-3xl font-black text-orange-600 transition-transform group-hover:scale-105"
+				>
+					{vm.stats.totalOrders}
+				</p>
 			</div>
 		</div>
 
 		<!-- Charts Grid -->
 		<div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
 			<!-- Revenue Chart -->
-			<div class="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm hover:shadow-md transition-all">
-				<h3 class="mb-6 text-xs font-bold tracking-widest text-gray-400 uppercase">Xu hướng doanh thu</h3>
+			<div
+				class="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm transition-all hover:shadow-md"
+			>
+				<h3 class="mb-6 text-xs font-bold tracking-widest text-gray-400 uppercase">
+					Xu hướng doanh thu
+				</h3>
 				<div bind:this={revenueChartDiv} class="h-72"></div>
 			</div>
 
 			<!-- Orders Chart -->
-			<div class="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm hover:shadow-md transition-all">
-				<h3 class="mb-6 text-xs font-bold tracking-widest text-gray-400 uppercase">Số lượng đơn hàng</h3>
+			<div
+				class="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm transition-all hover:shadow-md"
+			>
+				<h3 class="mb-6 text-xs font-bold tracking-widest text-gray-400 uppercase">
+					Số lượng đơn hàng
+				</h3>
 				<div bind:this={ordersChartDiv} class="h-72"></div>
 			</div>
 		</div>
@@ -137,39 +168,65 @@
 		<!-- Service Analysis Section -->
 		<div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
 			<!-- Service Type Chart -->
-			<div class="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm hover:shadow-md transition-all">
-				<h3 class="mb-6 text-xs font-bold tracking-widest text-gray-400 uppercase">Phân bố Nguồn đơn</h3>
+			<div
+				class="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm transition-all hover:shadow-md"
+			>
+				<h3 class="mb-6 text-xs font-bold tracking-widest text-gray-400 uppercase">
+					Phân bố Nguồn đơn
+				</h3>
 				<div bind:this={sourceChartDiv} class="h-72"></div>
 			</div>
 
 			<!-- Strategic Insight -->
-			<div class="lg:col-span-2 relative overflow-hidden rounded-2xl border border-indigo-100 bg-indigo-50/30 p-8 shadow-sm group">
-				<div class="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-indigo-100/50 blur-3xl transition-transform group-hover:scale-125"></div>
-				
+			<div
+				class="group relative overflow-hidden rounded-2xl border border-indigo-100 bg-indigo-50/30 p-8 shadow-sm lg:col-span-2"
+			>
+				<div
+					class="absolute -top-16 -right-16 h-48 w-48 rounded-full bg-indigo-100/50 blur-3xl transition-transform group-hover:scale-125"
+				></div>
+
 				<div class="relative flex flex-col gap-6 md:flex-row">
-					<div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-indigo-600 shadow-xl shadow-indigo-200">
+					<div
+						class="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-indigo-600 shadow-xl shadow-indigo-200"
+					>
 						<svg class="h-7 w-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+							<path
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								stroke-width="2"
+								d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+							/>
 						</svg>
 					</div>
 					<div>
 						<h3 class="text-xl font-black text-indigo-900">AI Strategic Insight</h3>
-						<div class="mt-4 prose prose-indigo max-w-none prose-sm leading-relaxed text-indigo-900/80">
+						<div
+							class="prose prose-sm mt-4 max-w-none leading-relaxed text-indigo-900/80 prose-indigo"
+						>
 							{#if vm.forecast?.recommendation}
 								<p class="text-base font-medium">
 									{vm.forecast.recommendation}
 								</p>
 							{:else}
 								<div class="flex items-center gap-3 py-2 text-indigo-400 italic">
-									<div class="h-4 w-4 animate-spin rounded-full border-2 border-indigo-400 border-t-transparent"></div>
+									<div
+										class="h-4 w-4 animate-spin rounded-full border-2 border-indigo-400 border-t-transparent"
+									></div>
 									Hệ thống đang phân tích xu hướng...
 								</div>
 							{/if}
 						</div>
-						<button class="mt-6 flex items-center gap-2 text-sm font-extrabold text-indigo-600 hover:text-indigo-800 transition-colors">
+						<button
+							class="mt-6 flex items-center gap-2 text-sm font-extrabold text-indigo-600 transition-colors hover:text-indigo-800"
+						>
 							<span>Khám phá báo cáo chi tiết</span>
 							<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+								<path
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									stroke-width="2"
+									d="M17 8l4 4m0 0l-4 4m4-4H3"
+								/>
 							</svg>
 						</button>
 					</div>

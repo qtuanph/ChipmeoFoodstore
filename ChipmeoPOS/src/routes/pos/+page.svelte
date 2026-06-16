@@ -136,19 +136,25 @@
 									/>
 								</div>
 							{:else}
-								<div class="relative aspect-[4/3] w-full bg-gradient-to-br from-indigo-50 to-purple-50 flex items-center justify-center">
+								<div
+									class="relative flex aspect-[4/3] w-full items-center justify-center bg-gradient-to-br from-indigo-50 to-purple-50"
+								>
 									<span class="text-2xl opacity-40">🍽️</span>
 								</div>
 							{/if}
 							<div class="flex flex-1 flex-col p-2">
-								<h3 class="mb-0.5 line-clamp-2 text-xs font-bold leading-tight text-gray-900 group-hover:text-indigo-600">
+								<h3
+									class="mb-0.5 line-clamp-2 text-xs leading-tight font-bold text-gray-900 group-hover:text-indigo-600"
+								>
 									{item.name}
 								</h3>
 								<div class="mt-auto flex items-center justify-between gap-1 pt-1">
 									<div class="text-xs font-black text-indigo-600">
 										{formatCurrency(item.price)}
 									</div>
-									<div class="rounded bg-indigo-50 px-1 py-0.5 text-[10px] font-bold text-indigo-600 opacity-0 transition-opacity group-hover:opacity-100">
+									<div
+										class="rounded bg-indigo-50 px-1 py-0.5 text-[10px] font-bold text-indigo-600 opacity-0 transition-opacity group-hover:opacity-100"
+									>
 										CHỌN
 									</div>
 								</div>
@@ -272,13 +278,18 @@
 					</button>
 				</div>
 			</div>
-            
-            {#if posStore.editingOrder}
-                <div class="bg-amber-100 px-3 py-2 text-sm text-amber-800 font-bold border-b border-amber-200 flex justify-between items-center">
-                    <span>Đang sửa: #{posStore.editingOrder.code}</span>
-                    <button onclick={() => posStore.clearCartAndEditState()} class="text-xs underline text-amber-900">Hủy sửa</button>
-                </div>
-            {/if}
+
+			{#if posStore.editingOrder}
+				<div
+					class="flex items-center justify-between border-b border-amber-200 bg-amber-100 px-3 py-2 text-sm font-bold text-amber-800"
+				>
+					<span>Đang sửa: #{posStore.editingOrder.code}</span>
+					<button
+						onclick={() => posStore.clearCartAndEditState()}
+						class="text-xs text-amber-900 underline">Hủy sửa</button
+					>
+				</div>
+			{/if}
 
 			<!-- Compact Source Selection (Sidebar) -->
 			<button
@@ -352,7 +363,9 @@
 				</div>
 			{:else}
 				{#each $cart.items as item, index (index)}
-					<div class="flex gap-3 rounded-xl border-2 border-gray-100 bg-white p-3 shadow-sm transition-all hover:border-indigo-100 hover:shadow-md">
+					<div
+						class="flex gap-3 rounded-xl border-2 border-gray-100 bg-white p-3 shadow-sm transition-all hover:border-indigo-100 hover:shadow-md"
+					>
 						<div class="min-w-0 flex-1">
 							<div class="flex items-start justify-between gap-2">
 								<h4 class="line-clamp-2 text-sm font-bold text-gray-900">
@@ -366,7 +379,7 @@
 								</h4>
 								<button
 									onclick={() => cartActions.removeItem(index)}
-									class="touch-manipulation flex-shrink-0 rounded-lg p-1.5 text-gray-400 transition-all hover:bg-red-50 hover:text-red-600 active:scale-90"
+									class="flex-shrink-0 touch-manipulation rounded-lg p-1.5 text-gray-400 transition-all hover:bg-red-50 hover:text-red-600 active:scale-90"
 									aria-label="Xóa món"
 								>
 									<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -406,17 +419,29 @@
 										aria-label="Giảm số lượng"
 									>
 										<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4" />
+											<path
+												stroke-linecap="round"
+												stroke-linejoin="round"
+												stroke-width="2"
+												d="M20 12H4"
+											/>
 										</svg>
 									</button>
-									<span class="min-w-[2rem] text-center text-base font-bold text-gray-900">{item.quantity}</span>
+									<span class="min-w-[2rem] text-center text-base font-bold text-gray-900"
+										>{item.quantity}</span
+									>
 									<button
 										onclick={() => cartActions.updateQuantity(index, item.quantity + 1)}
 										class="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-600 text-white transition-all hover:bg-indigo-700 active:scale-90"
 										aria-label="Tăng số lượng"
 									>
 										<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+											<path
+												stroke-linecap="round"
+												stroke-linejoin="round"
+												stroke-width="2"
+												d="M12 4v16m8-8H4"
+											/>
 										</svg>
 									</button>
 								</div>
@@ -584,8 +609,7 @@
 					bind:value={posStore.itemNote}
 					rows="2"
 					class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-transparent focus:ring-2 focus:ring-indigo-500"
-					placeholder="Ví dụ: Ít đá, nhiều sữa..."
-				></textarea>
+					placeholder="Ví dụ: Ít đá, nhiều sữa..."></textarea>
 			</div>
 
 			<!-- Quantity & Total -->
