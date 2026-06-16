@@ -78,6 +78,33 @@ Types: `feat`, `fix`, `chore`, `docs`, `style`, `refactor`, `perf`, `test`
 | `ChipmeoPOS/vite.config.ts` | Vite 8 config (Rolldown bundler) |
 | `ChipmeoPOS/eslint.config.js` | ESLint 10 flat config (warnings for tech debt) |
 
+## Tag Versioning Convention
+
+This project follows **[Semantic Versioning](https://semver.org/)** (SemVer):
+
+```
+MAJOR.MINOR.PATCH  (e.g., 1.0.0, 2.3.1)
+```
+
+| Bump | When | Example |
+|---|---|---|
+| **MAJOR** | Breaking API changes, breaking DB schema changes, major architecture rewrite | `1.0.0` → `2.0.0` |
+| **MINOR** | New features, new API endpoints, new modules (backward compatible) | `1.0.0` → `1.1.0` |
+| **PATCH** | Bug fixes, package updates, refactoring, docs, config changes (no new features) | `1.0.0` → `1.0.1` |
+
+### Rules
+- Only the **project owner** decides when to tag. AI must **ask** before creating any tag.
+- Tags are applied to `master` branch only (never on feature branches).
+- Each tag must have a corresponding [GitHub Release](https://docs.github.com/en/repositories/releasing-projects-on-github/managing-releases-in-a-repository).
+- For **squashing**: AI must get explicit user confirmation before force-pushing squashed commits.
+
+### Current Tags
+
+| Tag | Description |
+|---|---|
+| `1.0.0` | Initial project state |
+| `1.0.1` | Package upgrades + docs + coding standards |
+
 ## Important Constraints
 
 - Do NOT modify `docs/` files without explicit user request
