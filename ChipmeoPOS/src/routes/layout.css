@@ -1,13 +1,31 @@
 @import 'tailwindcss';
+@plugin 'flowbite/plugin';
 @plugin '@tailwindcss/forms';
 @plugin '@tailwindcss/typography';
 @plugin 'tailwindcss-animate';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@source '../../node_modules/flowbite-svelte/dist';
+@source '../../node_modules/flowbite-svelte-icons/dist';
 
 @theme {
 	--color-brand-brown: #5b3610;
 	--color-brand-gold: #dca840;
 	--color-brand-yellow: #ebd477;
 	--font-brand: 'Quicksand', sans-serif;
+
+	/* Flowbite primary color (indigo-600 based) */
+	--color-primary-50: #f0f9ff;
+	--color-primary-100: #e0f2fe;
+	--color-primary-200: #bae6fd;
+	--color-primary-300: #7dd3fc;
+	--color-primary-400: #38bdf8;
+	--color-primary-500: #0ea5e9;
+	--color-primary-600: #0284c7;
+	--color-primary-700: #0369a1;
+	--color-primary-800: #075985;
+	--color-primary-900: #0c4a6e;
 }
 
 :root {
