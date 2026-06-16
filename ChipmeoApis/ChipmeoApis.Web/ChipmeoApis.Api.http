@@ -1,0 +1,531 @@
+﻿@ChipmeoApis.Api_HostAddress = http://localhost:5142
+@token = 
+
+### Health Check
+GET {{ChipmeoApis.Api_HostAddress}}/health
+
+###############################################
+# AUTHENTICATION
+###############################################
+
+### Login (Get JWT Token)
+POST {{ChipmeoApis.Api_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "admin123"
+}
+
+### Logout
+POST {{ChipmeoApis.Api_HostAddress}}/api/auth/logout
+Authorization: Bearer {{token}}
+
+###############################################
+# CATEGORIES
+###############################################
+
+### Get All Categories
+GET {{ChipmeoApis.Api_HostAddress}}/admin/categories
+Authorization: Bearer {{token}}
+
+### Get Category By ID
+GET {{ChipmeoApis.Api_HostAddress}}/admin/categories/1
+Authorization: Bearer {{token}}
+
+### Create Category
+POST {{ChipmeoApis.Api_HostAddress}}/admin/categories
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Äá»“ uá»‘ng",
+  "description": "CÃ¡c loáº¡i Ä‘á»“ uá»‘ng",
+  "isActive": true
+}
+
+### Update Category
+PUT {{ChipmeoApis.Api_HostAddress}}/admin/categories/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Äá»“ uá»‘ng (Updated)",
+  "description": "CÃ¡c loáº¡i Ä‘á»“ uá»‘ng má»›i",
+  "isActive": true
+}
+
+### Delete Category
+DELETE {{ChipmeoApis.Api_HostAddress}}/admin/categories/1
+Authorization: Bearer {{token}}
+
+###############################################
+# MENU ITEMS
+###############################################
+
+### Get All Menu Items
+GET {{ChipmeoApis.Api_HostAddress}}/admin/menuitems
+Authorization: Bearer {{token}}
+
+### Get Menu Item By ID
+GET {{ChipmeoApis.Api_HostAddress}}/admin/menuitems/1
+Authorization: Bearer {{token}}
+
+### Create Menu Item
+POST {{ChipmeoApis.Api_HostAddress}}/admin/menuitems
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "TrÃ  sá»¯a truyá»n thá»‘ng",
+  "description": "TrÃ  sá»¯a truyá»n thá»‘ng thÆ¡m ngon",
+  "price": 30000,
+  "categoryId": 1,
+  "image": "trasua.jpg",
+  "isActive": true
+}
+
+### Update Menu Item
+PUT {{ChipmeoApis.Api_HostAddress}}/admin/menuitems/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "TrÃ  sá»¯a truyá»n thá»‘ng size L",
+  "description": "TrÃ  sá»¯a truyá»n thá»‘ng thÆ¡m ngon size lá»›n",
+  "price": 35000,
+  "categoryId": 1,
+  "image": "trasua.jpg",
+  "isActive": true
+}
+
+### Delete Menu Item
+DELETE {{ChipmeoApis.Api_HostAddress}}/admin/menuitems/1
+Authorization: Bearer {{token}}
+
+###############################################
+# TABLES
+###############################################
+
+### Get All Tables
+GET {{ChipmeoApis.Api_HostAddress}}/admin/tables
+Authorization: Bearer {{token}}
+
+### Get Table By ID
+GET {{ChipmeoApis.Api_HostAddress}}/admin/tables/1
+Authorization: Bearer {{token}}
+
+### Create Table
+POST {{ChipmeoApis.Api_HostAddress}}/admin/tables
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "BÃ n 01",
+  "capacity": 4,
+  "isActive": true
+}
+
+### Update Table
+PUT {{ChipmeoApis.Api_HostAddress}}/admin/tables/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "BÃ n 01 - VIP",
+  "capacity": 6,
+  "isActive": true
+}
+
+### Delete Table
+DELETE {{ChipmeoApis.Api_HostAddress}}/admin/tables/1
+Authorization: Bearer {{token}}
+
+###############################################
+# ADDONS
+###############################################
+
+### Get All Addons
+GET {{ChipmeoApis.Api_HostAddress}}/admin/addons
+Authorization: Bearer {{token}}
+
+### Get Addon By ID
+GET {{ChipmeoApis.Api_HostAddress}}/admin/addons/1
+Authorization: Bearer {{token}}
+
+### Create Addon
+POST {{ChipmeoApis.Api_HostAddress}}/admin/addons
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "TrÃ¢n chÃ¢u Ä‘en",
+  "price": 5000,
+  "isActive": true
+}
+
+### Update Addon
+PUT {{ChipmeoApis.Api_HostAddress}}/admin/addons/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "TrÃ¢n chÃ¢u Ä‘en size lá»›n",
+  "price": 7000,
+  "isActive": true
+}
+
+### Delete Addon
+DELETE {{ChipmeoApis.Api_HostAddress}}/admin/addons/1
+Authorization: Bearer {{token}}
+
+###############################################
+# DISCOUNTS
+###############################################
+
+### Get All Discounts
+GET {{ChipmeoApis.Api_HostAddress}}/admin/discounts
+Authorization: Bearer {{token}}
+
+### Get Discount By ID
+GET {{ChipmeoApis.Api_HostAddress}}/admin/discounts/1
+Authorization: Bearer {{token}}
+
+### Create Discount
+POST {{ChipmeoApis.Api_HostAddress}}/admin/discounts
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "code": "KHAI_TRUONG",
+  "name": "Khuyáº¿n mÃ£i khai trÆ°Æ¡ng",
+  "description": "Giáº£m giÃ¡ 20% cho Ä‘Æ¡n hÃ ng Ä‘áº§u tiÃªn",
+  "type": "percent",
+  "value": 20,
+  "maxDiscountAmount": 50000,
+  "minOrderAmount": 100000,
+  "usageLimit": 100,
+  "startDate": "2025-01-01T00:00:00",
+  "endDate": "2025-12-31T23:59:59",
+  "isActive": true
+}
+
+### Update Discount
+PUT {{ChipmeoApis.Api_HostAddress}}/admin/discounts/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "code": "KHAI_TRUONG_2025",
+  "name": "Khuyáº¿n mÃ£i khai trÆ°Æ¡ng 2025",
+  "description": "Giáº£m giÃ¡ 25% cho Ä‘Æ¡n hÃ ng Ä‘áº§u tiÃªn",
+  "type": "percent",
+  "value": 25,
+  "maxDiscountAmount": 100000,
+  "minOrderAmount": 150000,
+  "usageLimit": 200,
+  "startDate": "2025-01-01T00:00:00",
+  "endDate": "2025-12-31T23:59:59",
+  "isActive": true
+}
+
+### Delete Discount
+DELETE {{ChipmeoApis.Api_HostAddress}}/admin/discounts/1
+Authorization: Bearer {{token}}
+
+###############################################
+# COMBOS
+###############################################
+
+### Get All Combos
+GET {{ChipmeoApis.Api_HostAddress}}/admin/combos
+Authorization: Bearer {{token}}
+
+### Get Combo By ID
+GET {{ChipmeoApis.Api_HostAddress}}/admin/combos/1
+Authorization: Bearer {{token}}
+
+### Create Combo
+POST {{ChipmeoApis.Api_HostAddress}}/admin/combos
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Combo TrÃ  Sá»¯a + BÃ¡nh",
+  "comboPrice": 55000,
+  "description": "1 TrÃ  sá»¯a + 1 BÃ¡nh ngá»t",
+  "isActive": true,
+  "items": [
+    {
+      "menuItemId": 1,
+      "quantity": 1
+    },
+    {
+      "menuItemId": 2,
+      "quantity": 1
+    }
+  ]
+}
+
+### Update Combo
+PUT {{ChipmeoApis.Api_HostAddress}}/admin/combos/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Combo TrÃ  Sá»¯a + BÃ¡nh VIP",
+  "comboPrice": 65000,
+  "description": "1 TrÃ  sá»¯a + 2 BÃ¡nh ngá»t",
+  "isActive": true,
+  "items": [
+    {
+      "menuItemId": 1,
+      "quantity": 1
+    },
+    {
+      "menuItemId": 2,
+      "quantity": 2
+    }
+  ]
+}
+
+### Delete Combo
+DELETE {{ChipmeoApis.Api_HostAddress}}/admin/combos/1
+Authorization: Bearer {{token}}
+
+###############################################
+# EMPLOYEES
+###############################################
+
+### Get All Employees
+GET {{ChipmeoApis.Api_HostAddress}}/admin/employees
+Authorization: Bearer {{token}}
+
+### Get Employee By ID
+GET {{ChipmeoApis.Api_HostAddress}}/admin/employees/1
+Authorization: Bearer {{token}}
+
+### Create Employee
+POST {{ChipmeoApis.Api_HostAddress}}/admin/employees
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "fullName": "Nguyá»…n VÄƒn A",
+  "username": "nguyenvana",
+  "password": "Password123!",
+  "email": "nguyenvana@example.com",
+  "phone": "0901234567",
+  "roleId": 2,
+  "isActive": true
+}
+
+### Update Employee
+PUT {{ChipmeoApis.Api_HostAddress}}/admin/employees/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "fullName": "Nguyá»…n VÄƒn A (Updated)",
+  "email": "nguyenvana.new@example.com",
+  "phone": "0907654321",
+  "roleId": 2,
+  "isActive": true,
+  "password": "NewPassword123!"
+}
+
+### Delete Employee
+DELETE {{ChipmeoApis.Api_HostAddress}}/admin/employees/1
+Authorization: Bearer {{token}}
+
+###############################################
+# ROLES & PERMISSIONS
+###############################################
+
+### Get All Roles
+GET {{ChipmeoApis.Api_HostAddress}}/admin/roles
+Authorization: Bearer {{token}}
+
+### Get Role By ID
+GET {{ChipmeoApis.Api_HostAddress}}/admin/roles/1
+Authorization: Bearer {{token}}
+
+### Create Role
+POST {{ChipmeoApis.Api_HostAddress}}/admin/roles
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Cashier",
+  "description": "NhÃ¢n viÃªn thu ngÃ¢n",
+  "isActive": true
+}
+
+### Update Role
+PUT {{ChipmeoApis.Api_HostAddress}}/admin/roles/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Senior Cashier",
+  "description": "NhÃ¢n viÃªn thu ngÃ¢n cao cáº¥p",
+  "isActive": true
+}
+
+### Assign Permissions to Role
+POST {{ChipmeoApis.Api_HostAddress}}/admin/roles/1/permissions
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "permissionIds": [1, 2, 3, 4, 5]
+}
+
+### Delete Role
+DELETE {{ChipmeoApis.Api_HostAddress}}/admin/roles/1
+Authorization: Bearer {{token}}
+
+### Get All Permissions
+GET {{ChipmeoApis.Api_HostAddress}}/admin/permissions
+Authorization: Bearer {{token}}
+
+###############################################
+# ORDERS (POS)
+###############################################
+
+### Get All Orders
+GET {{ChipmeoApis.Api_HostAddress}}/api/orders
+Authorization: Bearer {{token}}
+
+### Get Order By ID
+GET {{ChipmeoApis.Api_HostAddress}}/api/orders/1
+Authorization: Bearer {{token}}
+
+### Get Orders By Status
+GET {{ChipmeoApis.Api_HostAddress}}/api/orders/status/pending
+Authorization: Bearer {{token}}
+
+### Get Orders By Date Range
+GET {{ChipmeoApis.Api_HostAddress}}/api/orders/date-range?fromDate=2025-01-01&toDate=2025-12-31
+Authorization: Bearer {{token}}
+
+### Create Order (Simple)
+POST {{ChipmeoApis.Api_HostAddress}}/api/orders
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "tableId": 1,
+  "customerName": "Nguyá»…n VÄƒn B",
+  "customerPhone": "0912345678",
+  "note": "Ãt Ä‘Æ°á»ng",
+  "items": [
+    {
+      "menuItemId": 1,
+      "quantity": 2,
+      "note": "Ãt Ä‘Ã¡",
+      "addons": [
+        {
+          "addonId": 1,
+          "quantity": 1
+        }
+      ]
+    }
+  ]
+}
+
+### Create Order (With Discount)
+POST {{ChipmeoApis.Api_HostAddress}}/api/orders
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "tableId": 2,
+  "customerName": "Tráº§n Thá»‹ C",
+  "customerPhone": "0923456789",
+  "discountCode": "KHAI_TRUONG",
+  "note": "Giao nhanh",
+  "items": [
+    {
+      "menuItemId": 1,
+      "quantity": 3,
+      "addons": [
+        {
+          "addonId": 1,
+          "quantity": 2
+        }
+      ]
+    },
+    {
+      "menuItemId": 2,
+      "quantity": 1,
+      "addons": []
+    }
+  ]
+}
+
+### Create Order (With Combo)
+POST {{ChipmeoApis.Api_HostAddress}}/api/orders
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "tableId": 3,
+  "customerName": "LÃª VÄƒn D",
+  "customerPhone": "0934567890",
+  "items": [
+    {
+      "comboId": 1,
+      "quantity": 2,
+      "note": "KhÃ´ng Ä‘Ã¡",
+      "addons": []
+    }
+  ]
+}
+
+### Update Order Status
+PATCH {{ChipmeoApis.Api_HostAddress}}/api/orders/1/status
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "status": "paid"
+}
+
+### Delete Order
+DELETE {{ChipmeoApis.Api_HostAddress}}/api/orders/1
+Authorization: Bearer {{token}}
+
+###############################################
+# NOTES FOR TESTING
+###############################################
+
+# 1. First run the LOGIN request to get JWT token
+# 2. Copy the token from response and paste it in the @token variable at the top
+# 3. All other requests will use this token automatically
+# 4. Make sure the API is running on https://localhost:5142
+# 5. You may need to create some test data first (categories, menu items, etc.)
+# 6. For order creation, make sure referenced IDs exist in database
+
+###############################################
+# STATUS VALUES
+###############################################
+
+# Order Status: pending, confirmed, preparing, ready, served, paid, cancelled
+# Table Status: available, occupied, reserved
+# Discount Type: percent, amount
+
+###############################################
+# SAMPLE WORKFLOW
+###############################################
+
+# 1. Login to get token
+# 2. Create Category
+# 3. Create Menu Items
+# 4. Create Addons
+# 5. Create Discount
+# 6. Create Table
+# 7. Create Order with items + addons + discount
+# 8. Update order status to "paid"
+
+

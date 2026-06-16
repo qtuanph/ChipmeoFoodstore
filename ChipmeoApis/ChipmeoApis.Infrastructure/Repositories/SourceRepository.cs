@@ -1,0 +1,52 @@
+﻿using ChipmeoApis.Usecase.Interfaces;
+using ChipmeoApis.Core.Entities;
+using ChipmeoApis.Infrastructure.Data;
+using Microsoft.EntityFrameworkCore;
+
+namespace ChipmeoApis.Infrastructure.Repositories;
+
+public class SourceRepository : ISourceRepository
+{
+    private readonly StoreDbContext _context;
+
+    public SourceRepository(StoreDbContext context)
+    {
+        _context = context;
+    }
+
+    public async Task<IEnumerable<Source>> GetAllAsync(CancellationToken cancellationToken = default)
+    {
+        return await _context.Sources.ToListAsync(cancellationToken);
+    }
+
+    public async Task<Source?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
+    {
+        return await _context.Sources.FindAsync(new object[] { id }, cancellationToken);
+    }
+
+    public async Task<Source> CreateAsync(Source source, CancellationToken cancellationToken = default)
+    {
+        _context.Sources.Add(source);
+        await _context.SaveChangesAsync(cancellationToken);
+        return source;
+    }
+
+    public async Task<bool> UpdateAsync(Source source, CancellationToken cancellationToken = default)
+    {
+        _context.Sources.Update(source);
+        return await _context.SaveChangesAsync(cancellationToken) > 0;
+    }
+
+    public async Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default)
+    {
+        var source = await _context.Sources.FindAsync(new object[] { id }, cancellationToken);
+        if (source == null) return false;
+        
+        _context.Sources.Remove(source);
+        return await _context.SaveChangesAsync(cancellationToken) > 0;
+    }
+}
+
+
+
+

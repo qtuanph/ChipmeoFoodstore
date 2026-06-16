@@ -1,0 +1,6 @@
+@MediaStorageManagement_HostAddress = http://localhost:5178
+
+GET {{MediaStorageManagement_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

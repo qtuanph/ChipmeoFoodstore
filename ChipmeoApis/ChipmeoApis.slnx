@@ -1,0 +1,9 @@
+﻿<Solution>
+  <Project Path="ChipmeoApis.Web/ChipmeoApis.Web.csproj" />
+  <Project Path="ChipmeoApis.Usecase/ChipmeoApis.Usecase.csproj" />
+  <Project Path="ChipmeoApis.Core/ChipmeoApis.Core.csproj" />
+  <Project Path="ChipmeoApis.Infrastructure/ChipmeoApis.Infrastructure.csproj" />
+</Solution>
+
+
+

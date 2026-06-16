@@ -1,0 +1,32 @@
+# .NET
+bin/
+obj/
+*.user
+*.suo
+*.vs/
+*.DotSettings
+*.nupkg
+**/appsettings.Development.json
+
+# Node
+node_modules/
+.env
+.env.local
+
+# Build
+dist/
+build/
+.vite/
+.svelte-kit/
+
+# IDE
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
