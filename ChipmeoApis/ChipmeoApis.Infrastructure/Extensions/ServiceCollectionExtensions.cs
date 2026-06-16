@@ -10,7 +10,6 @@ public static class ServiceCollectionExtensions
 {
     public static IServiceCollection AddInfrastructureServices(this IServiceCollection services, IConfiguration configuration)
     {
-        // Register all repositories
         services.AddScoped<ICategoryRepository, CategoryRepository>();
         services.AddScoped<IMenuItemRepository, MenuItemRepository>();
         services.AddScoped<IOrderRepository, OrderRepository>();
@@ -29,16 +28,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IPaymentRepository, PaymentRepository>();
         services.AddScoped<ITagRepository, TagRepository>();
 
-        // HttpClient for MediaHandler to call Media Storage API
-        services.AddHttpClient();
-
-        // Register handlers (infrastructure implementations of application interfaces)
         services.AddScoped<IMediaService, MediaHandler>();
 
         return services;
     }
 }
-
-
-
-

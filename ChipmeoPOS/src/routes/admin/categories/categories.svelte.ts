@@ -8,7 +8,8 @@ import {
 	deleteCategory,
 	type CategoryFormData
 } from '$lib/utils/index.js';
-import { API_BASE_URL } from '$lib/config/index.js';
+import { API_BASE_URL, STORAGE_KEYS } from '$lib/config/index.js';
+import { api } from '$lib/api/utils.js';
 
 export class CategoriesState {
 	categories = $state<Category[]>([]);
@@ -61,7 +62,7 @@ export class CategoriesState {
 
 	async handleSubmit() {
 		try {
-			const token = localStorage.getItem('token');
+			const token = localStorage.getItem(STORAGE_KEYS.TOKEN);
 			const oldImageUrl = this.editingItem?.imageUrl;
 
 			// Upload new image if pending
@@ -70,14 +71,10 @@ export class CategoriesState {
 				uploadData.append('file', this.pendingImageFile);
 				uploadData.append('folder', 'categories');
 
-				const uploadRes = await fetch(`${API_BASE_URL}/api/media/upload`, {
-					method: 'POST',
-					headers: { Authorization: `Bearer ${token}` },
-					body: uploadData
-				});
-
-				if (!uploadRes.ok) throw new Error('Upload ảnh thất bại');
-				const result = await uploadRes.json();
+				const result = await api.upload<{ fileUrl: string }>(
+					`${API_BASE_URL}/api/media/upload`,
+					uploadData
+				);
 				this.formData.imageUrl = result.fileUrl;
 			}
 

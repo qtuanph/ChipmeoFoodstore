@@ -3,11 +3,12 @@ using ChipmeoApis.Web.Authorization;
 using ChipmeoApis.Core.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using ChipmeoApis.Web.ApiResponse;
 
 namespace ChipmeoApis.Web.Controllers;
 
 [ApiController]
-[Route("admin/payment-settings")]
+[Route("api/admin/payment-settings")]
 public class PaymentSettingsController : ControllerBase
 {
     private readonly IPaymentSettingService _service;
@@ -22,7 +23,7 @@ public class PaymentSettingsController : ControllerBase
     public async Task<IActionResult> Get(CancellationToken cancellationToken)
     {
         var setting = await _service.GetAsync(cancellationToken);
-        return Ok(setting ?? new PaymentSetting());
+        return ApiResult.Success(setting ?? new PaymentSetting());
     }
 
     /// <summary>
@@ -33,7 +34,7 @@ public class PaymentSettingsController : ControllerBase
     public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
     {
         var settings = await _service.GetAllAsync(cancellationToken);
-        return Ok(settings);
+        return ApiResult.Success(settings);
     }
 
     /// <summary>
@@ -46,9 +47,9 @@ public class PaymentSettingsController : ControllerBase
         var setting = await _service.GetByIdAsync(id, cancellationToken);
         if (setting == null)
         {
-            return NotFound(new { message = $"Payment setting with ID {id} not found" });
+            return ApiResult.NotFound($"Payment setting with ID {id} not found");
         }
-        return Ok(setting);
+        return ApiResult.Success(setting);
     }
 
     /// <summary>
@@ -61,11 +62,11 @@ public class PaymentSettingsController : ControllerBase
         try
         {
             var saved = await _service.SaveAsync(setting, cancellationToken);
-            return Ok(saved);
+            return ApiResult.Success(saved);
         }
         catch (Exception ex)
         {
-            return BadRequest(new { message = ex.Message });
+            return ApiResult.BadRequest(ex.Message);
         }
     }
 
@@ -80,11 +81,11 @@ public class PaymentSettingsController : ControllerBase
         try
         {
             var saved = await _service.SaveAsync(setting, cancellationToken);
-            return Ok(saved);
+            return ApiResult.Success(saved);
         }
         catch (Exception ex)
         {
-            return BadRequest(new { message = ex.Message });
+            return ApiResult.BadRequest(ex.Message);
         }
     }
 
@@ -98,11 +99,11 @@ public class PaymentSettingsController : ControllerBase
         try
         {
             await _service.SetDefaultAsync(id, cancellationToken);
-            return Ok(new { message = "Payment setting set as default successfully" });
+            return ApiResult.Success(new { message = "Payment setting set as default successfully" });
         }
         catch (Exception ex)
         {
-            return BadRequest(new { message = ex.Message });
+            return ApiResult.BadRequest(ex.Message);
         }
     }
 
@@ -116,11 +117,11 @@ public class PaymentSettingsController : ControllerBase
         try
         {
             await _service.DeleteAsync(id, cancellationToken);
-            return Ok(new { message = "Payment setting deleted successfully" });
+            return ApiResult.Success(new { message = "Payment setting deleted successfully" });
         }
         catch (Exception ex)
         {
-            return BadRequest(new { message = ex.Message });
+            return ApiResult.BadRequest(ex.Message);
         }
     }
 }

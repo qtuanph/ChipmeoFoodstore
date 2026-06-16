@@ -1,6 +1,7 @@
 import { employeesAPI, rolesAPI } from '$lib/api/index.js';
 import type { Employee, Role } from '$lib/types/index.js';
-import { API_BASE_URL } from '$lib/config/index.js';
+import { API_BASE_URL, STORAGE_KEYS } from '$lib/config/index.js';
+import { api } from '$lib/api/utils.js';
 
 export class EmployeesState {
 	employees = $state<Employee[]>([]);
@@ -80,7 +81,7 @@ export class EmployeesState {
 
 	async handleSubmit() {
 		try {
-			const token = localStorage.getItem('token');
+			const token = localStorage.getItem(STORAGE_KEYS.TOKEN);
 			const oldAvatarUrl = this.editingItem?.avatarUrl;
 
 			// Upload new avatar if pending
@@ -89,14 +90,10 @@ export class EmployeesState {
 				uploadData.append('file', this.pendingImageFile);
 				uploadData.append('folder', 'avatars');
 
-				const uploadRes = await fetch(`${API_BASE_URL}/api/media/upload`, {
-					method: 'POST',
-					headers: { Authorization: `Bearer ${token}` },
-					body: uploadData
-				});
-
-				if (!uploadRes.ok) throw new Error('Upload avatar thất bại');
-				const result = await uploadRes.json();
+				const result = await api.upload<{ fileUrl: string }>(
+					`${API_BASE_URL}/api/media/upload`,
+					uploadData
+				);
 				this.formData.avatarUrl = result.fileUrl;
 			}
 

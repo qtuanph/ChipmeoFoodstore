@@ -1,18 +1,31 @@
 ﻿using ChipmeoApis.Usecase.Interfaces;
 using ChipmeoApis.Usecase.DTOs.Source;
+using ChipmeoApis.Usecase.Utils;
+using ChipmeoApis.Core.Constants;
 using ChipmeoApis.Core.Entities;
 using ChipmeoApis.Core.Utils;
+using Microsoft.Extensions.Caching.Distributed;
 
 namespace ChipmeoApis.Usecase.Services;
 
-public class SourceService(ISourceRepository repository) : ISourceService
+public class SourceService : ISourceService
 {
-    private readonly ISourceRepository _repository = repository;
+    private readonly ISourceRepository _repository;
+    private readonly IDistributedCache _cache;
+
+    public SourceService(ISourceRepository repository, IDistributedCache cache)
+    {
+        _repository = repository;
+        _cache = cache;
+    }
 
     public async Task<IEnumerable<SourceDto>> GetAllAsync(CancellationToken cancellationToken = default)
     {
-        var sources = await _repository.GetAllAsync(cancellationToken);
-        return sources.Select(MapToDto);
+        return await _cache.GetOrSetAsync(CacheKeys.Sources.All, async () =>
+        {
+            var sources = await _repository.GetAllAsync(cancellationToken);
+            return sources.Select(MapToDto).ToList();
+        }, TimeSpan.FromMinutes(30), cancellationToken);
     }
 
     public async Task<SourceDto?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
@@ -31,6 +44,7 @@ public class SourceService(ISourceRepository repository) : ISourceService
         };
 
         var created = await _repository.CreateAsync(source, cancellationToken);
+        await _cache.RemoveAsync(CacheKeys.Sources.All, cancellationToken);
         return MapToDto(created);
     }
 
@@ -42,12 +56,24 @@ public class SourceService(ISourceRepository repository) : ISourceService
         source.Name = dto.Name;
         source.IsActive = dto.IsActive;
 
-        return await _repository.UpdateAsync(source, cancellationToken);
+        var result = await _repository.UpdateAsync(source, cancellationToken);
+        if (result)
+        {
+            await _cache.RemoveAsync(CacheKeys.Sources.All, cancellationToken);
+            await _cache.RemoveAsync(CacheKeys.Sources.ById(id), cancellationToken);
+        }
+        return result;
     }
 
     public async Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default)
     {
-        return await _repository.DeleteAsync(id, cancellationToken);
+        var result = await _repository.DeleteAsync(id, cancellationToken);
+        if (result)
+        {
+            await _cache.RemoveAsync(CacheKeys.Sources.All, cancellationToken);
+            await _cache.RemoveAsync(CacheKeys.Sources.ById(id), cancellationToken);
+        }
+        return result;
     }
 
     private static SourceDto MapToDto(Source source)
@@ -61,7 +87,3 @@ public class SourceService(ISourceRepository repository) : ISourceService
         };
     }
 }
-
-
-
-

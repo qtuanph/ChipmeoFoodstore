@@ -1,18 +1,31 @@
 ﻿using ChipmeoApis.Usecase.Interfaces;
 using ChipmeoApis.Usecase.DTOs.Addon;
+using ChipmeoApis.Usecase.Utils;
+using ChipmeoApis.Core.Constants;
 using ChipmeoApis.Core.Entities;
 using ChipmeoApis.Core.Utils;
+using Microsoft.Extensions.Caching.Distributed;
 
 namespace ChipmeoApis.Usecase.Services;
 
-public class AddonService(IAddonRepository repository) : IAddonService
+public class AddonService : IAddonService
 {
-    private readonly IAddonRepository _repository = repository;
+    private readonly IAddonRepository _repository;
+    private readonly IDistributedCache _cache;
+
+    public AddonService(IAddonRepository repository, IDistributedCache cache)
+    {
+        _repository = repository;
+        _cache = cache;
+    }
 
     public async Task<IEnumerable<AddonDto>> GetAllAsync(CancellationToken cancellationToken = default)
     {
-        var addons = await _repository.GetAllAsync(cancellationToken);
-        return addons.Select(MapToDto);
+        return await _cache.GetOrSetAsync(CacheKeys.Addons.All, async () =>
+        {
+            var addons = await _repository.GetAllAsync(cancellationToken);
+            return addons.Select(MapToDto).ToList();
+        }, TimeSpan.FromMinutes(30), cancellationToken);
     }
 
     public async Task<AddonDto?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
@@ -32,6 +45,8 @@ public class AddonService(IAddonRepository repository) : IAddonService
         };
 
         var created = await _repository.CreateAsync(addon, cancellationToken);
+        await _cache.RemoveAsync(CacheKeys.Addons.All, cancellationToken);
+        await _cache.RemoveAsync(CacheKeys.MenuItems.All, cancellationToken);
         return MapToDto(created);
     }
 
@@ -44,12 +59,26 @@ public class AddonService(IAddonRepository repository) : IAddonService
         addon.Price = dto.Price;
         addon.IsActive = dto.IsActive;
 
-        return await _repository.UpdateAsync(addon, cancellationToken);
+        var result = await _repository.UpdateAsync(addon, cancellationToken);
+        if (result)
+        {
+            await _cache.RemoveAsync(CacheKeys.Addons.All, cancellationToken);
+            await _cache.RemoveAsync(CacheKeys.Addons.ById(id), cancellationToken);
+            await _cache.RemoveAsync(CacheKeys.MenuItems.All, cancellationToken);
+        }
+        return result;
     }
 
     public async Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default)
     {
-        return await _repository.DeleteAsync(id, cancellationToken);
+        var result = await _repository.DeleteAsync(id, cancellationToken);
+        if (result)
+        {
+            await _cache.RemoveAsync(CacheKeys.Addons.All, cancellationToken);
+            await _cache.RemoveAsync(CacheKeys.Addons.ById(id), cancellationToken);
+            await _cache.RemoveAsync(CacheKeys.MenuItems.All, cancellationToken);
+        }
+        return result;
     }
 
     private static AddonDto MapToDto(Addon addon)
@@ -64,7 +93,3 @@ public class AddonService(IAddonRepository repository) : IAddonService
         };
     }
 }
-
-
-
-

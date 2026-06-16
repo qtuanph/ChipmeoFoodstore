@@ -1,28 +1,56 @@
-﻿using ChipmeoApis.Usecase.DTOs.Media;
+using System.Text.RegularExpressions;
+using ChipmeoApis.Usecase.DTOs.Media;
 using ChipmeoApis.Usecase.Interfaces;
-using ChipmeoApis.Usecase.DTOs;
 using ChipmeoApis.Core.Entities;
+using ChipmeoApis.Infrastructure.Data;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
-using System.Net.Http.Headers;
-using System.Text.Json;
+using Amazon.S3;
+using Amazon.S3.Model;
+using Amazon.S3.Util;
 
 namespace ChipmeoApis.Infrastructure.Handlers;
 
 public class MediaHandler : IMediaService
 {
     private readonly IMediaRepository _repo;
-    private readonly HttpClient _httpClient;
-    private readonly string _mediaApiUrl;
-    private readonly string _mediaApiKey;
+    private readonly IAmazonS3 _s3Client;
+    private readonly StoreDbContext _context;
+    private readonly string _bucket;
+    private readonly string _publicUrl;
 
-    public MediaHandler(IMediaRepository repo, IHttpClientFactory httpClientFactory, IConfiguration configuration)
+    public MediaHandler(IMediaRepository repo, IAmazonS3 s3Client, StoreDbContext context, IConfiguration configuration)
     {
         _repo = repo;
-        _httpClient = httpClientFactory.CreateClient();
-        
-        // Media Storage API settings
-        _mediaApiUrl = configuration["Media:ApiUrl"] ?? "https://media.chipmeo.io.vn";
-        _mediaApiKey = configuration["Media:ApiKey"] ?? "chipmeo-media-api-key-2024";
+        _s3Client = s3Client;
+        _context = context;
+        _bucket = configuration["S3:Bucket"] ?? "food-media";
+        _publicUrl = configuration["S3:PublicUrl"] ?? "http://localhost:9000/food-media";
+    }
+
+    private async Task EnsureBucketExistsAsync()
+    {
+        var exists = await AmazonS3Util.DoesS3BucketExistV2Async(_s3Client, _bucket);
+        if (!exists)
+            await _s3Client.PutBucketAsync(new PutBucketRequest { BucketName = _bucket });
+
+        await _s3Client.PutBucketPolicyAsync(new PutBucketPolicyRequest
+        {
+            BucketName = _bucket,
+            Policy = $$"""
+            {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Principal": "*",
+                  "Action": "s3:GetObject",
+                  "Resource": "arn:aws:s3:::{{_bucket}}/*"
+                }
+              ]
+            }
+            """
+        });
     }
 
     public async Task<MediaDto> UploadFileAsync(Stream fileStream, string fileName, string contentType, long fileSize, int? uploadedBy, string folder = "misc")
@@ -30,35 +58,23 @@ public class MediaHandler : IMediaService
         if (fileStream == null || fileStream.Length == 0)
             throw new ArgumentException("File is empty");
 
-        // Upload to Media Storage API
-        using var content = new MultipartFormDataContent();
-        using var streamContent = new StreamContent(fileStream);
-        streamContent.Headers.ContentType = new MediaTypeHeaderValue(contentType);
-        content.Add(streamContent, "file", fileName);
-        content.Add(new StringContent(folder), "folder");
+        await EnsureBucketExistsAsync();
 
-        var request = new HttpRequestMessage(HttpMethod.Post, $"{_mediaApiUrl}/api/media/upload");
-        request.Headers.Add("X-Api-Key", _mediaApiKey);
-        request.Content = content;
+        var ext = Path.GetExtension(fileName);
+        var objectName = $"{folder}/{Guid.NewGuid()}{ext}";
 
-        var response = await _httpClient.SendAsync(request);
-        
-        if (!response.IsSuccessStatusCode)
+        var putRequest = new PutObjectRequest
         {
-            var errorContent = await response.Content.ReadAsStringAsync();
-            throw new Exception($"Media upload failed: {errorContent}");
-        }
+            BucketName = _bucket,
+            Key = objectName,
+            InputStream = fileStream,
+            ContentType = contentType
+        };
+        putRequest.Headers.ContentLength = fileStream.Length;
 
-        var jsonResponse = await response.Content.ReadAsStringAsync();
-        var uploadResult = JsonSerializer.Deserialize<MediaApiResponse>(jsonResponse, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        await _s3Client.PutObjectAsync(putRequest);
 
-        if (uploadResult == null)
-            throw new Exception("Failed to parse media upload response");
-
-        // Build full URL
-        var fileUrl = uploadResult.FileUrl.StartsWith("http") 
-            ? uploadResult.FileUrl 
-            : $"{_mediaApiUrl}{uploadResult.FileUrl}";
+        var fileUrl = $"{_publicUrl}/{objectName}";
 
         var media = new Media
         {
@@ -90,17 +106,22 @@ public class MediaHandler : IMediaService
         var media = await _repo.GetByIdAsync(id);
         if (media == null) return false;
 
-        // Try to delete from Media Storage API
         try
         {
             var uri = new Uri(media.FileUrl);
-            var urlPath = uri.AbsolutePath.TrimStart('/'); // blog/xxx.jpg
-            
-            var request = new HttpRequestMessage(HttpMethod.Delete, $"{_mediaApiUrl}/api/media/{urlPath}");
-            request.Headers.Add("X-Api-Key", _mediaApiKey);
-            await _httpClient.SendAsync(request);
+            var path = uri.AbsolutePath.TrimStart('/');
+            var bucketPrefix = $"{_bucket}/";
+            var idx = path.IndexOf(bucketPrefix, StringComparison.OrdinalIgnoreCase);
+            var objectName = idx >= 0 ? path[(idx + bucketPrefix.Length)..] : path;
+
+            var deleteRequest = new DeleteObjectRequest
+            {
+                BucketName = _bucket,
+                Key = objectName
+            };
+            await _s3Client.DeleteObjectAsync(deleteRequest);
         }
-        catch { /* Ignore file deletion errors */ }
+        catch { /* Ignore S3 deletion errors */ }
 
         await _repo.DeleteAsync(media);
         return true;
@@ -132,20 +153,6 @@ public class MediaHandler : IMediaService
         {
             media.EntityType = entityType;
             media.EntityId = entityId;
-            // The repository doesn't have an UpdateAsync, but EF Core tracks changes if retrieved from context.
-            // However, MediaRepository.AddAsync and DeleteAsync call SaveChangesAsync.
-            // We need a way to save changes. Since I cannot change existing repo interface easily without ensuring all implementations update (luckily only one here),
-            // I'll assume I can just use the context if I had access or add UpdateAsync to IRepostory.
-            // Actually, let's add UpdateAsync to IMediaRepository properly in next step if needed, 
-            // OR reuse AddAsync if it handles update (unlikely), 
-            // OR rely on direct context manipulation if repo exposed it (it doesn't).
-            // Best approach: Add UpdateAsync to IMediaRepository. I missed that in the plan but I can do it now.
-            // Wait, I can't modify interface again in this tool call sequence easily without proper order.
-            // I'll implement logic assuming I will add UpdateAsync to repo in next steps.
-            
-            // Re-reading MediaRepository: it uses _context.Media.Add(media).
-            // I should add UpdateAsync to MediaRepository first.
-            // For now I will put the logic here and will fix the repository in next turn.
             await _repo.UpdateAsync(media);
         }
     }
@@ -163,36 +170,82 @@ public class MediaHandler : IMediaService
     {
         if (string.IsNullOrWhiteSpace(content)) return;
 
-        // Regex to find src="..."
         var matches = System.Text.RegularExpressions.Regex.Matches(content, @"src\s*=\s*[""']([^""']+)[""']", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
         foreach (System.Text.RegularExpressions.Match match in matches)
         {
             if (match.Groups.Count > 1)
             {
                 var url = match.Groups[1].Value;
-                // Only link if it's our media
-                if (url.Contains(_mediaApiUrl) || !url.StartsWith("http")) 
+                if (url.Contains(_publicUrl) || !url.StartsWith("http"))
                 {
                      await LinkMediaToEntityAsync(url, entityType, entityId);
                 }
             }
         }
     }
+
+    public async Task<ImageUsageResult> CheckImageUsageAsync(string url)
+    {
+        var usages = new List<ImageUsageDetail>();
+
+        var blogMatch = await _context.BlogPosts.FirstOrDefaultAsync(p =>
+            (p.ThumbnailUrl != null && p.ThumbnailUrl.Contains(url)) ||
+            (p.OgImageUrl != null && p.OgImageUrl.Contains(url)) ||
+            (p.Content != null && p.Content.Contains(url)));
+        if (blogMatch != null)
+            usages.Add(new ImageUsageDetail("Blog", blogMatch.Title));
+
+        var menuMatch = await _context.MenuItems.FirstOrDefaultAsync(m =>
+            m.ImageUrl != null && m.ImageUrl.Contains(url));
+        if (menuMatch != null)
+            usages.Add(new ImageUsageDetail("Món ăn", menuMatch.Name));
+
+        var catMatch = await _context.Categories.FirstOrDefaultAsync(c =>
+            c.ImageUrl != null && c.ImageUrl.Contains(url));
+        if (catMatch != null)
+            usages.Add(new ImageUsageDetail("Danh mục", catMatch.Name));
+
+        var comboMatch = await _context.Combos.FirstOrDefaultAsync(c =>
+            c.ImageUrl != null && c.ImageUrl.Contains(url));
+        if (comboMatch != null)
+            usages.Add(new ImageUsageDetail("Combo", comboMatch.Name));
+
+        return new ImageUsageResult(url, usages.Count > 0, usages);
+    }
+
+    public async Task<HashSet<string>> GetAllUsedImageUrlsAsync()
+    {
+        var urls = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        var blogUrls = await _context.BlogPosts
+            .Where(p => p.ThumbnailUrl != null || p.OgImageUrl != null)
+            .Select(p => new { p.ThumbnailUrl, p.OgImageUrl, p.Content })
+            .ToListAsync();
+
+        foreach (var blog in blogUrls)
+        {
+            if (!string.IsNullOrEmpty(blog.ThumbnailUrl)) urls.Add(blog.ThumbnailUrl);
+            if (!string.IsNullOrEmpty(blog.OgImageUrl)) urls.Add(blog.OgImageUrl);
+            if (!string.IsNullOrEmpty(blog.Content))
+            {
+                var imgMatches = Regex.Matches(blog.Content, @"src\s*=\s*[""']([^""']+)[""']", RegexOptions.IgnoreCase);
+                foreach (Match match in imgMatches)
+                    if (match.Groups.Count > 1) urls.Add(match.Groups[1].Value);
+            }
+        }
+
+        var menuUrls = await _context.MenuItems
+            .Where(m => m.ImageUrl != null).Select(m => m.ImageUrl!).ToListAsync();
+        foreach (var url in menuUrls) urls.Add(url);
+
+        var catUrls = await _context.Categories
+            .Where(c => c.ImageUrl != null).Select(c => c.ImageUrl!).ToListAsync();
+        foreach (var url in catUrls) urls.Add(url);
+
+        var comboUrls = await _context.Combos
+            .Where(c => c.ImageUrl != null).Select(c => c.ImageUrl!).ToListAsync();
+        foreach (var url in comboUrls) urls.Add(url);
+
+        return urls;
+    }
 }
-
-public class MediaApiResponse
-{
-    public string FileName { get; set; } = "";
-    public string Folder { get; set; } = "";
-    public string FileUrl { get; set; } = "";
-    public long FileSize { get; set; }
-    public string FileType { get; set; } = "";
-}
-
-
-
-
-
-
-
-

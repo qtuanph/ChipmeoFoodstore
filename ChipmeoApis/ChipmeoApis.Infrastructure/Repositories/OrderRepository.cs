@@ -1,4 +1,5 @@
-﻿using ChipmeoApis.Usecase.Interfaces;
+﻿using ChipmeoApis.Core.Constants;
+using ChipmeoApis.Usecase.Interfaces;
 using ChipmeoApis.Core.Entities;
 using ChipmeoApis.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
@@ -157,7 +158,7 @@ public class OrderRepository(StoreDbContext context) : IOrderRepository
             .Include(o => o.Employee)
             .Include(o => o.OrderItems)
                 .ThenInclude(oi => oi.OrderItemAddons)
-            .Where(o => o.Status == "paid" || o.Status == "preparing" || (o.Status == "served" && o.UpdatedAt >= TimeUtils.GetVietnamTime().Date))
+            .Where(o => o.Status == OrderStatus.Paid || o.Status == OrderStatus.Preparing || (o.Status == OrderStatus.Served && o.UpdatedAt >= TimeUtils.GetVietnamTime().Date))
             .OrderBy(o => o.CreatedAt)
             .ToListAsync(cancellationToken);
     }

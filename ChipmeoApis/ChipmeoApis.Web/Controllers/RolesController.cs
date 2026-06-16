@@ -3,11 +3,12 @@ using ChipmeoApis.Web.Authorization;
 using ChipmeoApis.Usecase.DTOs.Role;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using ChipmeoApis.Web.ApiResponse;
 
 namespace ChipmeoApis.Web.Controllers;
 
 [ApiController]
-[Route("admin/roles")]
+[Route("api/admin/roles")]
 [Authorize]
 public class RolesController : ControllerBase
 {
@@ -23,7 +24,7 @@ public class RolesController : ControllerBase
     public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
     {
         var roles = await _service.GetAllAsync(cancellationToken);
-        return Ok(roles);
+        return ApiResult.Success(roles);
     }
 
     [HttpGet("{id:int}")]
@@ -31,8 +32,8 @@ public class RolesController : ControllerBase
     public async Task<IActionResult> GetById(int id, CancellationToken cancellationToken)
     {
         var role = await _service.GetByIdAsync(id, cancellationToken);
-        if (role == null) return NotFound();
-        return Ok(role);
+        if (role == null) return ApiResult.NotFound();
+        return ApiResult.Success(role);
     }
 
     [HttpPost]
@@ -48,7 +49,7 @@ public class RolesController : ControllerBase
     public async Task<IActionResult> Update(int id, [FromBody] CreateRoleDto dto, CancellationToken cancellationToken)
     {
         var ok = await _service.UpdateAsync(id, dto, cancellationToken);
-        if (!ok) return NotFound();
+        if (!ok) return ApiResult.NotFound();
         return NoContent();
     }
 
@@ -59,12 +60,12 @@ public class RolesController : ControllerBase
         try
         {
             var ok = await _service.DeleteAsync(id, cancellationToken);
-            if (!ok) return NotFound();
+            if (!ok) return ApiResult.NotFound();
             return NoContent();
         }
         catch (Exception)
         {
-            return BadRequest(new { error = "Không thể xóa vai trò này vì đang có nhân viên nắm giữ." });
+            return ApiResult.BadRequest("Không thể xóa vai trò này vì đang có nhân viên nắm giữ.");
         }
     }
 
@@ -73,7 +74,7 @@ public class RolesController : ControllerBase
     public async Task<IActionResult> AssignPermissions(int id, [FromBody] AssignPermissionsDto dto, CancellationToken cancellationToken)
     {
         var ok = await _service.AssignPermissionsAsync(id, dto, cancellationToken);
-        if (!ok) return NotFound();
+        if (!ok) return ApiResult.NotFound();
         return NoContent();
     }
 }

@@ -138,9 +138,13 @@
 					<div class="text-xs text-gray-500">{$auth.user?.roleName}</div>
 				</div>
 				<div
-					class="flex h-9 w-9 items-center justify-center rounded-full border border-indigo-200 bg-indigo-100 font-bold text-indigo-600"
+					class="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border border-indigo-200 bg-indigo-100 font-bold text-indigo-600"
 				>
-					{$auth.user?.fullName?.charAt(0).toUpperCase() || 'U'}
+					{#if $auth.user?.avatarUrl}
+						<img src={$auth.user.avatarUrl} alt="Avatar" class="h-full w-full object-cover" />
+					{:else}
+						{$auth.user?.fullName?.charAt(0).toUpperCase() || 'U'}
+					{/if}
 				</div>
 			</button>
 
@@ -297,9 +301,13 @@
 						<div class="text-[10px] font-medium text-gray-500 italic">{$auth.user?.roleName}</div>
 					</div>
 					<div
-						class="flex h-9 w-9 items-center justify-center rounded-full border border-indigo-200 bg-indigo-50 font-bold text-indigo-600 shadow-sm"
+						class="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border border-indigo-200 bg-indigo-50 font-bold text-indigo-600 shadow-sm"
 					>
-						{$auth.user?.fullName?.charAt(0).toUpperCase() || 'U'}
+						{#if $auth.user?.avatarUrl}
+							<img src={$auth.user.avatarUrl} alt="Avatar" class="h-full w-full object-cover" />
+						{:else}
+							{$auth.user?.fullName?.charAt(0).toUpperCase() || 'U'}
+						{/if}
 					</div>
 					<svg
 						class="h-4 w-4 text-gray-400 transition-transform {showDropdown ? 'rotate-180' : ''}"

@@ -1,7 +1,8 @@
 import { categoriesAPI, menuItemsAPI, addonsAPI } from '$lib/api/index.js';
 import { categories } from '$lib/utils/index.js';
 import type { MenuItem, Addon } from '$lib/types/index.js';
-import { API_BASE_URL } from '$lib/config/index.js';
+import { API_BASE_URL, STORAGE_KEYS } from '$lib/config/index.js';
+import { api } from '$lib/api/utils.js';
 import { get } from 'svelte/store';
 
 interface MenuFormData {
@@ -94,7 +95,7 @@ export class MenuState {
 
 	async handleSubmit() {
 		try {
-			const token = localStorage.getItem('token');
+			const token = localStorage.getItem(STORAGE_KEYS.TOKEN);
 			const oldImageUrl = this.editingItem?.imageUrl;
 
 			// Upload new image if pending
@@ -103,14 +104,10 @@ export class MenuState {
 				uploadData.append('file', this.pendingImageFile);
 				uploadData.append('folder', 'menu-items');
 
-				const uploadRes = await fetch(`${API_BASE_URL}/api/media/upload`, {
-					method: 'POST',
-					headers: { Authorization: `Bearer ${token}` },
-					body: uploadData
-				});
-
-				if (!uploadRes.ok) throw new Error('Upload ảnh thất bại');
-				const result = await uploadRes.json();
+				const result = await api.upload<{ fileUrl: string }>(
+					`${API_BASE_URL}/api/media/upload`,
+					uploadData
+				);
 				this.formData.imageUrl = result.fileUrl;
 			}
 

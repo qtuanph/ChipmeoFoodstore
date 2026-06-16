@@ -7,6 +7,7 @@
 	import ImageCropper from './ImageCropper.svelte';
 
 	import { API_BASE_URL } from '$lib/config/index.js';
+	import { api } from '$lib/api/utils.js';
 
 	let { open = $bindable() } = $props();
 
@@ -84,28 +85,16 @@
 
 	async function uploadAvatar(fileOrBlob: File | Blob) {
 		try {
-			loading = true; // Show loading indicator
-			const token = localStorage.getItem('token');
+			loading = true;
 			const uploadParams = new FormData();
-			// Ensure filename is present for Blob
 			uploadParams.append('file', fileOrBlob, 'avatar.jpg');
 			uploadParams.append('folder', 'avatars');
 
-			const response = await fetch(`${API_BASE_URL}/api/media/upload`, {
-				method: 'POST',
-				headers: { Authorization: `Bearer ${token}` },
-				body: uploadParams
-			});
-
-			if (response.ok) {
-				const result = await response.json();
-				formData.avatarUrl = result.fileUrl || result.url;
-				toastMessage = 'Tải ảnh thành công';
-				toastType = 'success';
-				showToast = true;
-			} else {
-				throw new Error('Upload failed');
-			}
+			const result = await api.upload<{ fileUrl: string }>(
+				`${API_BASE_URL}/api/media/upload`,
+				uploadParams
+			);
+			formData.avatarUrl = result.fileUrl;
 		} catch (err) {
 			console.error(err);
 			toastMessage = 'Lỗi khi tải ảnh lên';
@@ -214,8 +203,12 @@
 							/>
 						</svg>
 					</button>
-					type="file" accept="image/*" class="hidden" bind:this={fileInput}
-					onchange={handleFileSelect}
+					<input
+						type="file"
+						accept="image/*"
+						class="hidden"
+						bind:this={fileInput}
+						onchange={handleFileSelect}
 					/>
 				</div>
 			</div>

@@ -2,6 +2,7 @@ import * as signalR from '@microsoft/signalr';
 import { SvelteDate } from 'svelte/reactivity';
 import { api, API_ENDPOINTS, API_BASE_URL } from '$lib/api/index.js';
 import type { Order } from '$lib/types/index.js';
+import { API_HOST_URL, SIGNALR_HUB_PATH } from '$lib/config/index.js';
 
 export class KitchenState {
 	orders = $state<Order[]>([]);
@@ -67,7 +68,7 @@ export class KitchenState {
 
 	private async setupSignalR() {
 		this.connection = new signalR.HubConnectionBuilder()
-			.withUrl(`${API_BASE_URL}/hubs/app`)
+			.withUrl(`${API_HOST_URL}${SIGNALR_HUB_PATH}`)
 			.withAutomaticReconnect()
 			.build();
 

@@ -1,7 +1,6 @@
 ﻿using ChipmeoApis.Usecase.DTOs;
 using ChipmeoApis.Usecase.DTOs.Media;
 
-
 namespace ChipmeoApis.Usecase.Interfaces;
 
 public interface IMediaService
@@ -12,7 +11,12 @@ public interface IMediaService
     Task LinkMediaToEntityAsync(string fileUrl, string entityType, int entityId);
     Task DeleteMediaByEntityAsync(string entityType, int entityId);
     Task LinkMediaFromContentAsync(string? content, string entityType, int entityId);
+    Task<ImageUsageResult> CheckImageUsageAsync(string url);
+    Task<HashSet<string>> GetAllUsedImageUrlsAsync();
 }
+
+public record ImageUsageResult(string Url, bool IsInUse, List<ImageUsageDetail> Usages);
+public record ImageUsageDetail(string EntityType, string EntityName);
 
 
 

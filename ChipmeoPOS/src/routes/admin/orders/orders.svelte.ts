@@ -1,6 +1,7 @@
 import { ordersAPI } from '$lib/api/index.js';
 import { signalRService } from '$lib/services/signalr.js';
 import type { Order } from '$lib/types/index.js';
+import { STORAGE_KEYS } from '$lib/config/index.js';
 
 export class OrdersState {
 	orders = $state<Order[]>([]);
@@ -35,7 +36,7 @@ export class OrdersState {
 		await this.loadData();
 
 		// Start SignalR
-		const token = localStorage.getItem('token');
+		const token = localStorage.getItem(STORAGE_KEYS.TOKEN);
 		if (token) {
 			await signalRService.startConnection(token);
 			signalRService.on('ReceiveOrderUpdate', this.handleOrderUpdate.bind(this));

@@ -5,11 +5,12 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using ChipmeoApis.Web.Hubs;
+using ChipmeoApis.Web.ApiResponse;
 
 namespace ChipmeoApis.Web.Controllers;
 
 [ApiController]
-[Route("admin/discounts")]
+[Route("api/admin/discounts")]
 [Authorize]
 public class DiscountsController : ControllerBase
 {
@@ -27,7 +28,7 @@ public class DiscountsController : ControllerBase
     public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
     {
         var items = await _service.GetAllAsync(cancellationToken);
-        return Ok(items);
+        return ApiResult.Success(items);
     }
 
     [HttpGet("{id:int}")]
@@ -35,8 +36,8 @@ public class DiscountsController : ControllerBase
     public async Task<IActionResult> GetById(int id, CancellationToken cancellationToken)
     {
         var item = await _service.GetByIdAsync(id, cancellationToken);
-        if (item == null) return NotFound();
-        return Ok(item);
+        if (item == null) return ApiResult.NotFound();
+        return ApiResult.Success(item);
     }
 
     [HttpPost]
@@ -53,7 +54,7 @@ public class DiscountsController : ControllerBase
     public async Task<IActionResult> Update(int id, CreateDiscountDto dto, CancellationToken cancellationToken)
     {
         var ok = await _service.UpdateAsync(id, dto, cancellationToken);
-        if (!ok) return NotFound();
+        if (!ok) return ApiResult.NotFound();
         await _hubContext.Clients.All.SendAsync("ReceiveDiscountUpdate", cancellationToken);
         return NoContent();
     }
@@ -65,13 +66,13 @@ public class DiscountsController : ControllerBase
         try
         {
             var ok = await _service.DeleteAsync(id, cancellationToken);
-            if (!ok) return NotFound();
+            if (!ok) return ApiResult.NotFound();
             await _hubContext.Clients.All.SendAsync("ReceiveDiscountUpdate", cancellationToken);
             return NoContent();
         }
         catch (Exception)
         {
-            return BadRequest(new { error = "Không thể xóa mã giảm giá này vì đã được sử dụng trong đơn hàng." });
+            return ApiResult.BadRequest("Không thể xóa mã giảm giá này vì đã được sử dụng trong đơn hàng.");
         }
     }
 }

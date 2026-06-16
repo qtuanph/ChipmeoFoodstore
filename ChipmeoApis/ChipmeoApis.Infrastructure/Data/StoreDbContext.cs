@@ -62,7 +62,7 @@ public partial class StoreDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.UseCollation("SQL_Latin1_General_CP1_CI_AI");
+        // Collation được set ở cấp database trong init.sql (vi_ci_ai)
 
         modelBuilder.Entity<Addon>(entity =>
         {

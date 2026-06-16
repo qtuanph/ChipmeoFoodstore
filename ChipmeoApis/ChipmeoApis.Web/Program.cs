@@ -1,4 +1,5 @@
-﻿using ChipmeoApis.Infrastructure.Data;
+﻿using ChipmeoApis.Core.Configuration;
+using ChipmeoApis.Infrastructure.Data;
 using ChipmeoApis.Infrastructure.Extensions;
 using ChipmeoApis.Usecase.Extensions;
 using Microsoft.EntityFrameworkCore;
@@ -11,26 +12,92 @@ using ChipmeoApis.Web.Middleware;
 using Microsoft.AspNetCore.RateLimiting;
 using System.Threading.RateLimiting;
 using ChipmeoApis.Web.Hubs;
+using Amazon.S3;
+using Amazon.Runtime;
+using FluentValidation;
+using FluentValidation.AspNetCore;
+using Microsoft.OpenApi;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+
+AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-// Add services to the container.
-builder.Services.AddControllers();
+builder.Services.AddControllers(options =>
+    {
+        options.Conventions.Add(new ChipmeoApis.Web.Conventions.V2RouteConvention());
+    })
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+        options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
+    });
+
+builder.Services.AddFluentValidationAutoValidation()
+    .AddFluentValidationClientsideAdapters()
+    .AddValidatorsFromAssemblyContaining<Program>();
+
 builder.Services.AddSignalR();
 builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v2", new OpenApiInfo { Title = "ChipmeoFoodstore API", Version = "v2", Description = "API quản lý cửa hàng Chipmeo Foodstore v2 — RESTful với response envelope chuẩn" });
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        Description = "JWT Authorization header using the Bearer scheme."
+    });
+    c.AddSecurityRequirement((document) => new OpenApiSecurityRequirement
+    {
+        { new OpenApiSecuritySchemeReference("Bearer", document), new List<string>() }
+    });
+    var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+    if (File.Exists(xmlPath)) c.IncludeXmlComments(xmlPath);
+});
 
-// Infrastructure & Application Services
-// NOTE: DbContext must be registered explicitly if not inside AddInfrastructureServices
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 builder.Services.AddDbContext<StoreDbContext>(options =>
-    options.UseSqlServer(connectionString));
+    options.UseNpgsql(connectionString));
 
-builder.Services.AddMemoryCache(); // Register MemoryCache
+var redisConnection = builder.Configuration.GetConnectionString("Redis") ?? throw new InvalidOperationException("Connection string 'Redis' not found.");
+builder.Services.AddStackExchangeRedisCache(options =>
+{
+    options.Configuration = redisConnection;
+    options.InstanceName = "chipmeo:";
+});
+
+builder.Services.AddSingleton<IAmazonS3>(sp =>
+{
+    var config = sp.GetRequiredService<IConfiguration>();
+    var endpoint = config["S3:Endpoint"] ?? "http://rustfs:9000";
+    if (!endpoint.StartsWith("http://") && !endpoint.StartsWith("https://"))
+        endpoint = $"http://{endpoint}";
+    var s3Config = new AmazonS3Config
+    {
+        ServiceURL = endpoint,
+        ForcePathStyle = true,
+        UseHttp = true
+    };
+    var credentials = new BasicAWSCredentials(
+        config["S3:AccessKey"] ?? "chipmeo",
+        config["S3:SecretKey"] ?? "REMOVED");
+    return new AmazonS3Client(credentials, s3Config);
+});
+
+builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection(JwtSettings.SectionName));
 builder.Services.AddInfrastructureServices(builder.Configuration);
 builder.Services.AddApplicationServices();
 
-// Authentication & Authorization
+var jwtSettings = builder.Configuration.GetSection(JwtSettings.SectionName).Get<JwtSettings>()
+    ?? throw new InvalidOperationException("JwtSettings not configured");
+
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -40,9 +107,9 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateAudience = true,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            ValidIssuer = builder.Configuration["JwtSettings:Issuer"],
-            ValidAudience = builder.Configuration["JwtSettings:Audience"],
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["JwtSettings:SecretKey"]!))
+            ValidIssuer = jwtSettings.Issuer,
+            ValidAudience = jwtSettings.Audience,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.SecretKey))
         };
     });
 
@@ -50,7 +117,6 @@ builder.Services.AddSingleton<IAuthorizationHandler, PermissionAuthorizationHand
 builder.Services.AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProvider>();
 builder.Services.AddAuthorization();
 
-// Rate Limiting
 builder.Services.AddRateLimiter(options => 
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
@@ -72,9 +138,6 @@ builder.Services.AddRateLimiter(options =>
     });
 });
 
-// Permissions handled via Singleton/Scoped services in Infrastructure
-
-// CORS
 var allowedOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>() ?? Array.Empty<string>();
 builder.Services.AddCors(options =>
 {
@@ -89,33 +152,25 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// ==========================================
-// 3. PIPELINE XỬ LÝ REQUEST
-// ==========================================
-
-// Security Headers (Always first or early)
+app.UseMiddleware<ExceptionHandlingMiddleware>();
 app.UseMiddleware<SecurityHeadersMiddleware>();
 
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v2/swagger.json", "ChipmeoFoodstore API v2");
+        c.RoutePrefix = "swagger";
+    });
+}
 
-app.UseHttpsRedirection();
-
-// CORS must be before Auth & RateLimiting
 app.UseCors("CorsPolicy");
-
-// Rate Limiting
 app.UseRateLimiter();
-
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
 app.MapHub<AppHub>("/hubs/app");
 
-// Seed Permissions (Optional check or manual run)
-// scope execution for seeding if needed
-
 app.Run();
-
-
-
-

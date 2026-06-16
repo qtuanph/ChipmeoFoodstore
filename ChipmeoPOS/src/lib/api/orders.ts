@@ -63,9 +63,16 @@ export const ordersAPI = {
 		if (fromDate) params.append('fromDate', fromDate);
 		if (toDate) params.append('toDate', toDate);
 
-		return apiRequest<{ items: Order[]; totalCount: number; totalPages: number }>(
-			`${API_ENDPOINTS.orders.paged}?${params.toString()}`
-		);
+		const data = await apiRequest<Order[]>(`${API_ENDPOINTS.orders.paged}?${params.toString()}`);
+		// apiRequest unwraps { data, meta } → returns data array.
+		// Meta is lost during unwrap, so we fall back to client-side total.
+		return {
+			items: data as unknown as Order[],
+			totalCount:
+				(data as unknown as { meta?: { totalCount: number } })?.meta?.totalCount ??
+				(data as unknown as Order[]).length,
+			totalPages: (data as unknown as { meta?: { totalPages: number } })?.meta?.totalPages ?? 1
+		};
 	},
 	async getByStatus(status: string): Promise<Order[]> {
 		return apiRequest<Order[]>(API_ENDPOINTS.orders.byStatus(status));

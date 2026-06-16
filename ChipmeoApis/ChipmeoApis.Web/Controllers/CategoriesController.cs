@@ -2,11 +2,12 @@
 using ChipmeoApis.Web.Authorization;
 using ChipmeoApis.Usecase.DTOs.Category;
 using Microsoft.AspNetCore.Mvc;
+using ChipmeoApis.Web.ApiResponse;
 
 namespace ChipmeoApis.Web.Controllers;
 
 [ApiController]
-[Route("admin/categories")]
+[Route("api/admin/categories")]
 public class CategoriesController : ControllerBase
 {
     private readonly ICategoryService _service;
@@ -21,7 +22,7 @@ public class CategoriesController : ControllerBase
     public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
     {
         var items = await _service.GetAllAsync(cancellationToken);
-        return Ok(items);
+        return ApiResult.Success(items);
     }
 
     [HttpGet("{id:int}")]
@@ -29,8 +30,8 @@ public class CategoriesController : ControllerBase
     public async Task<IActionResult> GetById(int id, CancellationToken cancellationToken)
     {
         var item = await _service.GetByIdAsync(id, cancellationToken);
-        if (item == null) return NotFound();
-        return Ok(item);
+        if (item == null) return ApiResult.NotFound();
+        return ApiResult.Success(item);
     }
 
     [HttpPost]
@@ -46,7 +47,7 @@ public class CategoriesController : ControllerBase
     public async Task<IActionResult> Update(int id, CreateCategoryDto dto, CancellationToken cancellationToken)
     {
         var ok = await _service.UpdateAsync(id, dto, cancellationToken);
-        if (!ok) return NotFound();
+        if (!ok) return ApiResult.NotFound();
         return NoContent();
     }
 
@@ -55,7 +56,7 @@ public class CategoriesController : ControllerBase
     public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
     {
         var ok = await _service.DeleteAsync(id, cancellationToken);
-        if (!ok) return NotFound();
+        if (!ok) return ApiResult.NotFound();
         return NoContent();
     }
 }

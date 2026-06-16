@@ -5,7 +5,7 @@ namespace ChipmeoApis.Usecase.Interfaces;
 public interface IOrderService
 {
     Task<IEnumerable<OrderDto>> GetAllAsync(CancellationToken cancellationToken = default);
-    Task<OrderDto?> GetByIdAsync(int id, int? userId = null, IList<string>? permissions = null, CancellationToken cancellationToken = default);
+    Task<OrderDto?> GetByIdAsync(int id, CancellationToken cancellationToken = default);
     Task<OrderDto> CreateAsync(CreateOrderDto dto, int employeeId, CancellationToken cancellationToken = default);
     Task<OrderDto> ProcessPaymentAsync(int orderId, ProcessPaymentDto dto, int? employeeId = null, CancellationToken cancellationToken = default);
     Task<bool> UpdateStatusAsync(int id, string status, int? employeeId = null, string? paymentMethod = null, decimal? paymentAmount = null, CancellationToken cancellationToken = default);

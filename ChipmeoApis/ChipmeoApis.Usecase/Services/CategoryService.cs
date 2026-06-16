@@ -1,6 +1,9 @@
 ﻿using ChipmeoApis.Usecase.Interfaces;
 using ChipmeoApis.Usecase.DTOs.Category;
+using ChipmeoApis.Usecase.Utils;
+using ChipmeoApis.Core.Constants;
 using ChipmeoApis.Core.Entities;
+using Microsoft.Extensions.Caching.Distributed;
 
 namespace ChipmeoApis.Usecase.Services;
 
@@ -8,17 +11,22 @@ public class CategoryService : ICategoryService
 {
     private readonly ICategoryRepository _repo;
     private readonly IMediaService _mediaService;
+    private readonly IDistributedCache _cache;
 
-    public CategoryService(ICategoryRepository repo, IMediaService mediaService)
+    public CategoryService(ICategoryRepository repo, IMediaService mediaService, IDistributedCache cache)
     {
         _repo = repo;
         _mediaService = mediaService;
+        _cache = cache;
     }
 
     public async Task<IEnumerable<CategoryDto>> GetAllAsync(CancellationToken cancellationToken = default)
     {
-        var categories = await _repo.GetAllAsync(cancellationToken);
-        return categories.Select(c => new CategoryDto(c.Id, c.Name, c.Description, c.ImageUrl, c.IsActive, c.CreatedAt));
+        return await _cache.GetOrSetAsync(CacheKeys.Categories.All, async () =>
+        {
+            var categories = await _repo.GetAllAsync(cancellationToken);
+            return categories.Select(c => new CategoryDto(c.Id, c.Name, c.Description, c.ImageUrl, c.IsActive, c.CreatedAt)).ToList();
+        }, TimeSpan.FromMinutes(30), cancellationToken);
     }
 
     public async Task<CategoryDto?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
@@ -38,6 +46,8 @@ public class CategoryService : ICategoryService
             await _mediaService.LinkMediaToEntityAsync(dto.ImageUrl, "category", created.Id);
         }
 
+        await _cache.RemoveAsync(CacheKeys.Categories.All, cancellationToken);
+        await _cache.RemoveAsync(CacheKeys.MenuItems.All, cancellationToken);
         return new CategoryDto(created.Id, created.Name, created.Description, created.ImageUrl, created.IsActive, created.CreatedAt);
     }
 
@@ -60,6 +70,9 @@ public class CategoryService : ICategoryService
             await _mediaService.LinkMediaToEntityAsync(dto.ImageUrl, "category", id);
         }
 
+        await _cache.RemoveAsync(CacheKeys.Categories.All, cancellationToken);
+        await _cache.RemoveAsync(CacheKeys.Categories.ById(id), cancellationToken);
+        await _cache.RemoveAsync(CacheKeys.MenuItems.All, cancellationToken);
         return true;
     }
 
@@ -71,10 +84,9 @@ public class CategoryService : ICategoryService
         await _repo.DeleteAsync(existing, cancellationToken);
         await _mediaService.DeleteMediaByEntityAsync("category", id);
         
+        await _cache.RemoveAsync(CacheKeys.Categories.All, cancellationToken);
+        await _cache.RemoveAsync(CacheKeys.Categories.ById(id), cancellationToken);
+        await _cache.RemoveAsync(CacheKeys.MenuItems.All, cancellationToken);
         return true;
     }
 }
-
-
-
-

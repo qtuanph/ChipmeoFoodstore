@@ -17,7 +17,7 @@ public static class TimeUtils
             }
         }
 
-        // Fallback: UTC+7 (Vi?t Nam kh�ng c� DST n�n c?ng tay v?n d�ng)
+        // Fallback: UTC+7
         return DateTime.UtcNow.AddHours(7);
     }
 }

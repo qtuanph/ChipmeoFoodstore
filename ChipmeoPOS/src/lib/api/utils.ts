@@ -18,16 +18,16 @@ export async function apiRequest<T>(url: string, options: RequestInit = {}): Pro
 
 	if (!response.ok) {
 		if (response.status === 401) {
-			// Handle unauthorized - redirect to login
-			if (typeof window !== 'undefined') {
-				// Only redirect if not already on login page
-				if (!window.location.pathname.includes('/login')) {
+			// Don't redirect if the failing request is to the login endpoint itself
+			if (!url.includes('/auth/login')) {
+				if (typeof window !== 'undefined') {
 					window.location.href = '/';
+					return Promise.reject(new Error('Unauthorized')) as never;
 				}
 			}
 		}
 
-		let errorData;
+		let errorData: Record<string, unknown>;
 		try {
 			const text = await response.text();
 			errorData = text ? JSON.parse(text) : {};
@@ -35,9 +35,12 @@ export async function apiRequest<T>(url: string, options: RequestInit = {}): Pro
 			errorData = {};
 		}
 
-		const errorMessage = errorData.error || errorData.message || response.statusText;
+		// Handle ApiResult error envelope: { error: { code, message } }
+		const errorObj = errorData?.error as { message?: string } | undefined;
+		const errorMessage =
+			errorObj?.message || (errorData?.message as string | undefined) || response.statusText;
 		const error = new Error(errorMessage) as Error & { error?: string };
-		error.error = errorData.error; // Attach raw error for handlers
+		error.error = typeof errorData.error === 'string' ? errorData.error : errorObj?.message;
 		throw error;
 	}
 
@@ -46,7 +49,18 @@ export async function apiRequest<T>(url: string, options: RequestInit = {}): Pro
 		return undefined as T;
 	}
 
-	return response.json();
+	const json = (await response.json()) as Record<string, unknown>;
+
+	// Unwrap ApiResult envelope: { data, error, meta }
+	if (json && typeof json === 'object' && 'data' in json) {
+		if (json.error) {
+			const errDetail = json.error as { message?: string };
+			throw new Error(errDetail.message || 'API Error');
+		}
+		return json.data as T;
+	}
+
+	return json as T;
 }
 
 // Generic API helper object
@@ -69,7 +83,14 @@ export const api = {
 				const text = await res.text();
 				throw new Error(text || res.statusText);
 			}
-			return res.json();
+			return res.json().then((json: Record<string, unknown>) => {
+				if (json && typeof json === 'object' && 'data' in json) {
+					if (json.error)
+						throw new Error((json.error as { message?: string }).message || 'API Error');
+					return json.data as T;
+				}
+				return json as T;
+			});
 		});
 	}
 };

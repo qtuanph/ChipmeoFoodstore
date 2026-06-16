@@ -1,5 +1,5 @@
 import * as signalR from '@microsoft/signalr';
-import { API_BASE_URL } from '$lib/api/index.ts';
+import { API_HOST_URL, SIGNALR_HUB_PATH, SIGNALR_SKIP_NEGOTIATION } from '$lib/config/index.js';
 
 class SignalRService {
 	private connection: signalR.HubConnection | null = null;
@@ -20,14 +20,18 @@ class SignalRService {
 			return;
 		}
 
-		const hubUrl = API_BASE_URL + '/hubs/app';
+		const hubUrl = API_HOST_URL + SIGNALR_HUB_PATH;
+
+		const options: signalR.IHttpConnectionOptions = {
+			accessTokenFactory: () => token
+		};
+		if (SIGNALR_SKIP_NEGOTIATION) {
+			options.skipNegotiation = true;
+			options.transport = signalR.HttpTransportType.WebSockets;
+		}
 
 		this.connection = new signalR.HubConnectionBuilder()
-			.withUrl(hubUrl, {
-				accessTokenFactory: () => token,
-				skipNegotiation: true,
-				transport: signalR.HttpTransportType.WebSockets
-			})
+			.withUrl(hubUrl, options)
 			.withAutomaticReconnect()
 			.build();
 

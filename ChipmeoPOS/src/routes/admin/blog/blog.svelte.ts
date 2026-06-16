@@ -1,6 +1,7 @@
 import { blogAPI, type BlogPost } from '$lib/api/blog.js';
 import { tagsAPI, type Tag } from '$lib/api/tags.js';
 import { API_BASE_URL } from '$lib/config/index.js';
+import { api } from '$lib/api/utils.js';
 import { calculateSeoChecks, calculateTotalSeoScore } from '$lib/utils/seo.js';
 
 export class BlogState {
@@ -141,23 +142,15 @@ export class BlogState {
 	async uploadThumbnail(file: File): Promise<void> {
 		this.uploadingThumbnail = true;
 		try {
-			const token = localStorage.getItem('token');
 			const data = new FormData();
 			data.append('file', file);
 			data.append('folder', 'blog');
 
-			const response = await fetch(`${API_BASE_URL}/api/media/upload`, {
-				method: 'POST',
-				headers: { Authorization: `Bearer ${token}` },
-				body: data
-			});
-
-			if (response.ok) {
-				const result = await response.json();
-				this.formData.thumbnailUrl = result.fileUrl || result.url;
-			} else {
-				throw new Error('Upload failed');
-			}
+			const result = await api.upload<{ fileUrl: string }>(
+				`${API_BASE_URL}/api/media/upload`,
+				data
+			);
+			this.formData.thumbnailUrl = result.fileUrl;
 		} catch (err) {
 			console.error(err);
 			throw err;
@@ -167,23 +160,15 @@ export class BlogState {
 	}
 
 	async uploadEditorImage(file: File): Promise<string> {
-		const token = localStorage.getItem('token');
 		const data = new FormData();
 		data.append('file', file);
 		data.append('folder', 'blog-content');
 
-		const response = await fetch(`${API_BASE_URL}/api/media/upload`, {
-			method: 'POST',
-			headers: { Authorization: `Bearer ${token}` },
-			body: data
-		});
-
-		if (response.ok) {
-			const result = await response.json();
-			return result.fileUrl || result.url;
-		} else {
-			throw new Error('Failed to upload image');
-		}
+		const result = await api.upload<{ fileUrl: string }>(
+			`${API_BASE_URL}/api/media/upload`,
+			data
+		);
+		return result.fileUrl;
 	}
 
 	async handleSave(editorComponent?: any) {

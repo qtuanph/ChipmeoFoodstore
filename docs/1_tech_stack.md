@@ -24,7 +24,7 @@
 | Prettier Svelte | prettier-plugin-svelte | 4.1.1 | Svelte file formatting |
 | Prettier Tailwind | prettier-plugin-tailwindcss | 0.8.0 | Tailwind class sorting |
 | Type Checker | svelte-check | 4.6.0 | Svelte + TS type validation |
-| Adapter | @sveltejs/adapter-auto | 7.0.1 | Auto-detects deployment platform |
+| Adapter | @sveltejs/adapter-node | 5.5.4 | Node.js production server (Docker) |
 
 ### Key Frontend Dependencies (production)
 
@@ -81,8 +81,10 @@ ChipmeoApis.Infrastructure
 
 | Package | Version | Purpose |
 |---|---|---|
-| FluentFTP | 54.2.0 | FTP client for media transfer |
-| Microsoft.EntityFrameworkCore.SqlServer | 10.0.9 | SQL Server EF Core provider |
+| Npgsql.EntityFrameworkCore.PostgreSQL | 10.0.2 | PostgreSQL EF Core provider |
+| Microsoft.Extensions.Caching.StackExchangeRedis | 10.0.9 | Redis distributed cache client |
+| AWSSDK.S3 | 4.0.24.5 | AWS S3 SDK for object storage |
+| AWSSDK.Extensions.NETCore.Setup | 4.0.4.8 | S3 DI integration |
 | Microsoft.EntityFrameworkCore.Tools | 10.0.9 | EF Core CLI tooling (migrations) |
 
 ### Web Layer
@@ -94,21 +96,12 @@ ChipmeoApis.Infrastructure
 | Microsoft.AspNetCore.SignalR.Protocols.MessagePack | 10.0.9 | Binary SignalR protocol |
 | Microsoft.EntityFrameworkCore.Design | 10.0.9 | EF Core design-time (migrations) |
 
-## Media Server — MediaStorageManagement
+## Database — PostgreSQL
 
-| Category | Technology | Version | Purpose |
-|---|---|---|---|
-| Framework | .NET Minimal API | 10.0 | Lightweight file server |
-| OpenAPI | Microsoft.AspNetCore.OpenApi | 10.0.9 | API documentation |
-| Storage | Local disk | — | Files stored in `D:\MediaStorage` |
-| Auth | X-Api-Key header | — | Simple key-based authentication |
-
-## Database — SQL Server
-
-- **Engine**: Microsoft SQL Server
-- **Provider**: Entity Framework Core 10
+- **Engine**: PostgreSQL 18 with ICU Vietnamese collation
+- **Provider**: Entity Framework Core 10 + Npgsql
 - **Database name**: `pos_shop`
-- **Collation**: `SQL_Latin1_General_CP1_CI_AI`
+- **Collation**: `vi_VN_ci_ai` (accent-insensitive, case-insensitive Vietnamese)
 - **Tables**: 23 (categories, menu_items, addons, combos, orders, order_items, customers, employees, roles, permissions, blog_posts, media, discounts, sources, payments, payment_settings, tags, etc.)
 
 ### Key Database Patterns
@@ -117,7 +110,7 @@ ChipmeoApis.Infrastructure
 - `is_deleted` soft-delete flag
 - `status` enum-style string columns (order status flow: `pending → confirmed → preparing → ready → served → paid → cancelled`)
 - Many-to-many via junction tables: `menu_item_addons`, `role_permissions`, `blog_post_tags`
-- Entity image URLs stored as strings (images hosted on MediaStorageManagement)
+- Entity image URLs stored as strings (images hosted on RustFS S3)
 - SEO metadata stored directly on `blog_posts` table
 - Order-payment relationship: 1 order has many payments (supports split payments)
 - RBAC: roles → role_permissions → permissions (flat list of `"module.action"` strings)
@@ -127,14 +120,14 @@ ChipmeoApis.Infrastructure
 | Feature | Technology |
 |---|---|
 | Real-Time | SignalR + MessagePack binary protocol |
-| Caching | IMemoryCache (in-process, TTL 60-300s) |
+| Caching | Redis 8 (distributed, via StackExchangeRedis) |
 | Rate Limiting | System.Threading.RateLimiting (fixed window) |
 | Authentication | JWT (HS256, access + refresh tokens) |
 | Authorization | Custom permission-based RBAC with claims |
-| Media Storage | Dedicated .NET file server + FTP fallback |
+| Media Storage | RustFS (S3-compatible object storage) via AWS SDK |
 | ML | ML.NET SSA forecasting + co-occurrence recommendations |
 | File Validation | Server-side MIME type + extension check |
-| Deployment | IIS reverse proxy + Kestrel |
+| Deployment | Docker Compose (5 services) |
 | Proxy | Vite dev proxy (localhost:5173 → localhost:5142) |
 
 ## DevOps & Tools
@@ -147,4 +140,6 @@ ChipmeoApis.Infrastructure
 | VS Code | Frontend development |
 | dotnet-ef | Migration management |
 | npm | Package management |
-| Vercel | Frontend demo deployment |
+| Docker | Container runtime |
+| Docker Compose | Multi-service orchestration |
+| Traefik | Reverse proxy (ingress controller) |

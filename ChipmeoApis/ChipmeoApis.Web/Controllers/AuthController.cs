@@ -1,19 +1,17 @@
 ﻿using ChipmeoApis.Usecase.Interfaces;
 using ChipmeoApis.Usecase.DTOs.Auth;
+using ChipmeoApis.Web.Extensions;
 using Microsoft.AspNetCore.Mvc;
+using ChipmeoApis.Web.ApiResponse;
 
 namespace ChipmeoApis.Web.Controllers;
 
 [ApiController]
 [Route("api/auth")]
-public class AuthController(IAuthService authService, IConfiguration configuration) : ControllerBase
+public class AuthController(IAuthService authService) : ControllerBase
 {
     private readonly IAuthService _authService = authService;
-    private readonly IConfiguration _configuration = configuration;
 
-    /// <summary>
-    /// Đăng nhập cho nhân viên/admin
-    /// </summary>
     /// <summary>
     /// Đăng nhập cho nhân viên/admin
     /// </summary>
@@ -23,17 +21,17 @@ public class AuthController(IAuthService authService, IConfiguration configurati
     {
         if (string.IsNullOrWhiteSpace(request.Username) || string.IsNullOrWhiteSpace(request.Password))
         {
-            return BadRequest(new { error = "Username and password are required" });
+            return ApiResult.BadRequest("Username and password are required");
         }
 
         var response = await _authService.LoginAsync(request, cancellationToken);
         
         if (response == null)
         {
-            return Unauthorized(new { error = "Invalid credentials" });
+            return Unauthorized();
         }
 
-        return Ok(response);
+        return ApiResult.Success(response);
     }
 
     [HttpPost("refresh")]
@@ -43,57 +41,46 @@ public class AuthController(IAuthService authService, IConfiguration configurati
         
         if (response == null)
         {
-            return Unauthorized(new { error = "Invalid refresh token" });
+            return Unauthorized();
         }
 
-        return Ok(response);
+        return ApiResult.Success(response);
     }
 
     [HttpPost("logout")]
     public IActionResult Logout()
     {
-        return Ok(new { message = "Logged out successfully" });
+        return ApiResult.Success(new { message = "Logged out successfully" });
     }
 
     [HttpGet("profile")]
     public async Task<IActionResult> GetProfile(CancellationToken cancellationToken)
     {
-        var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
-        if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
-        {
-            return Unauthorized(new { error = "User not authenticated" });
-        }
+        var userId = User.GetUserId();
+        if (userId == 0) return Unauthorized();
 
         var profile = await _authService.GetProfileAsync(userId, cancellationToken);
-        if (profile == null)
-        {
-            return NotFound(new { error = "User not found" });
-        }
+        if (profile == null) return ApiResult.NotFound("User not found");
 
-        return Ok(profile);
+        return ApiResult.Success(profile);
     }
 
     [HttpPut("profile")]
     public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileDto dto, CancellationToken cancellationToken)
     {
-        var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
-        if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
-        {
-            return Unauthorized(new { error = "User not authenticated" });
-        }
+        var userId = User.GetUserId();
+        if (userId == 0) return Unauthorized();
 
         try
         {
             var updatedProfile = await _authService.UpdateProfileAsync(userId, dto, cancellationToken);
-            if (updatedProfile == null)
-            {
-                return NotFound(new { error = "User not found" });
-            }
-            return Ok(updatedProfile);
+            return updatedProfile == null
+                ? ApiResult.NotFound("User not found")
+                : ApiResult.Success(updatedProfile);
         }
         catch (ArgumentException ex)
         {
-            return BadRequest(new { error = ex.Message });
+            return ApiResult.BadRequest(ex.Message);
         }
     }
 }

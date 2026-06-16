@@ -5,11 +5,12 @@ using Microsoft.AspNetCore.Mvc;
 
 using Microsoft.AspNetCore.SignalR;
 using ChipmeoApis.Web.Hubs;
+using ChipmeoApis.Web.ApiResponse;
 
 namespace ChipmeoApis.Web.Controllers;
 
 [ApiController]
-[Route("admin/menuitems")]
+[Route("api/admin/menuitems")]
 public class MenuItemsController : ControllerBase
 {
     private readonly IMenuItemService _service;
@@ -26,7 +27,7 @@ public class MenuItemsController : ControllerBase
     public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
     {
         var items = await _service.GetAllAsync(cancellationToken);
-        return Ok(items);
+        return ApiResult.Success(items);
     }
 
     [HttpGet("{id:int}")]
@@ -34,8 +35,8 @@ public class MenuItemsController : ControllerBase
     public async Task<IActionResult> GetById(int id, CancellationToken cancellationToken)
     {
         var item = await _service.GetByIdAsync(id, cancellationToken);
-        if (item == null) return NotFound();
-        return Ok(item);
+        if (item == null) return ApiResult.NotFound();
+        return ApiResult.Success(item);
     }
 
     [HttpPost]
@@ -52,7 +53,7 @@ public class MenuItemsController : ControllerBase
     public async Task<IActionResult> Update(int id, CreateMenuItemDto dto, CancellationToken cancellationToken)
     {
         var ok = await _service.UpdateAsync(id, dto, cancellationToken);
-        if (!ok) return NotFound();
+        if (!ok) return ApiResult.NotFound();
         await _hubContext.Clients.All.SendAsync("ReceiveMenuUpdate", cancellationToken);
         return NoContent();
     }
@@ -64,30 +65,30 @@ public class MenuItemsController : ControllerBase
         try
         {
             var ok = await _service.DeleteAsync(id, cancellationToken);
-            if (!ok) return NotFound();
+            if (!ok) return ApiResult.NotFound();
             await _hubContext.Clients.All.SendAsync("ReceiveMenuUpdate", cancellationToken);
             return NoContent();
         }
         catch (Exception)
         {
-            return BadRequest(new { error = "Không thể xóa món này vì đã có trong đơn hàng hoặc combo." });
+            return ApiResult.BadRequest("Không thể xóa món này vì đã có trong đơn hàng hoặc combo.");
         }
     }
 
     // POS endpoints for read-only menu (public)
-    [HttpGet("/pos/menuitems")]
+    [HttpGet("/api/pos/menuitems")]
     public async Task<IActionResult> PosGetAll(CancellationToken cancellationToken)
     {
         var items = await _service.GetAllAsync(cancellationToken);
-        return Ok(items);
+        return ApiResult.Success(items);
     }
 
-    [HttpGet("/pos/menuitems/{id:int}")]
+    [HttpGet("/api/pos/menuitems/{id:int}")]
     public async Task<IActionResult> PosGetById(int id, CancellationToken cancellationToken)
     {
         var item = await _service.GetByIdAsync(id, cancellationToken);
-        if (item == null) return NotFound();
-        return Ok(item);
+        if (item == null) return ApiResult.NotFound();
+        return ApiResult.Success(item);
     }
 }
 

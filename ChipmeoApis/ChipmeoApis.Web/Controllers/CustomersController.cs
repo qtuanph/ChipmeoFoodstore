@@ -1,10 +1,11 @@
 ﻿using ChipmeoApis.Usecase.Interfaces;
-using ChipmeoApis.Web.Authorization;
 using ChipmeoApis.Usecase.DTOs;
 using ChipmeoApis.Usecase.DTOs.Customer;
+using ChipmeoApis.Web.Authorization;
+using ChipmeoApis.Web.Extensions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
+using ChipmeoApis.Web.ApiResponse;
 
 namespace ChipmeoApis.Web.Controllers;
 
@@ -28,11 +29,11 @@ public class CustomersController : ControllerBase
         try
         {
             var customer = await _customerService.RegisterAsync(dto);
-            return Ok(customer);
+            return ApiResult.Success(customer);
         }
         catch (Exception ex)
         {
-            return BadRequest(new { message = ex.Message });
+            return ApiResult.BadRequest(ex.Message);
         }
     }
 
@@ -45,11 +46,11 @@ public class CustomersController : ControllerBase
         try
         {
             var result = await _customerService.LoginAsync(dto);
-            return Ok(result);
+            return ApiResult.Success(result);
         }
         catch (Exception ex)
         {
-            return BadRequest(new { message = ex.Message });
+            return ApiResult.BadRequest(ex.Message);
         }
     }
 
@@ -60,23 +61,20 @@ public class CustomersController : ControllerBase
     [Authorize(Roles = "Customer")]
     public async Task<IActionResult> GetMe()
     {
-        var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+        var userId = User.GetUserId();
         var customer = await _customerService.GetCustomerByIdAsync(userId);
-        if (customer == null) return NotFound();
-        return Ok(customer);
+        if (customer == null) return ApiResult.NotFound();
+        return ApiResult.Success(customer);
     }
 
-    /// <summary>
-    /// Cập nhật thông tin khách hàng
-    /// </summary>
     [HttpPut("me")]
     [Authorize(Roles = "Customer")]
     public async Task<IActionResult> UpdateProfile([FromBody] CustomerUpdateDto dto)
     {
-        var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+        var userId = User.GetUserId();
         var customer = await _customerService.UpdateProfileAsync(userId, dto);
-        if (customer == null) return NotFound();
-        return Ok(customer);
+        if (customer == null) return ApiResult.NotFound();
+        return ApiResult.Success(customer);
     }
 
     /// <summary>
@@ -87,8 +85,8 @@ public class CustomersController : ControllerBase
     public async Task<IActionResult> LookupByPhone(string phone)
     {
         var customer = await _customerService.GetByPhoneAsync(phone);
-        if (customer == null) return NotFound();
-        return Ok(customer);
+        if (customer == null) return ApiResult.NotFound();
+        return ApiResult.Success(customer);
     }
 
     [HttpGet]
@@ -96,7 +94,7 @@ public class CustomersController : ControllerBase
     public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
     {
         var customers = await _customerService.GetAllAsync(cancellationToken);
-        return Ok(customers);
+        return ApiResult.Success(customers);
     }
 
     [HttpGet("{id:int}")]
@@ -104,8 +102,8 @@ public class CustomersController : ControllerBase
     public async Task<IActionResult> GetById(int id, CancellationToken cancellationToken)
     {
         var customer = await _customerService.GetByIdAsync(id, cancellationToken);
-        if (customer == null) return NotFound();
-        return Ok(customer);
+        if (customer == null) return ApiResult.NotFound();
+        return ApiResult.Success(customer);
     }
 
     [HttpPost]
@@ -121,7 +119,7 @@ public class CustomersController : ControllerBase
     public async Task<IActionResult> Update(int id, UpdateCustomerAdminDto dto, CancellationToken cancellationToken)
     {
         var ok = await _customerService.UpdateAsync(id, dto, cancellationToken);
-        if (!ok) return NotFound();
+        if (!ok) return ApiResult.NotFound();
         return NoContent();
     }
 
@@ -130,7 +128,7 @@ public class CustomersController : ControllerBase
     public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
     {
         var ok = await _customerService.DeleteAsync(id, cancellationToken);
-        if (!ok) return NotFound();
+        if (!ok) return ApiResult.NotFound();
         return NoContent();
     }
 }

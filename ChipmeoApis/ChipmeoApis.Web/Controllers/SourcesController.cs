@@ -6,11 +6,12 @@ using Microsoft.AspNetCore.Mvc;
 
 using Microsoft.AspNetCore.SignalR;
 using ChipmeoApis.Web.Hubs;
+using ChipmeoApis.Web.ApiResponse;
 
 namespace ChipmeoApis.Web.Controllers;
 
 [ApiController]
-[Route("admin/sources")]
+[Route("api/admin/sources")]
 [Authorize]
 public class SourcesController(ISourceService service, IHubContext<AppHub> hubContext) : ControllerBase
 {
@@ -22,7 +23,7 @@ public class SourcesController(ISourceService service, IHubContext<AppHub> hubCo
     public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
     {
         var sources = await _service.GetAllAsync(cancellationToken);
-        return Ok(sources);
+        return ApiResult.Success(sources);
     }
 
 
@@ -32,8 +33,8 @@ public class SourcesController(ISourceService service, IHubContext<AppHub> hubCo
     public async Task<IActionResult> GetById(int id, CancellationToken cancellationToken)
     {
         var source = await _service.GetByIdAsync(id, cancellationToken);
-        if (source == null) return NotFound();
-        return Ok(source);
+        if (source == null) return ApiResult.NotFound();
+        return ApiResult.Success(source);
     }
 
     [HttpPost]
@@ -50,7 +51,7 @@ public class SourcesController(ISourceService service, IHubContext<AppHub> hubCo
     public async Task<IActionResult> Update(int id, [FromBody] CreateSourceDto dto, CancellationToken cancellationToken)
     {
         var ok = await _service.UpdateAsync(id, dto, cancellationToken);
-        if (!ok) return NotFound();
+        if (!ok) return ApiResult.NotFound();
         await _hubContext.Clients.All.SendAsync("ReceiveSourceUpdate", cancellationToken);
         return NoContent();
     }
@@ -62,13 +63,13 @@ public class SourcesController(ISourceService service, IHubContext<AppHub> hubCo
         try
         {
             var ok = await _service.DeleteAsync(id, cancellationToken);
-            if (!ok) return NotFound();
+            if (!ok) return ApiResult.NotFound();
             await _hubContext.Clients.All.SendAsync("ReceiveSourceUpdate", cancellationToken);
             return NoContent();
         }
         catch (Exception)
         {
-            return BadRequest(new { error = "Không thể xóa nguồn này vì đang có đơn hàng liên kết." });
+            return ApiResult.BadRequest("Không thể xóa nguồn này vì đang có đơn hàng liên kết.");
         }
     }
 }

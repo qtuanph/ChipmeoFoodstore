@@ -4,6 +4,7 @@ import { cart, cartActions } from '$lib/utils/index.js';
 import { posAPI, ordersAPI, customerAPI } from '$lib/api/index.js';
 import { signalRService } from '$lib/services/signalr.js';
 import type { MenuItem, Addon, Source, Order, Combo, Customer } from '$lib/types/index.js';
+import { DEFAULT_CUSTOMER_PASSWORD, STORAGE_KEYS } from '$lib/config/index.js';
 
 class POSStore {
 	// UI State
@@ -81,7 +82,7 @@ class POSStore {
 	}
 
 	async initSignalR() {
-		const token = localStorage.getItem('token');
+		const token = localStorage.getItem(STORAGE_KEYS.TOKEN);
 		if (token) {
 			await signalRService.startConnection(token);
 			signalRService.on('ReceiveMenuUpdate', this.handleMenuUpdate);
@@ -111,7 +112,7 @@ class POSStore {
 	}
 
 	generatePassword(fullName: string): string {
-		if (!fullName) return 'Customer@123';
+		if (!fullName) return DEFAULT_CUSTOMER_PASSWORD;
 		// Get initials (e.g. "Phạm Quốc Tuấn" -> "pqt")
 		const initials = fullName
 			.trim()

@@ -60,7 +60,12 @@ export class AnalyticsState {
 			this.stats = await reportsAPI.getAnalytics(this.fromDate, this.toDate, this.groupBy);
 
 			// Load Forecast
-			this.forecast = await reportsAPI.getForecast(this.forecastHorizon);
+			try {
+				this.forecast = await reportsAPI.getForecast(this.forecastHorizon);
+			} catch (err: any) {
+				console.warn('Forecast unavailable:', err.message);
+				this.forecast = null;
+			}
 
 			// Load Recommendations
 			this.recommendations = await reportsAPI.getRecommendations();

@@ -1,4 +1,5 @@
-﻿using ChipmeoApis.Usecase.DTOs.Order;
+﻿using ChipmeoApis.Core.Constants;
+using ChipmeoApis.Usecase.DTOs.Order;
 using ChipmeoApis.Usecase.Interfaces;
 using ChipmeoApis.Core.Entities;
 using ChipmeoApis.Core.Utils;
@@ -32,37 +33,10 @@ public class OrderService(
         return orders.Select(MapToDto);
     }
 
-    public async Task<OrderDto?> GetByIdAsync(int id, int? userId = null, IList<string>? permissions = null, CancellationToken cancellationToken = default)
+    public async Task<OrderDto?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
         var order = await _orderRepo.GetByIdAsync(id, cancellationToken);
-        if (order == null) return null;
-
-        // Security Check (Anti-IDOR / Stealth Mode)
-        if (userId.HasValue)
-        {
-            // Privileged Access: Can manage orders, or update them, or create them (Staff/Admin)
-            // If user only has 'order.view', they might be a customer or restricted staff.
-            // We assume 'order.manage' (conceptually) or implicit privilege via update/create rights.
-            var isPrivileged = permissions != null && (
-                permissions.Contains("order.update") || 
-                permissions.Contains("order.create") || 
-                permissions.Contains("order.delete") ||
-                permissions.Contains("system.full_access")
-            );
-            
-            if (!isPrivileged)
-            {
-                // Strict Ownership Check: If not privileged, MUST be the customer who owns the order
-                if (order.CustomerId != userId)
-                {
-                    // Additional check: If user has 'order.view' but is NOT the owner, 
-                    // and strictly shouldn't see others, then return null.
-                    return null; // Return null to trigger 404 Not Found (Hiding existence)
-                }
-            }
-        }
-
-        return MapToDto(order);
+        return order == null ? null : MapToDto(order);
     }
 
     public async Task<OrderDto> CreateAsync(CreateOrderDto dto, int employeeId, CancellationToken cancellationToken = default)
@@ -93,7 +67,7 @@ public class OrderService(
             VatAmount = details.VatAmount,
             TotalAmount = details.TotalAmount,
             QrPaymentUrl = qrPaymentUrl,
-            Status = "pending",
+            Status = OrderStatus.Pending,
             Note = dto.Note,
             CreatedAt = now,
             UpdatedAt = now,
@@ -103,7 +77,7 @@ public class OrderService(
                 new OrderStatusHistory
                 {
                     FromStatus = null,
-                    ToStatus = "pending",
+                    ToStatus = OrderStatus.Pending,
                     ChangedBy = employeeId,
                     ChangedAt = now,
                     Note = "Order created"
@@ -112,12 +86,6 @@ public class OrderService(
         };
 
         await _orderRepo.CreateAsync(order, cancellationToken);
-        
-        // After create, we must assume EF populated IDs if we return.
-        // But the Repo returns 'void' or 'Task'. The entity 'order' should have ID updated.
-        // However, repo.GetById is called at end of this methods original version.
-        // We can replicate that.
-        
         var result = await _orderRepo.GetByIdAsync(order.Id, cancellationToken);
         return MapToDto(result!);
     }
@@ -126,7 +94,7 @@ public class OrderService(
     {
         var order = await _orderRepo.GetByIdAsync(id, cancellationToken);
         if (order == null) throw new Exception("Order not found");
-        if (order.Status != "pending") throw new Exception($"Cannot update order in status {order.Status}");
+        if (order.Status != OrderStatus.Pending) throw new Exception($"Cannot update order in status {order.Status}");
 
         var now = TimeUtils.GetVietnamTime();
         var details = await CalculateOrderDetailsAsync(dto, cancellationToken);
@@ -155,8 +123,6 @@ public class OrderService(
         order.SourceId = dto.SourceId;
         order.CustomerId = dto.CustomerId;
         order.Note = dto.Note;
-        // Keep original EmployeeId as Creator? Or update to modifier? 
-        // Let's decide NOT to change EmployeeId (Creator) but track modifier in History.
         
         order.DiscountId = details.Discount?.Id;
         order.SubtotalAmount = details.Subtotal;
@@ -166,8 +132,6 @@ public class OrderService(
         order.QrPaymentUrl = qrPaymentUrl;
         order.UpdatedAt = now;
 
-        // Update Items
-        // Clear existing items (Repositories need to handle orphan delete or we explicitly trust EF collection handling)
         order.OrderItems?.Clear();
         if (order.OrderItems == null) order.OrderItems = new List<OrderItem>();
         
@@ -176,12 +140,11 @@ public class OrderService(
             order.OrderItems.Add(item);
         }
         
-        // Add History
         var history = new OrderStatusHistory
         {
             OrderId = order.Id,
             FromStatus = order.Status,
-            ToStatus = order.Status, // Status didn't change (still pending)
+            ToStatus = order.Status,
             ChangedBy = employeeId,
             ChangedAt = now,
             Note = "Order updated"
@@ -214,15 +177,6 @@ public class OrderService(
             }
             else
             {
-                throw new Exception("Discount code invalid or inactive"); // Stricter than original? Original siliently set null.
-                // Original: if discount != null ... else discount = null.
-                // It didn't throw if code was found but inactive? 
-                // Wait, original: `if (discount != null && discount.IsActive == true) { ... checks ... } else { discount = null; }`
-                // So if code exists but inactive, it just ignores it.
-                // If code doesn't exist, `GetByCodeAsync` returns null?
-                
-                // Let's preserve original loose behavior but maybe cleaner.
-                // If invalid code provided, treating as no discount is safer.
                 discount = null;
             }
         }
@@ -272,17 +226,7 @@ public class OrderService(
 
                     var addonPrice = addon.Price;
                     var addonSubtotal = addonPrice * addonDto.Quantity;
-                    addonTotal += addonSubtotal * itemDto.Quantity; // Addon quantity per item * item quantity? 
-                    // Original: `addonTotal += addonSubtotal * itemDto.Quantity;`
-                    // Wait, `addonDto.Quantity` is usually quantity PER item unit.
-                    // Example: 1 Coffee (Qty 1) with 2 Sugar (Addon Qty 2).
-                    // Addon Subtotal = AddonPrice * 2.
-                    // Total Addon = AddonSubtotal * ItemQty (1) = AddonPrice * 2.
-                    
-                    // IF 2 Coffees (Qty 2) with 2 Sugar EACH.
-                    // Addon Subtotal = AddonPrice * 2.
-                    // Total Addon = AddonSubtotal * 2.
-                    // This seems correct.
+                    addonTotal += addonSubtotal * itemDto.Quantity;
 
                     orderItemAddons.Add(new OrderItemAddon
                     {
@@ -329,21 +273,7 @@ public class OrderService(
                 discountAmount = discount.Value;
             }
             
-            // Note: We are NOT incrementing usage count here. That happens in persist phase.
-            // But wait, `CreateAsync` did: `discount.UsedCount = ...; await _discountRepo.UpdateAsync(discount);`
-            // If we move this to Helper, we should be careful. 
-            // `CalculateOrderDetails` should ideally just calculate.
-            // But side effects (discount usage update) need to happen.
-            // In UpdateAsync, if we change discount, we might need to decrement old one and increment new one?
-            // This adds complexity.
-            
-            // Current `CreateAsync` increments usage.
-            // `UpdateAsync` should arguably also manage usage if discount changes.
-            // For simplicity in this iteration:
-            // I will return the Discount entity, and let the caller handle Usage Count update.
-            // BUT, `UpdateAsync` might reuse the SAME discount. We shouldn't double count.
-            // `CalculateOrderDetails` returns the discount entity to be used.
-            // The Caller is responsible for saving the discount usage update.
+            // Note: discount usage count is incremented by the caller (CreateAsync/UpdateAsync)
         }
 
         var vatAmount = subtotal * 0.10m;
@@ -363,7 +293,7 @@ public class OrderService(
         order.Status = status;
         order.UpdatedAt = now;
 
-        if (status == "paid")
+        if (status == OrderStatus.Paid)
         {
             order.PaidAt = now;
             
@@ -456,12 +386,12 @@ public class OrderService(
     {
         var order = await _orderRepo.GetByIdAsync(orderId, cancellationToken);
         if (order == null) throw new Exception("Order not found");
-        if (order.Status != "pending") throw new Exception($"Cannot process payment. Order status is {order.Status}");
+        if (order.Status != OrderStatus.Pending) throw new Exception($"Cannot process payment. Order status is {order.Status}");
 
         var now = TimeUtils.GetVietnamTime();
         var totalAmount = order.TotalAmount ?? 0;
 
-        order.Status = "paid";
+        order.Status = OrderStatus.Paid;
         order.PaidAt = now;
         order.UpdatedAt = now;
 
@@ -479,8 +409,8 @@ public class OrderService(
         var history = new OrderStatusHistory
         {
             OrderId = order.Id,
-            FromStatus = "pending",
-            ToStatus = "paid",
+            FromStatus = OrderStatus.Pending,
+            ToStatus = OrderStatus.Paid,
             ChangedBy = employeeId,
             ChangedAt = now,
             Note = $"Payment processed via {dto.PaymentMethod}"
@@ -513,13 +443,9 @@ public class OrderService(
         var order = await _orderRepo.GetByIdAsync(orderId, cancellationToken);
         if (order == null) return false;
 
-        var validTransitions = new Dictionary<string, List<string>>
-        {
-            { "paid", ["preparing", "cancelled"] },
-            { "preparing", ["served", "paid"] }
-        };
+        var validTransitions = OrderStatus.KitchenTransitions;
 
-        var currentStatus = order.Status ?? "pending";
+        var currentStatus = order.Status ?? OrderStatus.Pending;
         if (!validTransitions.ContainsKey(currentStatus) || 
             !validTransitions[currentStatus].Contains(status))
         {
@@ -564,7 +490,7 @@ public class OrderService(
             TotalAmount = order.TotalAmount ?? 0m,
             QrPaymentUrl = order.QrPaymentUrl,
             PaidAt = order.PaidAt,
-            Status = order.Status ?? "pending",
+            Status = order.Status ?? OrderStatus.Pending,
             Note = order.Note,
             PrintedAt = order.PrintedAt,
             CreatedAt = order.CreatedAt ?? TimeUtils.GetVietnamTime(),

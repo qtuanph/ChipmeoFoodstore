@@ -1,0 +1,158 @@
+name: ChipmeoFoodstore
+
+services:
+  traefik:
+    image: traefik:latest
+    container_name: traefik
+    command:
+      - "--api.insecure=true"
+      - "--api.dashboard=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:8080"
+      - "--entrypoints.traefik.address=:9090"
+    ports:
+      - "80:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - app-network
+
+  db:
+    image: postgres:18-alpine
+    container_name: db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_INITDB_ARGS: "--locale-provider=icu --icu-locale=vi-VN-x-icu"
+    volumes:
+      - postgres_data:/var/lib/postgresql
+      - ./scripts/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - app-network
+
+  redis:
+    image: redis:8-alpine
+    container_name: redis
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - app-network
+
+  rustfs:
+    image: rustfs/rustfs:latest
+    container_name: rustfs
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.uploads.rule=PathPrefix(`/uploads`)"
+      - "traefik.http.routers.uploads.priority=30"
+      - "traefik.http.middlewares.strip-uploads.stripprefix.prefixes=/uploads"
+      - "traefik.http.routers.uploads.middlewares=strip-uploads"
+      - "traefik.http.services.uploads.loadbalancer.server.port=9000"
+    environment:
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY}
+    volumes:
+      - s3_data:/data
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -s http://localhost:9000/ > /dev/null 2>&1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - app-network
+
+  api:
+    build:
+      context: ./ChipmeoApis
+      dockerfile: Dockerfile
+    container_name: api
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.api.rule=Host(`api.localhost`)"
+      - "traefik.http.services.api.loadbalancer.server.port=8080"
+    environment:
+      ConnectionStrings__DefaultConnection: "Host=db;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${DB_PASSWORD}"
+      ConnectionStrings__Redis: "redis:6379"
+      S3__Endpoint: "http://rustfs:9000"
+      S3__AccessKey: ${S3_ACCESS_KEY}
+      S3__SecretKey: ${S3_SECRET_KEY}
+      S3__Bucket: ${S3_BUCKET}
+      S3__PublicUrl: "http://localhost/uploads/${S3_BUCKET}"
+      JwtSettings__SecretKey: ${JWT_SECRET}
+      JwtSettings__Issuer: "ChipmeoApisAPI"
+      JwtSettings__Audience: "ChipmeoApisFrontend"
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT}
+      ASPNETCORE_HTTP_PORTS: "8080"
+      AllowedOrigins__0: "http://admin.localhost"
+      AllowedOrigins__1: "http://webapp:3000"
+      AllowedOrigins__2: "http://localhost"
+      AllowedOrigins__3: "http://localhost:4321"
+      AllowedOrigins__4: "http://landingpage:4321"
+      AllowedOrigins__5: "http://api.localhost"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rustfs:
+        condition: service_healthy
+    networks:
+      - app-network
+
+  webapp:
+    build:
+      context: ./ChipmeoPOS
+      dockerfile: Dockerfile
+    container_name: webapp
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.webapp.rule=Host(`admin.localhost`)"
+      - "traefik.http.routers.webapp.priority=5"
+      - "traefik.http.services.webapp.loadbalancer.server.port=3000"
+    environment:
+      PUBLIC_API_URL: ${PUBLIC_API_URL}
+      PUBLIC_AUTH_STORAGE_PREFIX: ${PUBLIC_AUTH_STORAGE_PREFIX}
+      PUBLIC_SIGNALR_HUB: ${PUBLIC_SIGNALR_HUB}
+      PUBLIC_SIGNALR_WS_ONLY: ${PUBLIC_SIGNALR_WS_ONLY}
+      PUBLIC_VIETQR_API_URL: ${PUBLIC_VIETQR_API_URL}
+      PUBLIC_DEFAULT_QR_TEMPLATE: ${PUBLIC_DEFAULT_QR_TEMPLATE}
+      PUBLIC_SITE_DOMAIN: ${PUBLIC_SITE_DOMAIN}
+      PUBLIC_DEFAULT_CUSTOMER_PASSWORD: ${PUBLIC_DEFAULT_CUSTOMER_PASSWORD}
+      ORIGIN: "http://admin.localhost"
+    depends_on:
+      - api
+    networks:
+      - app-network
+
+  landingpage:
+    build:
+      context: ./food-landingpage
+      dockerfile: Dockerfile
+    container_name: landingpage
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.landingpage.rule=Host(`localhost`)"
+      - "traefik.http.services.landingpage.loadbalancer.server.port=4321"
+    networks:
+      - app-network
+
+volumes:
+  postgres_data:
+  s3_data:
+  redis_data:
+
+networks:
+  app-network:
+    driver: bridge

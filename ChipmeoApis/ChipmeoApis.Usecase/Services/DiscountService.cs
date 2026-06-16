@@ -1,18 +1,31 @@
 ﻿using ChipmeoApis.Usecase.Interfaces;
 using ChipmeoApis.Usecase.DTOs.Discount;
+using ChipmeoApis.Usecase.Utils;
+using ChipmeoApis.Core.Constants;
 using ChipmeoApis.Core.Entities;
 using ChipmeoApis.Core.Utils;
+using Microsoft.Extensions.Caching.Distributed;
 
 namespace ChipmeoApis.Usecase.Services;
 
-public class DiscountService(IDiscountRepository repository) : IDiscountService
+public class DiscountService : IDiscountService
 {
-    private readonly IDiscountRepository _repository = repository;
+    private readonly IDiscountRepository _repository;
+    private readonly IDistributedCache _cache;
+
+    public DiscountService(IDiscountRepository repository, IDistributedCache cache)
+    {
+        _repository = repository;
+        _cache = cache;
+    }
 
     public async Task<IEnumerable<DiscountDto>> GetAllAsync(CancellationToken cancellationToken = default)
     {
-        var discounts = await _repository.GetAllAsync(cancellationToken);
-        return discounts.Select(MapToDto);
+        return await _cache.GetOrSetAsync(CacheKeys.Discounts.All, async () =>
+        {
+            var discounts = await _repository.GetAllAsync(cancellationToken);
+            return discounts.Select(MapToDto).ToList();
+        }, TimeSpan.FromMinutes(5), cancellationToken);
     }
 
     public async Task<DiscountDto?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
@@ -40,6 +53,7 @@ public class DiscountService(IDiscountRepository repository) : IDiscountService
         };
 
         var created = await _repository.CreateAsync(discount, cancellationToken);
+        await _cache.RemoveAsync(CacheKeys.Discounts.All, cancellationToken);
         return MapToDto(created);
     }
 
@@ -59,12 +73,24 @@ public class DiscountService(IDiscountRepository repository) : IDiscountService
         discount.EndDate = dto.EndDate;
         discount.IsActive = dto.IsActive;
 
-        return await _repository.UpdateAsync(discount, cancellationToken);
+        var result = await _repository.UpdateAsync(discount, cancellationToken);
+        if (result)
+        {
+            await _cache.RemoveAsync(CacheKeys.Discounts.All, cancellationToken);
+            await _cache.RemoveAsync(CacheKeys.Discounts.ById(id), cancellationToken);
+        }
+        return result;
     }
 
     public async Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default)
     {
-        return await _repository.DeleteAsync(id, cancellationToken);
+        var result = await _repository.DeleteAsync(id, cancellationToken);
+        if (result)
+        {
+            await _cache.RemoveAsync(CacheKeys.Discounts.All, cancellationToken);
+            await _cache.RemoveAsync(CacheKeys.Discounts.ById(id), cancellationToken);
+        }
+        return result;
     }
 
     private static DiscountDto MapToDto(Discount discount)
@@ -87,7 +113,3 @@ public class DiscountService(IDiscountRepository repository) : IDiscountService
         };
     }
 }
-
-
-
-

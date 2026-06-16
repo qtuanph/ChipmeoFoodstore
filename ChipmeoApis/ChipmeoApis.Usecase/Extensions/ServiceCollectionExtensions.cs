@@ -8,7 +8,6 @@ public static class ServiceCollectionExtensions
 {
     public static IServiceCollection AddApplicationServices(this IServiceCollection services)
     {
-        // Register all application services
         services.AddScoped<ICategoryService, CategoryService>();
         services.AddScoped<IMenuItemService, MenuItemService>();
         services.AddScoped<IAuthService, AuthService>();
@@ -26,12 +25,6 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IBlogService, BlogService>();
         services.AddScoped<ITagService, TagService>();
 
-        services.AddHttpClient();
-
         return services;
     }
 }
-
-
-
-

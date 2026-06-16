@@ -2,6 +2,7 @@ import { writable, get } from 'svelte/store';
 import { BROWSER as browser } from 'esm-env';
 import { authAPI } from '$lib/api/auth.js';
 import type { User, AuthState } from '$lib/types/index.js';
+import { STORAGE_KEYS } from '$lib/config/index.js';
 
 // Initial state
 const initialState: AuthState = {
@@ -21,8 +22,8 @@ function createAuthStore() {
 		// Initialize from localStorage
 		init: () => {
 			if (browser) {
-				const token = localStorage.getItem('token');
-				const userStr = localStorage.getItem('user');
+				const token = localStorage.getItem(STORAGE_KEYS.TOKEN);
+				const userStr = localStorage.getItem(STORAGE_KEYS.USER);
 
 				if (token && userStr) {
 					try {
@@ -35,8 +36,8 @@ function createAuthStore() {
 						}));
 					} catch (e) {
 						console.error('Failed to parse user from localStorage', e);
-						localStorage.removeItem('token');
-						localStorage.removeItem('user');
+						localStorage.removeItem(STORAGE_KEYS.TOKEN);
+						localStorage.removeItem(STORAGE_KEYS.USER);
 					}
 				}
 			}
@@ -57,8 +58,8 @@ function createAuthStore() {
 
 				// Save to localStorage
 				if (browser) {
-					localStorage.setItem('token', token);
-					localStorage.setItem('user', JSON.stringify(user));
+					localStorage.setItem(STORAGE_KEYS.TOKEN, token);
+					localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
 				}
 
 				// Update store
@@ -101,8 +102,8 @@ function createAuthStore() {
 			}
 
 			if (browser) {
-				localStorage.removeItem('token');
-				localStorage.removeItem('user');
+				localStorage.removeItem(STORAGE_KEYS.TOKEN);
+				localStorage.removeItem(STORAGE_KEYS.USER);
 			}
 
 			set(initialState);
@@ -116,7 +117,7 @@ function createAuthStore() {
 		checkAuth: () => {
 			const state = get({ subscribe });
 			if (!state.isAuthenticated && browser) {
-				const token = localStorage.getItem('token');
+				const token = localStorage.getItem(STORAGE_KEYS.TOKEN);
 				if (!token) {
 					// Redirect to login if needed, but be careful about infinite loops
 					const path = window.location.pathname;
@@ -131,7 +132,7 @@ function createAuthStore() {
 		// Update user profile
 		updateUser: (user: User) => {
 			if (browser) {
-				localStorage.setItem('user', JSON.stringify(user));
+				localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
 			}
 
 			update((s) => ({

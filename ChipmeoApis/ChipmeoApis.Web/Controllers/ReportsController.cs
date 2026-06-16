@@ -3,6 +3,7 @@ using ChipmeoApis.Web.Authorization;
 using ChipmeoApis.Usecase.DTOs.Report;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using ChipmeoApis.Web.ApiResponse;
 
 namespace ChipmeoApis.Web.Controllers;
 
@@ -20,10 +21,10 @@ public class ReportsController : ControllerBase
 
     [HttpGet("dashboard-stats")]
     [RequirePermission("analytics.view")]
-    public async Task<ActionResult<DashboardStatsDto>> GetDashboardStats(CancellationToken cancellationToken)
+    public async Task<IActionResult> GetDashboardStats(CancellationToken cancellationToken)
     {
         var stats = await _service.GetDashboardStatsAsync(cancellationToken);
-        return Ok(stats);
+        return ApiResult.Success(stats);
     }
 }
 

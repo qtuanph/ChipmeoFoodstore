@@ -1,19 +1,33 @@
 ﻿using ChipmeoApis.Usecase.Interfaces;
 using ChipmeoApis.Usecase.DTOs.Combo;
+using ChipmeoApis.Usecase.Utils;
+using ChipmeoApis.Core.Constants;
 using ChipmeoApis.Core.Entities;
 using ChipmeoApis.Core.Utils;
+using Microsoft.Extensions.Caching.Distributed;
 
 namespace ChipmeoApis.Usecase.Services;
 
-public class ComboService(IComboRepository repository, IMediaService mediaService) : IComboService
+public class ComboService : IComboService
 {
-    private readonly IComboRepository _repository = repository;
-    private readonly IMediaService _mediaService = mediaService;
+    private readonly IComboRepository _repository;
+    private readonly IMediaService _mediaService;
+    private readonly IDistributedCache _cache;
+
+    public ComboService(IComboRepository repository, IMediaService mediaService, IDistributedCache cache)
+    {
+        _repository = repository;
+        _mediaService = mediaService;
+        _cache = cache;
+    }
 
     public async Task<IEnumerable<ComboDto>> GetAllAsync(CancellationToken cancellationToken = default)
     {
-        var combos = await _repository.GetAllAsync(cancellationToken);
-        return combos.Select(MapToDto);
+        return await _cache.GetOrSetAsync(CacheKeys.Combos.All, async () =>
+        {
+            var combos = await _repository.GetAllAsync(cancellationToken);
+            return combos.Select(MapToDto).ToList();
+        }, TimeSpan.FromMinutes(30), cancellationToken);
     }
 
     public async Task<ComboDto?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
@@ -47,6 +61,7 @@ public class ComboService(IComboRepository repository, IMediaService mediaServic
             await _mediaService.LinkMediaToEntityAsync(dto.ImageUrl, "combo", created.Id);
         }
 
+        await _cache.RemoveAsync(CacheKeys.Combos.All, cancellationToken);
         return MapToDto(created);
     }
 
@@ -73,9 +88,14 @@ public class ComboService(IComboRepository repository, IMediaService mediaServic
 
         var result = await _repository.UpdateWithItemsAsync(combo, newItems, cancellationToken);
         
-        if (result && !string.IsNullOrEmpty(dto.ImageUrl) && dto.ImageUrl != oldImageUrl)
+        if (result)
         {
-            await _mediaService.LinkMediaToEntityAsync(dto.ImageUrl, "combo", id);
+            if (!string.IsNullOrEmpty(dto.ImageUrl) && dto.ImageUrl != oldImageUrl)
+            {
+                await _mediaService.LinkMediaToEntityAsync(dto.ImageUrl, "combo", id);
+            }
+            await _cache.RemoveAsync(CacheKeys.Combos.All, cancellationToken);
+            await _cache.RemoveAsync(CacheKeys.Combos.ById(id), cancellationToken);
         }
         
         return result;
@@ -83,7 +103,13 @@ public class ComboService(IComboRepository repository, IMediaService mediaServic
 
     public async Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default)
     {
-        return await _repository.DeleteAsync(id, cancellationToken);
+        var result = await _repository.DeleteAsync(id, cancellationToken);
+        if (result)
+        {
+            await _cache.RemoveAsync(CacheKeys.Combos.All, cancellationToken);
+            await _cache.RemoveAsync(CacheKeys.Combos.ById(id), cancellationToken);
+        }
+        return result;
     }
 
     private static ComboDto MapToDto(Combo combo)
@@ -107,7 +133,3 @@ public class ComboService(IComboRepository repository, IMediaService mediaServic
         };
     }
 }
-
-
-
-

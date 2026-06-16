@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using ChipmeoApis.Web.Hubs;
+using ChipmeoApis.Web.ApiResponse;
 
 namespace ChipmeoApis.Web.Controllers;
 
@@ -23,7 +24,7 @@ public class KitchenController(IOrderService orderService, IHubContext<AppHub> h
     public async Task<IActionResult> GetOrders(CancellationToken cancellationToken)
     {
         var orders = await _orderService.GetPaidOrdersForKitchenAsync(cancellationToken);
-        return Ok(orders);
+        return ApiResult.Success(orders);
     }
 
     /// <summary>
@@ -34,7 +35,7 @@ public class KitchenController(IOrderService orderService, IHubContext<AppHub> h
     public async Task<IActionResult> GetPendingOrders(CancellationToken cancellationToken)
     {
         var orders = await _orderService.GetByStatusAsync("paid", cancellationToken);
-        return Ok(orders);
+        return ApiResult.Success(orders);
     }
 
     /// <summary>
@@ -45,7 +46,7 @@ public class KitchenController(IOrderService orderService, IHubContext<AppHub> h
     public async Task<IActionResult> GetPreparingOrders(CancellationToken cancellationToken)
     {
         var orders = await _orderService.GetByStatusAsync("preparing", cancellationToken);
-        return Ok(orders);
+        return ApiResult.Success(orders);
     }
 
     /// <summary>
@@ -58,7 +59,7 @@ public class KitchenController(IOrderService orderService, IHubContext<AppHub> h
         try
         {
             var success = await _orderService.UpdateKitchenStatusAsync(id, "preparing", cancellationToken);
-            if (!success) return NotFound();
+            if (!success) return ApiResult.NotFound();
 
             // Notify all clients about status change
             await _hubContext.Clients.All.SendAsync("ReceiveOrderUpdate", new { Id = id, Status = "preparing" }, cancellationToken);
@@ -67,7 +68,7 @@ public class KitchenController(IOrderService orderService, IHubContext<AppHub> h
         }
         catch (Exception ex)
         {
-            return BadRequest(new { error = ex.Message });
+            return ApiResult.BadRequest(ex.Message);
         }
     }
 
@@ -81,7 +82,7 @@ public class KitchenController(IOrderService orderService, IHubContext<AppHub> h
         try
         {
             var success = await _orderService.UpdateKitchenStatusAsync(id, "served", cancellationToken);
-            if (!success) return NotFound();
+            if (!success) return ApiResult.NotFound();
 
             // Notify all clients about completion
             await _hubContext.Clients.All.SendAsync("ReceiveOrderUpdate", new { Id = id, Status = "served" }, cancellationToken);
@@ -90,7 +91,7 @@ public class KitchenController(IOrderService orderService, IHubContext<AppHub> h
         }
         catch (Exception ex)
         {
-            return BadRequest(new { error = ex.Message });
+            return ApiResult.BadRequest(ex.Message);
         }
     }
 }

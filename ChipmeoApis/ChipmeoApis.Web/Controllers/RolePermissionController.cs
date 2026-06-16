@@ -1,6 +1,7 @@
 ﻿using ChipmeoApis.Usecase.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using ChipmeoApis.Web.ApiResponse;
 
 namespace ChipmeoApis.Web.Controllers;
 
@@ -8,7 +9,7 @@ namespace ChipmeoApis.Web.Controllers;
 /// Controller for managing role-permission assignments
 /// </summary>
 [ApiController]
-[Route("admin/roles/{roleId}/permissions")]
+[Route("api/admin/roles/{roleId}/permissions")]
 [Authorize(Roles = "Admin")]
 public class RolePermissionController : ControllerBase
 {
@@ -26,7 +27,7 @@ public class RolePermissionController : ControllerBase
     public async Task<IActionResult> GetRolePermissions(int roleId, CancellationToken cancellationToken)
     {
         var permissionIds = await _permissionService.GetRolePermissionIdsAsync(roleId, cancellationToken);
-        return Ok(permissionIds);
+        return ApiResult.Success(permissionIds);
     }
 
     /// <summary>
@@ -36,7 +37,7 @@ public class RolePermissionController : ControllerBase
     public async Task<IActionResult> AssignPermission(int roleId, int permissionId, CancellationToken cancellationToken)
     {
         await _permissionService.AssignPermissionToRoleAsync(roleId, permissionId, cancellationToken);
-        return Ok(new { message = "Permission assigned successfully" });
+        return ApiResult.Success(new { message = "Permission assigned successfully" });
     }
 
     /// <summary>
@@ -46,7 +47,7 @@ public class RolePermissionController : ControllerBase
     public async Task<IActionResult> RemovePermission(int roleId, int permissionId, CancellationToken cancellationToken)
     {
         await _permissionService.RemovePermissionFromRoleAsync(roleId, permissionId, cancellationToken);
-        return Ok(new { message = "Permission removed successfully" });
+        return ApiResult.Success(new { message = "Permission removed successfully" });
     }
 
     /// <summary>
@@ -61,11 +62,11 @@ public class RolePermissionController : ControllerBase
         try
         {
             await _permissionService.BulkUpdateRolePermissionsAsync(roleId, permissionIds, cancellationToken);
-            return Ok(new { message = "Permissions updated successfully", count = permissionIds.Count });
+            return ApiResult.Success(new { message = "Permissions updated successfully", count = permissionIds.Count });
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new { message = ex.Message, stackTrace = ex.StackTrace });
+            return StatusCode(500, ApiResponse<object>.Failure(new ErrorDetail { Code = "INTERNAL_ERROR", Message = ex.Message }));
         }
     }
 }
@@ -74,7 +75,7 @@ public class RolePermissionController : ControllerBase
 /// Controller for managing all permissions (read-only for now)
 /// </summary>
 [ApiController]
-[Route("admin/permissions")]
+[Route("api/admin/permissions")]
 [Authorize]
 public class PermissionController : ControllerBase
 {
@@ -92,7 +93,7 @@ public class PermissionController : ControllerBase
     public async Task<IActionResult> GetAllPermissions(CancellationToken cancellationToken)
     {
         var permissions = await _permissionService.GetAllPermissionsGroupedByModuleAsync(cancellationToken);
-        return Ok(permissions);
+        return ApiResult.Success(permissions);
     }
 }
 

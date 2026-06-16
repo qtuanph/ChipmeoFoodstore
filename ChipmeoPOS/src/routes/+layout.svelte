@@ -3,6 +3,7 @@
 	import { onMount } from 'svelte';
 	import { auth } from '$lib/utils/index.js';
 	import LandscapePrompt from '$lib/components/LandscapePrompt.svelte';
+	import { STORAGE_KEYS } from '$lib/config/index.js';
 
 	onMount(() => {
 		auth.checkAuth();
@@ -27,7 +28,7 @@
 					// Wait for auth check if loading
 					if (!$auth.loading) {
 						// Double check token in storage
-						const token = localStorage.getItem('token');
+						const token = localStorage.getItem(STORAGE_KEYS.TOKEN);
 						if (!token) {
 							isAuthorized = false;
 							await goto('/');
@@ -78,7 +79,7 @@
 				// If auth finished loading and still not authenticated
 				const path = $page.url.pathname;
 				if (protectedPrefixes.some((prefix) => path.startsWith(prefix))) {
-					const token = localStorage.getItem('token');
+					const token = localStorage.getItem(STORAGE_KEYS.TOKEN);
 					if (!token) {
 						isAuthorized = false;
 						checking = false;
@@ -112,7 +113,7 @@
 					checking = false;
 				}
 			} else if (checking) {
-				const token = localStorage.getItem('token');
+				const token = localStorage.getItem(STORAGE_KEYS.TOKEN);
 				const path = $page.url.pathname;
 				if (!token && protectedPrefixes.some((prefix) => path.startsWith(prefix))) {
 					isAuthorized = false;

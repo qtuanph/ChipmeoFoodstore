@@ -69,9 +69,6 @@
 							<span class="text-sm font-medium text-gray-500">{vm.formatTime(order.createdAt)}</span
 							>
 						</div>
-						<div class="mb-3 text-lg text-gray-700">
-							Bàn: <strong>{order.tableName || 'Mang Về'}</strong>
-						</div>
 						<div class="flex flex-col gap-2">
 							{#each order.items as item, i (i)}
 								<div
@@ -156,9 +153,6 @@
 								>⏳ {vm.getElapsedTime(order.updatedAt)}</span
 							>
 						</div>
-						<div class="mb-3 text-lg text-gray-700">
-							Bàn: <strong>{order.tableName || 'Mang Về'}</strong>
-						</div>
 						<div class="flex flex-col gap-2">
 							{#each order.items as item, i (i)}
 								<div
@@ -232,12 +226,7 @@
 							<span class="text-3xl leading-none font-extrabold text-gray-900"
 								>#{order.orderCode.split('-').pop()}</span
 							>
-							<div class="flex flex-col gap-0.5">
-								<div class="text-base font-semibold text-gray-600">
-									{order.tableName || 'Mang Về'}
-								</div>
-								<div class="text-xs text-gray-400">{vm.formatTime(order.updatedAt)}</div>
-							</div>
+							<div class="text-xs text-gray-400">{vm.formatTime(order.updatedAt)}</div>
 						</div>
 					</div>
 				{/each}

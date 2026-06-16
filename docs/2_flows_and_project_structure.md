@@ -4,7 +4,8 @@
 
 ```
 ChipmeoFoodstore/
-│
+├── docker-compose.yml                    # 🐳 Full stack (6 services)
+├── .env                                  # 🔒 Environment variables
 ├── ChipmeoApis/                          # 🖥️ Backend (.NET 10 Clean Architecture)
 │   ├── ChipmeoApis.slnx                  # Solution file
 │   │
@@ -47,11 +48,12 @@ ChipmeoFoodstore/
 │   ├── ChipmeoApis.Infrastructure/       # 📀 Infrastructure Layer
 │   │   ├── Data/                         #   EF Core DbContext + Configurations
 │   │   ├── Repositories/                 #   17 repository implementations
-│   │   ├── Handlers/                     #   Media upload handler (FTP)
+│   │   ├── Handlers/                     #   Media upload handler (S3/AWS SDK)
 │   │   ├── Extensions/                   #   DI registration
 │   │   ├── Caching/                      #   (empty — planned)
 │   │   └── Mappings/                     #   (future: AutoMapper profiles)
 │   │
+│   ├── Dockerfile                        #   🐳 API Docker image
 │   └── ChipmeoApis.Web/                  # 🌐 Presentation Layer
 │       ├── Controllers/                  #   21 API controllers
 │       ├── Hubs/                         #   SignalR hub
@@ -107,6 +109,7 @@ ChipmeoFoodstore/
 │   │       │   └── kitchen.svelte.ts
 │   │       ├── logout/
 │   │       └── error/
+│   ├── Dockerfile                        #   🐳 Frontend Docker image
 │   ├── static/
 │   ├── svelte.config.js
 │   ├── vite.config.ts
@@ -114,9 +117,11 @@ ChipmeoFoodstore/
 │   ├── eslint.config.js
 │   └── package.json
 │
-├── MediaStorageManagement/               # 🖼️ Media Server
-│   ├── MediaStorageManagement.slnx
-│   └── MediaStorageManagement/
+├── scripts/                              # 📜 Database
+│   └── init.sql                          #   PostgreSQL schema + seed data
+│
+├── docker-compose.yml                    # 🐳 Full stack orchestration
+├── .env                                  # 🔒 Environment variables
 │
 ├── docs/                                 # 📚 Documentation
 │   ├── 0_quick_reference.json
@@ -157,21 +162,21 @@ ChipmeoFoodstore/
 ### 2. Authentication Flow
 
 ```
-┌──────────┐     ┌──────────────────┐     ┌────────────────┐
-│  Client  │     │  ChipmeoApis.Web │     │  SQL Server    │
-├──────────┤     ├──────────────────┤     ├────────────────┤
-│  1. POST │────►│  /api/auth/login │────►│  Find employee │
-│          │     │  (username,pass)  │     │  Verify bcrypt │
-│          │◄────│  JWT + Refresh   │     │                │
-│          │     │  (in response)   │     │                │
-│          │     │                  │     │                │
-│  2. GET  │────►│  /admin/xxx      │     │                │
-│   /admin │     │  Authorization:  │     │                │
-│          │     │  Bearer <jwt>    │     │                │
-│          │◄────│  Check JWT sig   │     │                │
-│          │     │  Check permission│────►│  role_perms    │
-│          │     │  Return data     │     │                │
-└──────────┘     └──────────────────┘     └────────────────┘
+┌──────────┐     ┌──────────┐     ┌──────────────────┐     ┌────────────────┐
+│  Client  │     │ Traefik  │     │  ChipmeoApis.Web │     │  PostgreSQL    │
+├──────────┤     ├──────────┤     ├──────────────────┤     ├────────────────┤
+│  1. POST │────►│ :80/     │────►│  /api/auth/login │────►│  Find employee │
+│          │     │ /api/*   │     │  (username,pass)  │     │  Verify bcrypt │
+│          │◄────│          │◄────│  JWT + Refresh   │     │                │
+│          │     │          │     │  (in response)   │     │                │
+│          │     │          │     │                  │     │                │
+│  2. GET  │────►│ :80/     │────►│  /admin/xxx      │     │                │
+│   /admin │     │ /admin/* │     │  Authorization:  │     │                │
+│          │     │          │     │  Bearer <jwt>    │     │                │
+│          │◄────│          │◄────│  Check JWT sig   │     │                │
+│          │     │          │     │  Check permission│────►│  role_perms    │
+│          │     │          │     │  Return data     │     │                │
+└──────────┘     └──────────┘     └──────────────────┘     └────────────────┘
 ```
 
 ### 3. Real-Time Updates (SignalR)
@@ -188,16 +193,15 @@ ChipmeoFoodstore/
 ### 4. Media Upload Flow
 
 ```
-┌──────────┐     ┌──────────────────┐     ┌───────────────────────┐
-│   POS UI │     │  ChipmeoApis.Web  │     │ MediaStorageManagement │
-├──────────┤     ├──────────────────┤     ├───────────────────────┤
-│  1. POST │────►│  /api/media/     │────►│  POST /api/media/     │
-│  (file)  │     │  upload           │     │  upload + X-Api-Key  │
-│          │     │                   │     │  Validate file type  │
-│          │     │                   │     │  Save to D:\Media... │
-│          │     │◄──────────────────│────│  Return URL           │
-│          │◄────│  {id, url}        │     │                       │
-└──────────┘     └──────────────────┘     └───────────────────────┘
+┌──────────┐     ┌──────────┐     ┌──────────────────┐     ┌──────────────────────────┐
+│   POS UI │     │ Traefik  │     │  ChipmeoApis.Web │     │  RustFS (S3 Object Store)│
+├──────────┤     ├──────────┤     ├──────────────────┤     ├──────────────────────────┤
+│  1. POST │────►│ :80/     │────►│  /api/media/     │────►│  PutObjectAsync (AWS SDK)│
+│  (file)  │     │ /api/*   │     │  upload           │     │  Validate file type     │
+│          │     │          │     │                   │     │  Save to S3 bucket      │
+│          │     │          │     │◄──────────────────│────│  Return public URL      │
+│          │◄────│          │◄────│  {id, url}        │     │                          │
+└──────────┘     └──────────┘     └──────────────────┘     └──────────────────────────┘
 ```
 
 ### 5. Data Fetching (Frontend → Backend)
@@ -258,9 +262,11 @@ Permissions follow the pattern `"{module}.{action}"`:
 |---|---|
 | **Clean Architecture** | Isolates business rules from frameworks; swappable DB/UI |
 | **RBAC with flat permissions** | Simpler than hierarchical roles; each action explicitly checked |
-| **Separate media server** | Dedicated file serving reduces load on main API; can scale independently |
+| **RustFS for media** | S3-compatible object storage (MinIO/RustFS/Garage) via AWS SDK — vendor-neutral |
 | **SignalR + MessagePack** | Binary protocol reduces payload size for real-time updates |
 | **Vite dev proxy** | Avoids CORS issues during local development |
 | **Environment-aware config** | Frontend auto-detects local/demo/production without manual switches |
 | **ML.NET (not Python API)** | Keeps ML in-process with .NET; no extra infrastructure |
-| **IMemoryCache (not Redis)** | Simpler for single-instance deployment; upgrade path to Redis later |
+| **Redis (not IMemoryCache)** | Distributed caching suitable for multi-instance Docker deployments |
+| **Traefik ingress** | Single entry point (`:80`), path-based routing: `/api/*` & `/hubs/*` → API, rest → webapp |
+| **Build cache mounts** | NuGet (`/root/.nuget/packages`) & npm (`/root/.npm`) cached via Docker BuildKit — rebuild nhanh hơn |

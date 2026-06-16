@@ -1,3 +1,5 @@
+import { SITE_DOMAIN } from '$lib/config/index.js';
+
 export interface SeoCheck {
 	name: string;
 	score: number;
@@ -270,7 +272,7 @@ export function calculateSeoChecks(
 	}
 
 	// 8. Internal links (10 points)
-	const internalLinks = content.match(/href=["'][^"']*chipmeo[^"']*["']/g) || [];
+	const internalLinks = content.match(new RegExp(`href=["'][^"']*${SITE_DOMAIN}[^"']*["']`, 'g')) || [];
 	if (internalLinks.length >= 1) {
 		checks.push({
 			name: 'Liên kết nội bộ',

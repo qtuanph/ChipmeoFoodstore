@@ -1,18 +1,19 @@
-﻿using ChipmeoApis.Usecase.Interfaces;
-using System.IdentityModel.Tokens.Jwt;
+﻿using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using ChipmeoApis.Usecase.DTOs.Auth;
+using ChipmeoApis.Core.Configuration;
 using ChipmeoApis.Core.Utils;
-using Microsoft.Extensions.Configuration;
+using ChipmeoApis.Usecase.DTOs.Auth;
+using ChipmeoApis.Usecase.Interfaces;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
 namespace ChipmeoApis.Usecase.Services;
 
-public class AuthService(IEmployeeRepository employeeRepository, IConfiguration configuration, IMediaService mediaService) : IAuthService
+public class AuthService(IEmployeeRepository employeeRepository, IOptions<JwtSettings> jwtOptions, IMediaService mediaService) : IAuthService
 {
     private readonly IEmployeeRepository _employeeRepository = employeeRepository;
-    private readonly IConfiguration _configuration = configuration;
+    private readonly JwtSettings _jwtSettings = jwtOptions.Value;
     private readonly IMediaService _mediaService = mediaService;
 
     public async Task<LoginResponse?> LoginAsync(LoginRequest request, CancellationToken cancellationToken = default)
@@ -39,7 +40,7 @@ public class AuthService(IEmployeeRepository employeeRepository, IConfiguration 
             
         // Generate JWT token
         var token = GenerateJwtToken(employee, permissions);
-        var expiresIn = int.Parse(_configuration["JwtSettings:ExpiryInHours"] ?? "1") * 3600;
+        var expiresIn = _jwtSettings.ExpiryInHours * 3600;
 
         return new LoginResponse
         {
@@ -52,6 +53,7 @@ public class AuthService(IEmployeeRepository employeeRepository, IConfiguration 
                 FullName = employee.FullName ?? employee.Username,
                 Username = employee.Username,
                 Email = employee.Email,
+                AvatarUrl = employee.AvatarUrl,
                 RoleId = employee.RoleId,
                 RoleName = employee.Role?.Name ?? "Unknown",
                 DefaultRoute = employee.Role?.DefaultRoute,
@@ -62,9 +64,7 @@ public class AuthService(IEmployeeRepository employeeRepository, IConfiguration 
 
     public Task<TokenResponse?> RefreshTokenAsync(string refreshToken, CancellationToken cancellationToken = default)
     {
-        // TODO: Implement refresh token logic
-        // For now, return null
-        return Task.FromResult<TokenResponse?>(null);
+        throw new NotImplementedException("Refresh token not yet implemented");
     }
 
     public Task<bool> ValidateTokenAsync(string token, CancellationToken cancellationToken = default)
@@ -72,16 +72,16 @@ public class AuthService(IEmployeeRepository employeeRepository, IConfiguration 
         try
         {
             var tokenHandler = new JwtSecurityTokenHandler();
-            var key = Encoding.UTF8.GetBytes(_configuration["JwtSettings:SecretKey"] ?? "");
-            
+            var key = Encoding.UTF8.GetBytes(_jwtSettings.SecretKey);
+
             tokenHandler.ValidateToken(token, new TokenValidationParameters
             {
                 ValidateIssuerSigningKey = true,
                 IssuerSigningKey = new SymmetricSecurityKey(key),
                 ValidateIssuer = true,
-                ValidIssuer = _configuration["JwtSettings:Issuer"],
+                ValidIssuer = _jwtSettings.Issuer,
                 ValidateAudience = true,
-                ValidAudience = _configuration["JwtSettings:Audience"],
+                ValidAudience = _jwtSettings.Audience,
                 ValidateLifetime = true,
                 ClockSkew = TimeSpan.Zero
             }, out SecurityToken validatedToken);
@@ -142,14 +142,7 @@ public class AuthService(IEmployeeRepository employeeRepository, IConfiguration 
 
         await _employeeRepository.UpdateAsync(employee, cancellationToken);
 
-        // Link media if avatar changed
-        if (!string.IsNullOrEmpty(dto.AvatarUrl) && dto.AvatarUrl != employee.AvatarUrl) // Note: employee is updated in memory but logic requires checking old value. 
-        // Actually, update is called above. I need to capture old value before update or check dto against null.
-        // The original code didn't capture old value properly in my snippet.
-        // Let's re-read the file content logic.
-        // Wait, I should do this carefully. 
-        // I will do a targeted replacement of the end of the function.
-        if (!string.IsNullOrEmpty(dto.AvatarUrl))
+        if (!string.IsNullOrEmpty(dto.AvatarUrl) && dto.AvatarUrl != employee.AvatarUrl)
              await _mediaService.LinkMediaToEntityAsync(dto.AvatarUrl, "employee", userId);
              
         return new UserDto
@@ -167,7 +160,7 @@ public class AuthService(IEmployeeRepository employeeRepository, IConfiguration 
     private string GenerateJwtToken(Core.Entities.Employee employee, List<string> permissions)
     {
         var securityKey = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes(_configuration["JwtSettings:SecretKey"] ?? ""));
+            Encoding.UTF8.GetBytes(_jwtSettings.SecretKey));
         var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
 
         var claims = new List<Claim>
@@ -186,10 +179,10 @@ public class AuthService(IEmployeeRepository employeeRepository, IConfiguration 
         }
 
         var token = new JwtSecurityToken(
-            issuer: _configuration["JwtSettings:Issuer"],
-            audience: _configuration["JwtSettings:Audience"],
+            issuer: _jwtSettings.Issuer,
+            audience: _jwtSettings.Audience,
             claims: claims,
-            expires: TimeUtils.GetVietnamTime().AddHours(int.Parse(_configuration["JwtSettings:ExpiryInHours"] ?? "1")),
+            expires: TimeUtils.GetVietnamTime().AddHours(_jwtSettings.ExpiryInHours),
             signingCredentials: credentials
         );
 

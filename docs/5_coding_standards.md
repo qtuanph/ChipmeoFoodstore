@@ -393,30 +393,37 @@ var page = await _context.Orders
     .ToListAsync(ct);
 ```
 
-### 2.7 Controllers & API
+### 2.7 Controllers & API (v2)
+
+#### Route Convention
+
+> Tất cả routes tự động có prefix `/v2/` nhờ `V2RouteConvention` (xem `Conventions/V2RouteConvention.cs`).
+> Không cần ghi `v2/` trong `[Route]` attribute — convention xử lý tự động.
 
 #### Controller Structure
 
 ```csharp
 [ApiController]
-[Route("admin/orders")]
+[Route("api/admin/orders")]     // → thực tế là /v2/api/admin/orders
 [Authorize]
-public class OrdersController(IOrderService orderService) : ControllerBase
+public class OrdersController(IOrderService service) : ControllerBase
 {
     [HttpGet]
     [RequirePermission("orders.view")]
     public async Task<IActionResult> GetAll(CancellationToken ct)
     {
-        var orders = await orderService.GetAllAsync(ct);
-        return Ok(orders);
+        var orders = await service.GetAllAsync(ct);
+        return ApiResult.Success(orders);       // ← bắt buộc dùng ApiResult
     }
 
     [HttpGet("{id}")]
     [RequirePermission("orders.view")]
     public async Task<IActionResult> GetById(int id, CancellationToken ct)
     {
-        var order = await orderService.GetByIdAsync(id, ct);
-        return order is null ? NotFound() : Ok(order);
+        var order = await service.GetByIdAsync(id, ct);
+        return order is null
+            ? ApiResult.NotFound("Order not found")
+            : ApiResult.Success(order);
     }
 
     [HttpPost]
@@ -425,51 +432,102 @@ public class OrdersController(IOrderService orderService) : ControllerBase
         [FromBody] CreateOrderRequest request,
         CancellationToken ct)
     {
-        var order = await orderService.CreateAsync(request, ct);
+        var order = await service.CreateAsync(request, ct);
         return CreatedAtAction(nameof(GetById), new { id = order.Id }, order);
+        // CreatedAtAction giữ nguyên — HTTP 201, body là resource
+    }
+
+    [HttpGet("paged")]
+    public async Task<IActionResult> GetPaged(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20,
+        CancellationToken ct)
+    {
+        var (items, totalCount) = await service.GetPagedAsync(page, pageSize, ct);
+        return ApiResult.Paged(items, page, pageSize, totalCount);
     }
 }
 ```
 
-#### Route Conventions
+#### Route Conventions (v2)
 
-| Controller | Route | Auth |
+| Controller | Route (thực tế) | Auth |
 |---|---|---|
-| Public/Health | `GET /health` | None |
-| Auth | `/api/auth/*` | Mixed |
-| Customer API | `/api/customers/*` | Mixed |
-| Public Blog | `/api/blog` | None (read) / Employee (write) |
-| POS | `/pos/*` | Employee |
-| Kitchen | `/api/kitchen/*` | Employee |
-| Admin | `/admin/*` | Employee + Permission |
-| Admin Dashboard | `/admin/dashboard/*` | Employee + Permission |
-| Reports | `/api/reports/*` | Employee |
-| Media | `/api/media/*` | Employee |
+| Health | `GET /v2/api/health` | None |
+| Auth | `/v2/api/auth/*` | Mixed |
+| Customer API | `/v2/api/customers/*` | Mixed |
+| Public Blog | `/v2/api/blog` | None (read) / Employee (write) |
+| POS | `/v2/api/pos/*` | Employee |
+| Kitchen | `/v2/api/kitchen/*` | Employee |
+| Admin | `/v2/api/admin/*` | Employee + Permission |
+| Admin Dashboard | `/v2/api/admin/dashboard/*` | Employee + Permission |
+| Reports | `/v2/api/reports/*` | Employee |
+| Media | `/v2/api/media/*` | Employee |
 
-#### Response Conventions
+#### Response Conventions (v2)
+
+**BẮT BUỘC** dùng `ApiResult` helper cho mọi response:
 
 ```csharp
-// Success
-return Ok(result);        // 200
-return Created(...);      // 201
-return NoContent();       // 204
+using ChipmeoApis.Web.ApiResponse;
 
-// Client Error
-return BadRequest(error); // 400
-return NotFound();        // 404
-return Unauthorized();    // 401 (from JWT middleware)
-return Forbid();          // 403 (from authorization handler)
+// ✅ Success — single resource (HTTP 200)
+return ApiResult.Success(data);
 
-// Use ProblemDetails for errors
-return Problem(
-    statusCode: 400,
-    title: "Validation Error",
-    detail: "Order must have at least one item.",
-    type: "https://tools.ietf.org/html/rfc7231#section-6.5.1"
-);
+// ✅ Success — collection (HTTP 200)
+return ApiResult.Success(items);
+
+// ✅ Success — paginated (HTTP 200)
+// Response: { data: [...], error: null, meta: { page, pageSize, totalCount, totalPages } }
+return ApiResult.Paged(items, page, pageSize, totalCount);
+
+// ✅ Created (HTTP 201)
+return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
+
+// ✅ No Content (HTTP 204) — cho DELETE
+return ApiResult.NoContent();           // hoặc return NoContent();
+
+// ❌ Client Error (HTTP 400)
+return ApiResult.BadRequest("message", errors);    // errors: List<FieldError>?
+
+// ❌ Not Found (HTTP 404)
+return ApiResult.NotFound("message");
+
+// ❌ Server Error (HTTP 500)
+return StatusCode(500, ApiResponse<object>.Failure(
+    new ErrorDetail { Code = "INTERNAL_ERROR", Message = ex.Message }
+));
+
+// ❌ Unauthorized — giữ nguyên (middleware xử lý)
+return Unauthorized();
+return Forbid();
 ```
 
-### 2.8 Error Handling
+**KHÔNG được** dùng trực tiếp:
+- ❌ `return Ok(data)` — không envelope
+- ❌ `return NotFound(new { ... })` — format không chuẩn
+- ❌ `return BadRequest("string")` — thiếu error code
+- ❌ `return StatusCode(500, new { error = ... })` — thiếu envelope
+
+#### Response Envelope Format
+
+Mọi response (trừ 204 No Content) đều theo format:
+
+```json
+{
+  "data": { ... } | [ ... ] | null,
+  "error": { "code": "...", "message": "...", "details": [...] } | null,
+  "meta": { "timestamp": "2026-01-15T10:30:00Z", "requestId": "uuid" }
+}
+```
+
+- Success: `data` có giá trị, `error` = `null`
+- Error: `data` = `null`, `error` có giá trị
+- Paginated: `data` là mảng, `meta` có `page`, `pageSize`, `totalCount`, `totalPages`
+
+### 2.8 Error Handling (v2)
+
+#### Service Layer — Result Pattern
 
 ```csharp
 // Use Result pattern for service operations
@@ -493,34 +551,36 @@ public async Task<Result<OrderResponse>> CreateAsync(CreateOrderRequest request,
     // ... create order
     return Result<OrderResponse>.Success(response);
 }
+```
 
-// Controllers check Result
+#### Controller Layer — ApiResult
+
+```csharp
+// Controllers map Result → ApiResult envelope
 var result = await orderService.CreateAsync(request, ct);
 if (result.IsFailure)
-    return BadRequest(new { error = result.Error });
+    return ApiResult.BadRequest(result.Error);
 
-return CreatedAtAction(..., result.Value);
+return CreatedAtAction(nameof(GetById), new { id = result.Value!.Id }, result.Value);
 ```
 
 #### Exception Handling Middleware
 
 ```csharp
-// Global exception handler in Program.cs or Middleware
-app.UseExceptionHandler(exceptionHandlerApp =>
-{
-    exceptionHandlerApp.Run(async context =>
-    {
-        context.Response.StatusCode = 500;
-        context.Response.ContentType = "application/problem+json";
+// Global exception handler — tự động wrap vào ApiResponse<object>.Failure
+app.UseMiddleware<ExceptionHandlingMiddleware>();
+```
 
-        await context.Response.WriteAsJsonAsync(new
-        {
-            title = "An error occurred",
-            status = 500,
-            traceId = Activity.Current?.Id ?? context.TraceIdentifier
-        });
-    });
-});
+Middleware (`Middleware/ExceptionHandlingMiddleware.cs`) tự động bắt mọi unhandled exception và trả về:
+```json
+{
+  "data": null,
+  "error": {
+    "code": "INTERNAL_ERROR",
+    "message": "An unexpected error occurred."
+  },
+  "meta": { "timestamp": "..." }
+}
 ```
 
 ---
@@ -1004,6 +1064,57 @@ export let orders = $state<Order[]>([]);
   Save
 </Button>
 ```
+
+### 3.9 Frontend Configuration (Environment Variables)
+
+> Tất cả cấu hình frontend đều qua `PUBLIC_*` env vars, đọc ở runtime bằng `$env/dynamic/public`.
+
+#### Nguyên tắc
+
+1. **Single source of truth** — `.env` ở project root, không có file `.env` riêng trong `ChipmeoPOS/`.
+2. **Runtime, không build-time** — dùng `$env/dynamic/public` thay vì `$env/static/public` để Docker build không cần `.env`.
+3. **Không hardcode fallback** — mọi `PUBLIC_*` đều required trong `.env`, config không có `|| defaultValue`.
+4. **Docker** — biến môi trường được truyền qua `environment:` trong `docker-compose.yml`.
+
+#### Cấu trúc
+
+```typescript
+// src/lib/config/index.ts
+import { env } from '$env/dynamic/public';
+
+const apiBaseUrl = env.PUBLIC_API_URL;
+if (!apiBaseUrl) throw new Error('PUBLIC_API_URL is required');
+export const API_BASE_URL = apiBaseUrl;
+
+const storagePrefix = env.PUBLIC_AUTH_STORAGE_PREFIX || '';
+export const STORAGE_KEYS = {
+  TOKEN: storagePrefix + 'token',
+  USER: storagePrefix + 'user'
+};
+
+export const SIGNALR_HUB_PATH = env.PUBLIC_SIGNALR_HUB;
+export const API_HOST_URL = API_BASE_URL.replace(/\/v2\/?$/, '');
+// ...etc
+```
+
+#### Danh sách `PUBLIC_*` vars
+
+| Var | Mục đích |
+|---|---|
+| `PUBLIC_API_URL` | Base URL của API (vd: `http://api.localhost/v2`) |
+| `PUBLIC_AUTH_STORAGE_PREFIX` | Prefix cho localStorage keys (tránh conflict domain) |
+| `PUBLIC_SIGNALR_HUB` | SignalR hub path (vd: `/hubs/app`) |
+| `PUBLIC_SIGNALR_WS_ONLY` | `true` = WebSockets only (skipNegotiation) |
+| `PUBLIC_VIETQR_API_URL` | URL API VietQR (vd: `https://api.vietqr.io/v2/banks`) |
+| `PUBLIC_DEFAULT_QR_TEMPLATE` | Template QR mặc định (vd: `compact2`) |
+| `PUBLIC_SITE_DOMAIN` | Domain cho SEO internal link detection |
+| `PUBLIC_DEFAULT_CUSTOMER_PASSWORD` | Password mặc định cho customer POS |
+
+#### Lưu ý
+
+- `PUBLIC_SIGNALR_WS_ONLY=false` → dùng negotiation + fallback transport.
+- `PUBLIC_AUTH_STORAGE_PREFIX` rỗng → không prefix, key là `token`/`user`.
+- `API_HOST_URL` = `API_BASE_URL` bỏ suffix `/v2` — dùng cho SignalR WebSocket (hub ở root, không dưới `/v2`).
 
 ### 3.8 Naming Conventions (Frontend)
 

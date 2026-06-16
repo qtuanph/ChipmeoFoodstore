@@ -20,7 +20,7 @@
 	}
 
 	function onLoginSuccess() {
-		// Stay on page, auth store will update automatically
+		// Ở lại trang, auth store tự update → navbar hiện avatar + menu
 	}
 
 	// Simple click outside action
@@ -81,9 +81,17 @@
 									<div class="text-xs text-gray-500">{$auth.user.roleName}</div>
 								</div>
 								<div
-									class="flex h-10 w-10 items-center justify-center rounded-full border-2 border-white bg-brand-yellow/20 font-bold text-brand-brown shadow-sm"
+									class="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border-2 border-white bg-brand-yellow/20 font-bold text-brand-brown shadow-sm"
 								>
-									{($auth.user.fullName || $auth.user.username)[0].toUpperCase()}
+									{#if $auth.user?.avatarUrl}
+										<img
+											src={$auth.user.avatarUrl}
+											alt="Avatar"
+											class="h-full w-full object-cover"
+										/>
+									{:else}
+										{($auth.user.fullName || $auth.user.username)[0].toUpperCase()}
+									{/if}
 								</div>
 							</button>
 

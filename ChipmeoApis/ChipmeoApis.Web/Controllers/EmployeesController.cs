@@ -3,11 +3,12 @@ using ChipmeoApis.Web.Authorization;
 using ChipmeoApis.Usecase.DTOs.Employee;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using ChipmeoApis.Web.ApiResponse;
 
 namespace ChipmeoApis.Web.Controllers;
 
 [ApiController]
-[Route("admin/employees")]
+[Route("api/admin/employees")]
 [Authorize]
 public class EmployeesController : ControllerBase
 {
@@ -23,7 +24,7 @@ public class EmployeesController : ControllerBase
     public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
     {
         var employees = await _service.GetAllAsync(cancellationToken);
-        return Ok(employees);
+        return ApiResult.Success(employees);
     }
 
     [HttpGet("{id:int}")]
@@ -31,8 +32,8 @@ public class EmployeesController : ControllerBase
     public async Task<IActionResult> GetById(int id, CancellationToken cancellationToken)
     {
         var employee = await _service.GetByIdAsync(id, cancellationToken);
-        if (employee == null) return NotFound();
-        return Ok(employee);
+        if (employee == null) return ApiResult.NotFound();
+        return ApiResult.Success(employee);
     }
 
     [HttpPost]
@@ -46,7 +47,7 @@ public class EmployeesController : ControllerBase
         }
         catch (Exception ex)
         {
-            return BadRequest(new { error = ex.Message });
+            return ApiResult.BadRequest(ex.Message);
         }
     }
 
@@ -55,7 +56,7 @@ public class EmployeesController : ControllerBase
     public async Task<IActionResult> Update(int id, [FromBody] UpdateEmployeeDto dto, CancellationToken cancellationToken)
     {
         var ok = await _service.UpdateAsync(id, dto, cancellationToken);
-        if (!ok) return NotFound();
+        if (!ok) return ApiResult.NotFound();
         return NoContent();
     }
 
@@ -66,12 +67,12 @@ public class EmployeesController : ControllerBase
         try
         {
             var ok = await _service.DeleteAsync(id, cancellationToken);
-            if (!ok) return NotFound();
+            if (!ok) return ApiResult.NotFound();
             return NoContent();
         }
         catch (Exception)
         {
-            return BadRequest(new { error = "Không thể xóa nhân viên này vì đang liên kết với đơn hàng hoặc dữ liệu khác." });
+            return ApiResult.BadRequest("Không thể xóa nhân viên này vì đang liên kết với đơn hàng hoặc dữ liệu khác.");
         }
     }
 }

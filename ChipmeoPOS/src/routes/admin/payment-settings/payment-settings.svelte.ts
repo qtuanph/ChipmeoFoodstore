@@ -1,4 +1,4 @@
-import { API_BASE_URL } from '$lib/config/index.js';
+import { API_ENDPOINTS, VIETQR_API_URL, DEFAULT_QR_TEMPLATE } from '$lib/config/index.js';
 import { api } from '$lib/api/index.js';
 
 export interface PaymentSetting {
@@ -34,7 +34,7 @@ export class PaymentSettingsState {
 		bankAccount: '',
 		bankName: '',
 		bankAccountName: '',
-		template: 'compact2',
+		template: DEFAULT_QR_TEMPLATE,
 		isActive: true,
 		isDefault: false
 	});
@@ -46,7 +46,7 @@ export class PaymentSettingsState {
 	async loadBanks() {
 		this.loadingBanks = true;
 		try {
-			const response = await fetch('https://api.vietqr.io/v2/banks');
+			const response = await fetch(VIETQR_API_URL);
 			const data = await response.json();
 			if (data.code === '00') {
 				this.banks = data.data;
@@ -61,7 +61,7 @@ export class PaymentSettingsState {
 	async loadSettings() {
 		this.loading = true;
 		try {
-			this.settings = await api.get<PaymentSetting[]>(`${API_BASE_URL}/admin/payment-settings/all`);
+			this.settings = await api.get<PaymentSetting[]>(`${API_ENDPOINTS.paymentSettings}/all`);
 		} catch (error) {
 			console.error('Failed to load payment settings:', error);
 			alert('Lỗi khi tải danh sách tài khoản');
@@ -77,7 +77,7 @@ export class PaymentSettingsState {
 			bankAccount: '',
 			bankName: '',
 			bankAccountName: '',
-			template: 'compact2',
+			template: DEFAULT_QR_TEMPLATE,
 			isActive: true,
 			isDefault: false
 		};
@@ -100,9 +100,9 @@ export class PaymentSettingsState {
 	async handleSave() {
 		try {
 			if (this.editingId) {
-				await api.put(`${API_BASE_URL}/admin/payment-settings/${this.editingId}`, this.formData);
+				await api.put(`${API_ENDPOINTS.paymentSettings}/${this.editingId}`, this.formData);
 			} else {
-				await api.post(`${API_BASE_URL}/admin/payment-settings`, this.formData);
+				await api.post(`${API_ENDPOINTS.paymentSettings}`, this.formData);
 			}
 			this.showDialog = false;
 			await this.loadSettings();
@@ -117,7 +117,7 @@ export class PaymentSettingsState {
 		if (setting.isDefault) return; // Already default
 
 		try {
-			await api.put(`${API_BASE_URL}/admin/payment-settings/${setting.id}/set-default`, {});
+			await api.put(`${API_ENDPOINTS.paymentSettings}/${setting.id}/set-default`, {});
 			await this.loadSettings();
 		} catch (error) {
 			console.error('Set default failed:', error);
@@ -129,7 +129,7 @@ export class PaymentSettingsState {
 		if (!confirm('Xóa tài khoản này? Không thể xóa tài khoản mặc định.')) return;
 
 		try {
-			await api.delete(`${API_BASE_URL}/admin/payment-settings/${id}`);
+			await api.delete(`${API_ENDPOINTS.paymentSettings}/${id}`);
 			await this.loadSettings();
 			// alert('Đã xóa tài khoản!');
 		} catch (error: any) {

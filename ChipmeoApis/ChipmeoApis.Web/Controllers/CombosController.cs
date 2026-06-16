@@ -5,11 +5,12 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using ChipmeoApis.Web.Hubs;
+using ChipmeoApis.Web.ApiResponse;
 
 namespace ChipmeoApis.Web.Controllers;
 
 [ApiController]
-[Route("admin/combos")]
+[Route("api/admin/combos")]
 [Authorize]
 public class CombosController : ControllerBase
 {
@@ -27,7 +28,7 @@ public class CombosController : ControllerBase
     public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
     {
         var items = await _service.GetAllAsync(cancellationToken);
-        return Ok(items);
+        return ApiResult.Success(items);
     }
 
     [HttpGet("{id:int}")]
@@ -35,8 +36,8 @@ public class CombosController : ControllerBase
     public async Task<IActionResult> GetById(int id, CancellationToken cancellationToken)
     {
         var item = await _service.GetByIdAsync(id, cancellationToken);
-        if (item == null) return NotFound();
-        return Ok(item);
+        if (item == null) return ApiResult.NotFound();
+        return ApiResult.Success(item);
     }
 
     [HttpPost]
@@ -52,7 +53,7 @@ public class CombosController : ControllerBase
     public async Task<IActionResult> Update(int id, CreateComboDto dto, CancellationToken cancellationToken)
     {
         var ok = await _service.UpdateAsync(id, dto, cancellationToken);
-        if (!ok) return NotFound();
+        if (!ok) return ApiResult.NotFound();
         return NoContent();
     }
 
@@ -61,27 +62,27 @@ public class CombosController : ControllerBase
     public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
     {
         var ok = await _service.DeleteAsync(id, cancellationToken);
-        if (!ok) return NotFound();
+        if (!ok) return ApiResult.NotFound();
         return NoContent();
     }
 
     // POS endpoints for read-only combos
-    [HttpGet("/pos/combos")]
+    [HttpGet("/api/pos/combos")]
     [AllowAnonymous]
     public async Task<IActionResult> PosGetAll(CancellationToken cancellationToken)
     {
         var combos = await _service.GetAllAsync(cancellationToken);
         var activeCombos = combos.Where(c => c.IsActive);
-        return Ok(activeCombos);
+        return ApiResult.Success(activeCombos);
     }
 
-    [HttpGet("/pos/combos/{id:int}")]
+    [HttpGet("/api/pos/combos/{id:int}")]
     [AllowAnonymous]
     public async Task<IActionResult> PosGetById(int id, CancellationToken cancellationToken)
     {
         var combo = await _service.GetByIdAsync(id, cancellationToken);
-        if (combo == null || !combo.IsActive) return NotFound();
-        return Ok(combo);
+        if (combo == null || !combo.IsActive) return ApiResult.NotFound();
+        return ApiResult.Success(combo);
     }
 }
 

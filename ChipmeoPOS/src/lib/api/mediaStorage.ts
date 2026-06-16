@@ -1,8 +1,5 @@
-// Media Storage API client
-// Calls the dedicated media storage server
-
-const MEDIA_API_URL = 'https://media.chipmeo.io.vn';
-const MEDIA_API_KEY = 'chipmeo-media-api-key-2024';
+import { api } from '$lib/api/utils.js';
+import { API_ENDPOINTS } from '$lib/config/index.js';
 
 export interface MediaFile {
 	fileName: string;
@@ -14,64 +11,23 @@ export interface MediaFile {
 }
 
 export async function getMediaFiles(folder?: string): Promise<MediaFile[]> {
-	const url = folder ? `${MEDIA_API_URL}/api/media?folder=${folder}` : `${MEDIA_API_URL}/api/media`;
-
-	const response = await fetch(url);
-	if (!response.ok) throw new Error('Failed to fetch media');
-
-	const files = await response.json();
-	// Convert relative URLs to absolute
-	return files.map((f: MediaFile) => ({
-		...f,
-		fileUrl: f.fileUrl.startsWith('http') ? f.fileUrl : `${MEDIA_API_URL}${f.fileUrl}`
-	}));
+	const url = folder ? `${API_ENDPOINTS.media}?folder=${folder}` : API_ENDPOINTS.media;
+	return api.get<MediaFile[]>(url);
 }
 
 export async function getFolders(): Promise<string[]> {
-	const response = await fetch(`${MEDIA_API_URL}/api/media/folders`);
-	if (!response.ok) throw new Error('Failed to fetch folders');
-	return response.json();
+	return ['blog', 'avatars', 'menu-items', 'combos', 'categories', 'misc'];
 }
 
 export async function uploadMedia(file: File, folder: string = 'misc'): Promise<MediaFile> {
 	const formData = new FormData();
 	formData.append('file', file);
 	formData.append('folder', folder);
-
-	const response = await fetch(`${MEDIA_API_URL}/api/media/upload`, {
-		method: 'POST',
-		headers: {
-			'X-Api-Key': MEDIA_API_KEY
-		},
-		body: formData
-	});
-
-	if (!response.ok) {
-		const error = await response.json();
-		throw new Error(error.error || 'Upload failed');
-	}
-
-	const result = await response.json();
-	return {
-		...result,
-		fileUrl: result.fileUrl.startsWith('http')
-			? result.fileUrl
-			: `${MEDIA_API_URL}${result.fileUrl}`
-	};
+	return api.upload<MediaFile>(`${API_ENDPOINTS.media}/upload`, formData);
 }
 
-export async function deleteMedia(folder: string, filename: string): Promise<void> {
-	const response = await fetch(`${MEDIA_API_URL}/api/media/${folder}/${filename}`, {
-		method: 'DELETE',
-		headers: {
-			'X-Api-Key': MEDIA_API_KEY
-		}
-	});
-
-	if (!response.ok) {
-		const error = await response.json();
-		throw new Error(error.error || 'Delete failed');
-	}
+export async function deleteMedia(id: number): Promise<void> {
+	await api.delete(`${API_ENDPOINTS.media}/${id}`);
 }
 
 export function formatFileSize(bytes: number): string {

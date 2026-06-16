@@ -1,4 +1,5 @@
-﻿using ChipmeoApis.Usecase.Interfaces;
+﻿using ChipmeoApis.Core.Constants;
+using ChipmeoApis.Usecase.Interfaces;
 using ChipmeoApis.Usecase.DTOs.Report;
 using ChipmeoApis.Core.Utils;
 using ChipmeoApis.Infrastructure.Data;
@@ -16,7 +17,7 @@ public class ReportRepository(StoreDbContext context) : IReportRepository
         var tomorrow = today.AddDays(1);
 
         var todayOrdersQuery = _context.Orders.AsNoTracking()
-            .Where(o => o.CreatedAt >= today && o.CreatedAt < tomorrow && (o.Status == "paid" || o.Status == "preparing" || o.Status == "served"));
+            .Where(o => o.CreatedAt >= today && o.CreatedAt < tomorrow && OrderStatus.ActiveSet.Contains(o.Status!));
 
         var todayRevenue = await todayOrdersQuery.SumAsync(o => o.TotalAmount ?? 0, cancellationToken);
         var todayVat = await todayOrdersQuery.SumAsync(o => o.VatAmount ?? 0, cancellationToken);
@@ -34,7 +35,7 @@ public class ReportRepository(StoreDbContext context) : IReportRepository
         var peakHour = hourlyOrders != null ? $"{hourlyOrders.Hour}:00 - {hourlyOrders.Hour + 1}:00" : "N/A";
 
         var popularItemsList = await _context.OrderItems.AsNoTracking()
-            .Where(i => i.Order.CreatedAt >= today && i.Order.CreatedAt < tomorrow && (i.Order.Status == "paid" || i.Order.Status == "preparing" || i.Order.Status == "served"))
+            .Where(i => i.Order.CreatedAt >= today && i.Order.CreatedAt < tomorrow && OrderStatus.ActiveSet.Contains(i.Order.Status!))
             .GroupBy(i => i.MenuItemName)
             .Select(g => new { Name = g.Key, Sold = g.Sum(i => i.Quantity) })
             .OrderByDescending(x => x.Sold)
@@ -65,7 +66,7 @@ public class ReportRepository(StoreDbContext context) : IReportRepository
     public async Task<DashboardStatsDto> GetStatsAsync(DateTime fromDate, DateTime toDate, string groupBy, CancellationToken cancellationToken = default)
     {
         var ordersQuery = _context.Orders.AsNoTracking()
-            .Where(o => o.CreatedAt >= fromDate && o.CreatedAt <= toDate && (o.Status == "paid" || o.Status == "preparing" || o.Status == "served"));
+            .Where(o => o.CreatedAt >= fromDate && o.CreatedAt <= toDate && OrderStatus.ActiveSet.Contains(o.Status!));
 
         var totalRevenue = await ordersQuery.SumAsync(o => o.TotalAmount ?? 0, cancellationToken);
         var totalVat = await ordersQuery.SumAsync(o => o.VatAmount ?? 0, cancellationToken);
@@ -112,7 +113,7 @@ public class ReportRepository(StoreDbContext context) : IReportRepository
         }
 
         var topItemsList = await _context.OrderItems.AsNoTracking()
-            .Where(i => i.Order.CreatedAt >= fromDate && i.Order.CreatedAt <= toDate && (i.Order.Status == "paid" || i.Order.Status == "preparing" || i.Order.Status == "served") && i.MenuItemId != null)
+            .Where(i => i.Order.CreatedAt >= fromDate && i.Order.CreatedAt <= toDate && OrderStatus.ActiveSet.Contains(i.Order.Status!) && i.MenuItemId != null)
             .GroupBy(i => i.MenuItemName)
             .Select(g => new { Name = g.Key, Sold = g.Sum(i => i.Quantity) })
             .OrderByDescending(x => x.Sold)
@@ -122,7 +123,7 @@ public class ReportRepository(StoreDbContext context) : IReportRepository
         var topItems = topItemsList.Select(x => new PopularItemDto(x.Name, x.Sold)).ToList();
 
         var rawComboItems = await _context.OrderItems.AsNoTracking()
-            .Where(i => i.Order.CreatedAt >= fromDate && i.Order.CreatedAt <= toDate && (i.Order.Status == "paid" || i.Order.Status == "preparing" || i.Order.Status == "served") && (i.ComboId != null || i.MenuItemId == null))
+            .Where(i => i.Order.CreatedAt >= fromDate && i.Order.CreatedAt <= toDate && OrderStatus.ActiveSet.Contains(i.Order.Status!) && (i.ComboId != null || i.MenuItemId == null))
             .Include(i => i.Combo)
             .Select(i => new 
             { 
@@ -169,7 +170,7 @@ public class ReportRepository(StoreDbContext context) : IReportRepository
     public async Task<List<SalesDataDto>> GetSalesDataAsync(DateTime fromDate, DateTime toDate, CancellationToken cancellationToken = default)
     {
         return await _context.Orders.AsNoTracking()
-            .Where(o => o.CreatedAt >= fromDate && o.CreatedAt < toDate && (o.Status == "paid" || o.Status == "preparing" || o.Status == "served"))
+            .Where(o => o.CreatedAt >= fromDate && o.CreatedAt < toDate && OrderStatus.ActiveSet.Contains(o.Status!))
             .GroupBy(o => o.CreatedAt!.Value.Date)
             .Select(g => new SalesDataDto
             {
@@ -187,7 +188,7 @@ public class ReportRepository(StoreDbContext context) : IReportRepository
         var monthStart = new DateTime(now.Year, now.Month, 1);
 
         var paidOrders = await _context.Orders.AsNoTracking()
-            .Where(o => o.Status == "paid" || o.Status == "preparing" || o.Status == "served")
+            .Where(o => OrderStatus.ActiveSet.Contains(o.Status!))
             .Include(o => o.OrderItems)
             .Include(o => o.Source)
             .ToListAsync(cancellationToken);
@@ -201,7 +202,7 @@ public class ReportRepository(StoreDbContext context) : IReportRepository
         var totalRevenue = paidOrders.Sum(o => o.TotalAmount ?? 0);
 
         var popularItemsList = await _context.OrderItems.AsNoTracking()
-            .Where(oi => (oi.Order.Status == "paid" || oi.Order.Status == "preparing" || oi.Order.Status == "served") && oi.Order.CreatedAt >= todayStart && oi.Order.CreatedAt < todayStart.AddDays(1) && oi.MenuItemId != null)
+            .Where(oi => OrderStatus.ActiveSet.Contains(oi.Order.Status!) && oi.Order.CreatedAt >= todayStart && oi.Order.CreatedAt < todayStart.AddDays(1) && oi.MenuItemId != null)
             .GroupBy(oi => new { oi.MenuItemId, Name = oi.MenuItemName })
             .Select(g => new
             {
@@ -216,7 +217,7 @@ public class ReportRepository(StoreDbContext context) : IReportRepository
         var popularItems = popularItemsList.Select(x => new PopularItemLegacyDto(x.Name, x.Quantity, x.Revenue)).ToList();
 
         var popularCombosList = await _context.OrderItems.AsNoTracking()
-            .Where(oi => (oi.Order.Status == "paid" || oi.Order.Status == "preparing" || oi.Order.Status == "served") && oi.Order.CreatedAt >= todayStart && oi.Order.CreatedAt < todayStart.AddDays(1) && oi.ComboId != null)
+            .Where(oi => OrderStatus.ActiveSet.Contains(oi.Order.Status!) && oi.Order.CreatedAt >= todayStart && oi.Order.CreatedAt < todayStart.AddDays(1) && oi.ComboId != null)
             .GroupBy(oi => new { oi.ComboId, Name = oi.MenuItemName })
             .Select(g => new
             {
@@ -311,7 +312,7 @@ public class ReportRepository(StoreDbContext context) : IReportRepository
     {
         return await _context.Orders
             .Include(o => o.OrderItems)
-            .Where(o => o.CreatedAt >= fromDate && (o.Status == "paid" || o.Status == "preparing" || o.Status == "served"))
+            .Where(o => o.CreatedAt >= fromDate && OrderStatus.ActiveSet.Contains(o.Status!))
             .SelectMany(o => o.OrderItems
                 .Where(oi => oi.MenuItemId != null)
                 .Select(oi => new ComboRecommendationDataDto

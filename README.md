@@ -14,7 +14,10 @@
     <img src="https://img.shields.io/badge/TypeScript-6-3178C6?logo=typescript" alt="TypeScript 6">
     <img src="https://img.shields.io/badge/Vite-8-646CFF?logo=vite" alt="Vite 8">
     <img src="https://img.shields.io/badge/Tailwind_CSS-4-06B6D4?logo=tailwindcss" alt="Tailwind CSS 4">
-    <img src="https://img.shields.io/badge/SQL_Server-CC2927?logo=microsoftsqlserver" alt="SQL Server">
+    <img src="https://img.shields.io/badge/PostgreSQL-18-4169E1?logo=postgresql" alt="PostgreSQL 18">
+    <img src="https://img.shields.io/badge/Redis-8-DC382D?logo=redis" alt="Redis 8">
+    <img src="https://img.shields.io/badge/Traefik-latest-24D1C4?logo=traefik" alt="Traefik">
+    <img src="https://img.shields.io/badge/Docker-2496ED?logo=docker" alt="Docker">
   </p>
 
   <br>
@@ -55,7 +58,7 @@ Chipmeo Foodstore is a production-ready restaurant management platform designed 
 
 ### Real-Time
 - **SignalR hub** for live order updates, menu changes, table status, and kitchen notifications
-- BFF integration with MessagePack protocol for efficient binary transport
+- MessagePack protocol for efficient binary transport
 
 ### Machine Learning
 - **Sales forecasting** using `Microsoft.ML.TimeSeries` (SSA estimation)
@@ -74,53 +77,58 @@ Chipmeo Foodstore is a production-ready restaurant management platform designed 
 | **ApexCharts** | Interactive analytics charts |
 | **Croppie** | Client-side image cropping |
 | **SignalR** | Real-time WebSocket communication |
+| **@sveltejs/adapter-node** | Node.js production server (Docker) |
 
 ### Backend — ChipmeoApis (`ChipmeoApis/`)
 | Layer | Technology |
 |---|---|
 | **Core** | .NET 10, EF Core Abstractions |
-| **Usecase** | BCrypt, JWT, ML.NET, IMemoryCache |
-| **Infrastructure** | EF Core (SQL Server), FluentFTP |
+| **Usecase** | BCrypt, JWT, ML.NET, StackExchangeRedis |
+| **Infrastructure** | EF Core (PostgreSQL/Npgsql), AWS S3 SDK, Redis |
 | **Web** | ASP.NET Core, SignalR, JWT Bearer, Rate Limiting |
 
-### Media Server — MediaStorageManagement (`MediaStorageManagement/`)
-- Standalone .NET 10 Minimal API for file storage
-- API-key authenticated uploads/deletes
-- Serves static files directly from disk
-
 ### Database
-- **SQL Server** with Entity Framework Core 10
+- **PostgreSQL 18** with Vietnamese collation (`vi-VN-x-ICU`)
 - 23 tables covering the full restaurant domain model
-- Collation: `SQL_Latin1_General_CP1_CI_AI`
+- Entity Framework Core 10 with Npgsql provider
+
+### Caching
+- **Redis 8** — distributed cache (replaces legacy `IMemoryCache`)
+
+### Media Storage
+- **RustFS** (S3-compatible object storage)
+- **AWS SDK for .NET** (`AWSSDK.S3`) for S3 API calls
+
+### Reverse Proxy
+- **Traefik** (latest) — single entry point, routes `/api/*` & `/hubs/*` to API, everything else to webapp
 
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    ChipmeoFoodstore                          │
-├─────────────────────┬───────────────────┬───────────────────┤
-│    ChipmeoPOS       │   ChipmeoApis     │MediaStorageMgmt   │
-│   (SvelteKit UI)    │  (.NET Clean API) │  (.NET File API)  │
-│                     │                   │                   │
-│  ┌───────────────┐  │ ┌─────────────┐   │ ┌─────────────┐   │
-│  │  POS Module   │  │ │   Web/API   │   │ │Minimal API  │   │
-│  │  Admin Module │  │ │   (JWT)     │   │ │(API Key)    │   │
-│  │  Kitchen View │  │ ├─────────────┤   │ └─────────────┘   │
-│  │  Blog Editor  │  │ │ Usecase     │   │                   │
-│  └───────┬───────┘  │ ├─────────────┤   └───────────────────┘
-│          │           │ │Infrastructure│          │
-│          │  SignalR  │ ├─────────────┤          │
-│          ◄──────────►│ │   Core      │          │
-│          │  REST API │ └─────────────┘          │
-│          ◄──────────►│         │                │
-│          │           │    SQL Server │     Disk Storage
-│          └───────────┴──────────┴────────────────┘
+Internet (port 80)
+     │
+     ▼
+┌──────────┐
+│  Traefik  │  ← Reverse Proxy (latest)
+└────┬─────┘
+     │
+     ├── /api/* , /hubs/* ────────► api:8080 (ASP.NET Core 10)
+     │
+     └── Host(localhost) ─────────► webapp:3000 (SvelteKit Node)
+                                        │
+                                        ▼
+                                   api:8080 (SSR internal)
+                                        │
+                               ┌────────┼────────┐
+                               ▼        ▼        ▼
+                            db:5432  redis:6379  rustfs:9000
+                          (PG 18)   (Redis 8)   (S3 Storage)
 ```
 
 The backend follows **Clean Architecture** with 4 layers:
 1. **Core** — domain entities (no dependencies)
 2. **Usecase** — business logic, DTOs, service interfaces
-3. **Infrastructure** — EF Core DbContext, repositories, FTP
+3. **Infrastructure** — EF Core DbContext, repositories, S3, Redis
 4. **Web** — controllers, middleware, SignalR hub
 
 ## Project Structure
@@ -130,9 +138,11 @@ ChipmeoFoodstore/
 ├── ChipmeoApis/                    # Backend (.NET 10)
 │   ├── ChipmeoApis.Core/           #   Domain entities
 │   ├── ChipmeoApis.Usecase/        #   Business logic & DTOs
-│   ├── ChipmeoApis.Infrastructure/ #   EF Core, repositories
+│   ├── ChipmeoApis.Infrastructure/ #   EF Core, S3, Redis
+│   ├── Dockerfile                  #   Docker image
 │   └── ChipmeoApis.Web/            #   API controllers, hubs
 ├── ChipmeoPOS/                     # Frontend (SvelteKit)
+│   ├── Dockerfile                  #   Docker image
 │   ├── src/
 │   │   ├── lib/
 │   │   │   ├── api/                #   API client modules
@@ -148,106 +158,96 @@ ChipmeoFoodstore/
 │   │       ├── logout/
 │   │       └── error/
 │   └── ...
-├── MediaStorageManagement/         # Media file server
-│   └── MediaStorageManagement/
+├── scripts/                        # DB init scripts
+│   └── init.sql                    # PostgreSQL schema + seed
+├── docker-compose.yml              # Full stack orchestration
+├── .env                            # Environment variables
 └── docs/
 ```
 
 ## Getting Started
 
 ### Prerequisites
-- [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
-- [Node.js 22+](https://nodejs.org)
-- [SQL Server](https://www.microsoft.com/en-us/sql-server) (local or remote)
-- [Git](https://git-scm.com)
+- [Docker](https://www.docker.com) + Docker Compose
+- [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) (local dev)
+- [Node.js 22+](https://nodejs.org) (local dev)
 
-### 1. Clone & Setup Database
+### 1. Quick Start (Docker — Recommended)
 
 ```bash
+# Clone & start full stack
 git clone https://github.com/qtuanph/ChipmeoFoodstore.git
 cd ChipmeoFoodstore
+
+# Full stack: traefik + db + redis + rustfs + api + webapp
+docker compose up -d
 ```
 
-Create a SQL Server database named `pos_shop` and run the migration:
+Open **http://localhost** → Traefik routes to webapp.
+
+Default admin login: **admin** / **admin123**
+
+### 2. Local Development (without Docker)
 
 ```bash
+# Terminal 1 — Dependencies (PostgreSQL + Redis + RustFS)
+docker compose up -d db redis rustfs
+
+# Terminal 2 — Backend API
 cd ChipmeoApis
-dotnet ef database update --project ChipmeoApis.Web
-```
+dotnet run --project ChipmeoApis.Web   # http://localhost:5142
 
-> **Note**: Update the connection string in `ChipmeoApis/ChipmeoApis.Web/appsettings.json` to point to your SQL Server instance.
-
-### 2. Run the Backend API
-
-```bash
-cd ChipmeoApis
-dotnet run --project ChipmeoApis.Web
-```
-
-The API starts at `http://localhost:5142`.
-
-### 3. Run the Media Server
-
-```bash
-cd MediaStorageManagement
-dotnet run --project MediaStorageManagement
-```
-
-### 4. Run the Frontend
-
-```bash
+# Terminal 3 — Frontend
 cd ChipmeoPOS
 npm install
-npm run dev
+npm run dev                            # http://localhost:5173
 ```
 
-The frontend starts at `http://localhost:5173` with a Vite proxy forwarding `/api` and `/hubs` to the backend.
+> The Vite dev server proxies `/api` and `/hubs` to `localhost:5142` automatically.
 
-### Build for Production
+### 3. Build Docker Images
 
 ```bash
-# Frontend
-cd ChipmeoPOS
-npm run build          # Output: .svelte-kit/output/
-
-# Backend
-cd ChipmeoApis
-dotnet publish -c Release
+docker compose build
 ```
 
 ## Configuration
 
-### Backend (`appsettings.json`)
-```json
-{
-  "ConnectionStrings": {
-    "DefaultConnection": "Server=.;Database=pos_shop;Integrated Security=True;TrustServerCertificate=True"
-  },
-  "JwtSettings": {
-    "SecretKey": "your-256-bit-secret",
-    "Issuer": "ChipmeoApisAPI",
-    "Audience": "ChipmeoApisFrontend",
-    "ExpiryInHours": 1
-  }
-}
+### Environment (`.env`)
+```env
+# PostgreSQL
+POSTGRES_USER=chipmeo
+POSTGRES_DB=pos_shop
+DB_PASSWORD=REMOVED
+
+# Redis
+REDIS_PASSWORD=
+
+# S3 (RustFS)
+S3_ACCESS_KEY=chipmeo
+S3_SECRET_KEY=REMOVED
+S3_BUCKET=food-media
+
+# JWT
+JWT_SECRET=REMOVED
+
+# Frontend
+PUBLIC_API_URL=http://api:8080
 ```
+
+### Backend (`appsettings.json`)
+Settings overridden by environment variables in Docker. Key config sections:
+- `ConnectionStrings:DefaultConnection` — PostgreSQL
+- `ConnectionStrings:Redis` — Redis
+- `S3:Endpoint` / `S3:Bucket` — S3 object storage
+- `JwtSettings:SecretKey` — JWT signing key
 
 ### Frontend (`src/lib/config/index.ts`)
-The frontend auto-detects its environment (localhost, Vercel demo, or production via `food.chipmeo.io.vn`) and selects the corresponding API URLs.
-
-### Media Server (`appsettings.json`)
-```json
-{
-  "Storage": {
-    "Path": "D:\\MediaStorage"
-  },
-  "Security": {
-    "ApiKey": "your-api-key"
-  }
-}
-```
+Auto-detects environment. In Docker, server-side uses `PUBLIC_API_URL=http://api:8080`; browser uses relative URLs via Traefik proxy.
 
 ## API Overview
+
+All API requests go through Traefik at `http://localhost/api/*`.
 
 ### Authentication
 - `POST /api/auth/login` — Employee login (JWT)
@@ -263,10 +263,6 @@ The frontend auto-detects its environment (localhost, Vercel demo, or production
 
 ### Admin
 - Full CRUD for categories, menu items, add-ons, combos, discounts, sources, employees, roles, customers, blog posts, tags, payment settings
-- `GET /admin/dashboard/overview` — KPIs
-- `GET /admin/dashboard/analytics` — Time-series stats
-- `GET /admin/dashboard/forecast` — ML sales forecast
-- `GET /admin/dashboard/recommendations` — Combo recommendations
 
 ### Kitchen
 - `GET /api/kitchen/orders` — Order queue
@@ -274,34 +270,40 @@ The frontend auto-detects its environment (localhost, Vercel demo, or production
 - `PUT /api/kitchen/orders/{id}/complete` — Complete order
 
 ### Media
+- `POST /api/media/upload` — Upload file (saved to S3)
 - `GET /api/media` — List media
-- `POST /api/media/upload` — Upload file
 - `DELETE /api/media/{id}` — Delete media
 
 ### SignalR Hub
 - **Endpoint**: `/hubs/app`
 - **Events**: order updates, menu updates, table updates, kitchen notifications
 
+## Docker Compose Services
+
+| Service | Image | Internal Port | External | Depends On |
+|---------|-------|--------------|----------|------------|
+| **traefik** | `traefik:latest` | `:8080` (web) | **`:80`** | — |
+| **db** | `postgres:18-alpine` | `:5432` | — | — |
+| **redis** | `redis:8-alpine` | `:6379` | — | — |
+| **rustfs** | `rustfs/rustfs:latest` | `:9000` (S3), `:9001` (console) | — | — |
+| **api** | `chipmeofoodstore-api` (build) | `:8080` | — | db, redis, rustfs (healthy) |
+| **webapp** | `chipmeofoodstore-webapp` (build) | `:3000` | — | api |
+
+### Data Volumes
+| Volume | Mount | Purpose |
+|--------|-------|---------|
+| `postgres_data` | `/var/lib/postgresql` | PostgreSQL data |
+| `redis_data` | `/data` | Redis persistence |
+| `s3_data` | `/data` | RustFS object storage |
+
 ## Deployment
 
-The project is designed for flexible deployment:
+```bash
+docker compose up -d
+```
 
-| Component | Hosting Options |
-|---|---|
-| **Frontend** | Vercel, Netlify, IIS, any Node.js host |
-| **Backend API** | IIS, Azure App Service, Linux container |
-| **Media Server** | IIS, Azure, any Windows/Linux server |
-| **Database** | SQL Server (on-prem or cloud) |
-
-Environment-specific domains:
-- `food.chipmeo.io.vn` — Production frontend
-- `api.chipmeo.io.vn` — Production API
-- `media.chipmeo.io.vn` — Media server
-- `foodchipmeo.vercel.app` — Vercel demo
-
-## Roadmap
-
-- [ ] Docker Compose setup (API + DB + Media Server)
+### Roadmap
+- [x] Docker Compose (Traefik + PostgreSQL + Redis + RustFS + API + Frontend)
 - [ ] Customer mobile ordering via QR code
 - [ ] Multi-branch/outlet support
 - [ ] Offline POS mode

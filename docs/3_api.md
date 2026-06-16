@@ -1,20 +1,83 @@
-# API Reference
+# API Reference v2
+
+> RESTful API với response envelope chuẩn. Tất cả routes đều có prefix `/v2/`.
 
 ## Base URLs
 
 | Environment | Base URL |
 |---|---|
-| **Development** | `http://localhost:5142` |
-| **Production** | `https://api.chipmeo.io.vn` |
-| **Media Server (dev)** | `http://localhost:5000` |
-| **Media Server (prod)** | `https://media.chipmeo.io.vn` |
+| **Docker (Traefik)** | `http://api.localhost/v2` |
+
+## Response Envelope
+
+Mọi response đều theo format:
+
+```json
+// ✅ Success — single resource (HTTP 200)
+{
+  "data": { "id": 1, "name": "Alice", "createdAt": "2026-01-15T10:30:00Z" },
+  "error": null,
+  "meta": { "requestId": "...", "timestamp": "2026-01-15T10:30:00Z" }
+}
+
+// ✅ Success — collection (HTTP 200)
+{
+  "data": [ ... ],
+  "error": null,
+  "meta": {
+    "page": 1,
+    "pageSize": 20,
+    "totalCount": 87,
+    "totalPages": 5
+  }
+}
+
+// ✅ Error (HTTP 4xx/5xx)
+{
+  "data": null,
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Username and password are required",
+    "details": [
+      { "field": "email", "message": "must not be empty" }
+    ]
+  },
+  "meta": { "requestId": "...", "timestamp": "..." }
+}
+```
+
+### HTTP Status Codes
+
+| Code | Meaning |
+|---|---|
+| 200 | Success |
+| 201 | Created (POST) |
+| 204 | No Content (DELETE) |
+| 400 | Bad Request / Validation Error |
+| 401 | Unauthorized |
+| 403 | Forbidden |
+| 404 | Not Found |
+| 429 | Too Many Requests |
+| 500 | Internal Server Error |
+
+### Error Codes
+
+| Code | Description |
+|---|---|
+| `VALIDATION_ERROR` | Input validation failed |
+| `NOT_FOUND` | Resource not found |
+| `INTERNAL_ERROR` | Server error |
+| `UNAUTHORIZED` | Authentication required |
+| `FORBIDDEN` | Insufficient permissions |
+
+---
 
 ## Authentication
 
 ### Employee Login
 
 ```
-POST /api/auth/login
+POST /v2/api/auth/login
 Content-Type: application/json
 
 {
@@ -24,41 +87,74 @@ Content-Type: application/json
 
 Response 200:
 {
-  "token": "eyJhbGciOiJI...",
-  "refreshToken": "dGhpcyBpcyBh...",
-  "employee": {
-    "id": 1,
-    "username": "admin",
-    "fullName": "Admin",
-    "roleId": 1,
-    "roleName": "Admin",
-    "avatarUrl": null
-  }
+  "data": {
+    "token": "eyJhbGciOiJI...",
+    "refreshToken": "dGhpcyBpcyBh...",
+    "user": {
+      "id": 1,
+      "username": "admin",
+      "fullName": "Admin",
+      "roleId": 1,
+      "roleName": "Admin",
+      "avatarUrl": null,
+      "permissions": ["order.view", "menu.edit", ...]
+    }
+  },
+  "error": null,
+  "meta": { "timestamp": "..." }
+}
+```
+
+### Refresh Token
+
+```
+POST /v2/api/auth/refresh
+Content-Type: application/json
+
+{
+  "refreshToken": "dGhpcyBpcyBh..."
+}
+```
+
+### Logout
+
+```
+POST /v2/api/auth/logout
+Authorization: Bearer <token>
+```
+
+### Profile
+
+```
+GET /v2/api/auth/profile
+Authorization: Bearer <token>
+
+PUT /v2/api/auth/profile
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "fullName": "New Name",
+  "email": "new@email.com"
 }
 ```
 
 ### Customer Login
 
 ```
-POST /api/customers/login
+POST /v2/api/customers/login
 Content-Type: application/json
 
 {
   "phone": "0901234567",
   "password": "customerpass"
 }
-
-Response 200:
-{
-  "token": "eyJhbGciOiJI...",
-  "customer": { ... }
-}
 ```
 
 ### Customer Registration
 
 ```
-POST /api/customers/register
+POST /v2/api/customers/register
 Content-Type: application/json
 
 {
@@ -66,15 +162,9 @@ Content-Type: application/json
   "fullName": "Nguyen Van A",
   "password": "customerpass"
 }
-
-Response 201:
-{
-  "token": "eyJhbGciOiJI...",
-  "customer": { ... }
-}
 ```
 
-### All API calls (except auth) require:
+### Authentication Header
 
 ```
 Authorization: Bearer <jwt_token>
@@ -86,7 +176,7 @@ Authorization: Bearer <jwt_token>
 
 | Method | Route | Description |
 |---|---|---|
-| `GET` | `/health` | Server health check |
+| `GET` | `/v2/api/health` | Server health check |
 
 ---
 
@@ -94,109 +184,32 @@ Authorization: Bearer <jwt_token>
 
 | Method | Route | Description | Auth |
 |---|---|---|---|
-| `GET` | `/pos/menu` | Full menu (categories + items + addons + combos + discounts) | Employee |
-| `GET` | `/pos/sources` | Active order sources/tables | Employee |
-| `GET` | `/pos/addons` | All add-ons (for POS ordering) | Employee |
-| `POST` | `/pos/orders` | Create new order | Employee |
-| `PUT` | `/pos/orders/{id}` | Update order (items, discounts) | Employee |
-| `PUT` | `/pos/orders/{id}/status` | Update order status | Employee |
-| `POST` | `/pos/orders/{id}/payment` | Process payment | Employee |
+| `GET` | `/v2/api/pos/menu` | Full menu (categories + items + addons + combos + discounts) | Employee |
+| `GET` | `/v2/api/pos/sources` | Active order sources/tables | Employee |
+| `GET` | `/v2/api/pos/addons` | All add-ons | Employee |
+| `POST` | `/v2/api/pos/orders` | Create new order | Employee |
+| `PUT` | `/v2/api/pos/orders/{id}/status` | Update order status | Employee |
+| `POST` | `/v2/api/pos/orders/{id}/payment` | Process payment | Employee |
 
 ### POS Menu Response
 
 ```json
 {
-  "categories": [
-    {
-      "id": 1,
-      "name": "Coffee",
-      "imageUrl": "https://media.chipmeo.io.vn/categories/coffee.jpg",
-      "items": [
-        {
-          "id": 1,
-          "name": "Espresso",
-          "price": 29000,
-          "imageUrl": "https://media.chipmeo.io.vn/menu-items/espresso.jpg",
-          "status": "available",
-          "allowAddons": true,
-          "addonIds": [1, 2]
-        }
-      ]
-    }
-  ],
-  "combos": [
-    {
-      "id": 1,
-      "name": "Breakfast Combo",
-      "price": 59000,
-      "imageUrl": "...",
-      "items": [{ "id": 1, "quantity": 1 }]
-    }
-  ],
-  "discounts": [
-    {
-      "id": 1,
-      "code": "WELCOME10",
-      "type": "percentage",
-      "value": 10
-    }
-  ]
-}
-```
-
-### Create Order
-
-```
-POST /pos/orders
-Content-Type: application/json
-
-{
-  "sourceId": 1,
-  "customerPhone": "0901234567",
-  "note": "Less ice",
-  "discountCode": "WELCOME10",
-  "items": [
-    {
-      "menuItemId": 1,
-      "quantity": 2,
-      "addonIds": [1, 2],
-      "note": "No sugar"
-    },
-    {
-      "comboId": 1,
-      "quantity": 1
-    }
-  ]
-}
-
-Response 201:
-{
-  "id": 42,
-  "totalAmount": 87000,
-  "discountAmount": 8700,
-  "finalAmount": 78300,
-  "status": "pending"
-}
-```
-
-### Process Payment
-
-```
-POST /pos/orders/{id}/payment
-Content-Type: application/json
-
-{
-  "method": "cash" | "qr" | "zalopay" | "momo" | "card",
-  "amount": 78300,
-  "bankTransactionId": "optional"
-}
-
-Response 200:
-{
-  "orderId": 42,
-  "paymentId": 1,
-  "status": "paid",
-  "changeAmount": 21700
+  "data": {
+    "categories": [
+      {
+        "id": 1,
+        "name": "Coffee",
+        "imageUrl": "http://localhost/uploads/food-media/categories/coffee.jpg",
+        "items": [...]
+      }
+    ],
+    "combos": [...],
+    "addons": [...],
+    "discounts": [...]
+  },
+  "error": null,
+  "meta": { "timestamp": "..." }
 }
 ```
 
@@ -206,57 +219,72 @@ Response 200:
 
 | Method | Route | Description | Auth |
 |---|---|---|---|
-| `GET` | `/api/kitchen/orders` | Get kitchen order queue (paid orders) | Employee |
-| `PUT` | `/api/kitchen/orders/{id}/start` | Start preparing → status `preparing` | Employee |
-| `PUT` | `/api/kitchen/orders/{id}/complete` | Complete → status `served` | Employee |
+| `GET` | `/v2/api/kitchen/orders` | Get kitchen order queue | Employee |
+| `PUT` | `/v2/api/kitchen/orders/{id}/start` | Start preparing | Employee |
+| `PUT` | `/v2/api/kitchen/orders/{id}/complete` | Complete → served | Employee |
 
 ---
 
-## Admin Endpoints (Full CRUD)
+## Admin Endpoints
 
-Each admin endpoint follows the same pattern:
+### CRUD Pattern
 
 | Method | Route | Description |
 |---|---|---|
-| `GET` | `/admin/{resource}` | List all |
-| `GET` | `/admin/{resource}/{id}` | Get by ID |
-| `POST` | `/admin/{resource}` | Create |
-| `PUT` | `/admin/{resource}/{id}` | Update |
-| `DELETE` | `/admin/{resource}/{id}` | Delete |
+| `GET` | `/v2/api/admin/{resource}` | List all |
+| `GET` | `/v2/api/admin/{resource}/{id}` | Get by ID |
+| `POST` | `/v2/api/admin/{resource}` | Create |
+| `PUT` | `/v2/api/admin/{resource}/{id}` | Update |
+| `DELETE` | `/v2/api/admin/{resource}/{id}` | Delete |
 
-### Admin Resources
+### Resources
 
-| Resource | Route Prefix | Auth Permission |
+| Resource | Route Prefix | Permission |
 |---|---|---|
-| Categories | `/admin/categories` | `categories.*` |
-| Menu Items | `/admin/menuitems` | `menu.*` |
-| Addons | `/admin/addons` | `menu.*` |
-| Combos | `/admin/combos` | `menu.*` |
-| Discounts | `/admin/discounts` | `discounts.*` |
-| Sources (tables) | `/admin/sources` | `sources.*` |
-| Orders | `/admin/orders` | `orders.*` |
-| Employees | `/admin/employees` | `employees.*` |
-| Roles | `/admin/roles` | `roles.*` |
-| Role Permissions | `/admin/roles/{roleId}/permissions` | `roles.*` |
-| Customers | `/api/customers` | `customers.*` |
-| Blog Posts | `/api/blog` | `blog.*` |
-| Tags | `/api/tags` | `blog.*` |
-| Payment Settings | `/admin/payment-settings` | `settings.*` |
-| Media | `/api/media` | `media.*` |
+| Categories | `/v2/api/admin/categories` | `category.*` |
+| Menu Items | `/v2/api/admin/menuitems` | `menu.*` |
+| Addons | `/v2/api/admin/addons` | `addon.*` |
+| Combos | `/v2/api/admin/combos` | `menu.*` |
+| Discounts | `/v2/api/admin/discounts` | `discount.*` |
+| Sources (tables) | `/v2/api/admin/sources` | `source.*` |
+| Orders | `/v2/api/admin/orders` | `order.*` |
+| Employees | `/v2/api/admin/employees` | `employee.*` |
+| Roles | `/v2/api/admin/roles` | `role.*` |
+| Role Permissions | `/v2/api/admin/roles/{roleId}/permissions` | `role.*` |
+| Permissions | `/v2/api/admin/permissions` | `role.*` |
+| Payment Settings | `/v2/api/admin/payment-settings` | `payment.*` |
 
 ### Special Admin Endpoints
 
 | Method | Route | Description |
 |---|---|---|
-| `GET` | `/admin/dashboard/overview` | KPIs (revenue, orders, customers, popular items) |
-| `GET` | `/admin/dashboard/stats` | Detailed statistics |
-| `GET` | `/admin/dashboard/analytics` | Time-series data (daily/weekly/monthly) |
-| `GET` | `/admin/dashboard/forecast` | ML sales forecast (next 7 days) |
-| `GET` | `/admin/dashboard/recommendations` | Combo recommendations (co-occurrence) |
-| `GET` | `/admin/orders/paged` | Paginated orders with filters |
-| `GET` | `/admin/orders/status/{status}` | Orders filtered by status |
-| `PUT` | `/admin/orders/{id}/set-unpaid` | Revert payment to unpaid |
-| `GET` | `/api/reports/dashboard-stats` | Dashboard statistics report |
+| `GET` | `/v2/api/admin/dashboard/stats` | KPIs (revenue, orders, customers) |
+| `GET` | `/v2/api/admin/dashboard/analytics` | Time-series data |
+| `GET` | `/v2/api/admin/dashboard/forecast` | Sales forecast (7 days) |
+| `GET` | `/v2/api/admin/dashboard/recommendations` | Combo recommendations |
+| `GET` | `/v2/api/admin/orders/paged?page=1&pageSize=20` | Paginated orders |
+| `GET` | `/v2/api/admin/orders/status/{status}` | Orders by status |
+| `PUT` | `/v2/api/admin/orders/{id}/set-unpaid` | Revert payment |
+| `GET` | `/v2/api/admin/orders/date-range?fromDate=...&toDate=...` | Orders by date range |
+
+### Paginated Response Example
+
+```json
+GET /v2/api/admin/orders/paged?page=1&pageSize=10
+
+{
+  "data": [
+    { "id": 42, "finalAmount": 78300, "status": "paid", ... }
+  ],
+  "error": null,
+  "meta": {
+    "page": 1,
+    "pageSize": 10,
+    "totalCount": 87,
+    "totalPages": 9
+  }
+}
+```
 
 ---
 
@@ -264,16 +292,16 @@ Each admin endpoint follows the same pattern:
 
 | Method | Route | Description | Auth |
 |---|---|---|---|
-| `POST` | `/api/customers/register` | Register | None |
-| `POST` | `/api/customers/login` | Login | None |
-| `GET` | `/api/customers/me` | Get profile | Customer |
-| `PUT` | `/api/customers/me` | Update profile | Customer |
-| `GET` | `/api/customers/lookup/{phone}` | POS phone lookup | Employee |
-| `GET` | `/api/customers` | List all (admin) | Employee |
-| `GET` | `/api/customers/{id}` | Get by ID (admin) | Employee |
-| `POST` | `/api/customers` | Create (admin) | Employee |
-| `PUT` | `/api/customers/{id}` | Update (admin) | Employee |
-| `DELETE` | `/api/customers/{id}` | Delete (admin) | Employee |
+| `POST` | `/v2/api/customers/register` | Register | None |
+| `POST` | `/v2/api/customers/login` | Login | None |
+| `GET` | `/v2/api/customers/me` | Get profile | Customer |
+| `PUT` | `/v2/api/customers/me` | Update profile | Customer |
+| `GET` | `/v2/api/customers/lookup/{phone}` | POS phone lookup | Employee |
+| `GET` | `/v2/api/customers` | List all (admin) | Employee |
+| `GET` | `/v2/api/customers/{id}` | Get by ID | Employee |
+| `POST` | `/v2/api/customers` | Create (admin) | Employee |
+| `PUT` | `/v2/api/customers/{id}` | Update | Employee |
+| `DELETE` | `/v2/api/customers/{id}` | Delete | Employee |
 
 ---
 
@@ -281,64 +309,63 @@ Each admin endpoint follows the same pattern:
 
 | Method | Route | Description | Auth |
 |---|---|---|---|
-| `GET` | `/api/blog` | Public blog list | None |
-| `GET` | `/api/blog/{slug}` | Public blog detail | None |
-| `POST` | `/api/blog` | Create post | Employee |
-| `PUT` | `/api/blog/{id}` | Update post | Employee |
-| `DELETE` | `/api/blog/{id}` | Delete post | Employee |
-| `GET` | `/api/tags` | List tags | None |
-| `GET` | `/api/tags/{id}` | Get tag | None |
-| `GET` | `/api/tags/slug/{slug}` | Get tag by slug | None |
-| `POST` | `/api/tags` | Create tag | Employee |
-| `PUT` | `/api/tags/{id}` | Update tag | Employee |
-| `DELETE` | `/api/tags/{id}` | Delete tag | Employee |
+| `GET` | `/v2/api/blog` | Public blog list | None |
+| `GET` | `/v2/api/blog/{slug}` | Public blog detail | None |
+| `POST` | `/v2/api/blog` | Create post | Employee |
+| `PUT` | `/v2/api/blog/{id}` | Update post | Employee |
+| `DELETE` | `/v2/api/blog/{id}` | Delete post | Employee |
+| `GET` | `/v2/api/tags` | List tags | None |
+| `GET` | `/v2/api/tags/{id}` | Get tag | None |
+| `GET` | `/v2/api/tags/slug/{slug}` | Get tag by slug | None |
+| `POST` | `/v2/api/tags` | Create tag | Employee |
+| `PUT` | `/v2/api/tags/{id}` | Update tag | Employee |
+| `DELETE` | `/v2/api/tags/{id}` | Delete tag | Employee |
 
 ---
 
-## Media Endpoints
+## Reports
 
 | Method | Route | Description | Auth |
 |---|---|---|---|
-| `POST` | `/api/media/upload` | Upload file (multipart) | Employee |
-| `GET` | `/api/media` | List all media (paginated) | Employee |
-| `DELETE` | `/api/media/{id}` | Delete media | Employee |
-| `GET` | `/api/media/check-usage` | Check if URL is referenced | Employee |
-| `GET` | `/api/media/unused` | Find unused media | Employee |
-| `DELETE` | `/api/media/cleanup` | Bulk delete unused media | Employee |
+| `GET` | `/v2/api/reports/dashboard-stats` | Dashboard stats | Employee |
+
+---
+
+## Media
+
+| Method | Route | Description | Auth |
+|---|---|---|---|
+| `POST` | `/v2/api/media/upload` | Upload file (multipart) | Employee |
+| `GET` | `/v2/api/media` | List media (paginated) | Employee |
+| `DELETE` | `/v2/api/media/{id}` | Delete media | Employee |
+| `GET` | `/v2/api/media/check-usage` | Check URL usage | Employee |
+| `GET` | `/v2/api/media/unused` | Find unused media | Employee |
+| `DELETE` | `/v2/api/media/cleanup` | Bulk delete unused | Employee |
 
 ### Media Upload
 
 ```
-POST /api/media/upload
+POST /v2/api/media/upload
 Content-Type: multipart/form-data
+Authorization: Bearer <token>
 
 file: <binary>
 folder: "menu-items" | "categories" | "combos" | "blog" | "avatars" | "misc"
 
 Response 201:
 {
-  "id": 1,
-  "url": "https://media.chipmeo.io.vn/menu-items/espresso.jpg",
-  "fileName": "espresso.jpg",
-  "folder": "menu-items",
-  "contentType": "image/jpeg",
-  "size": 24576
+  "data": {
+    "id": 1,
+    "url": "http://localhost/uploads/food-media/menu-items/espresso.jpg",
+    "fileName": "espresso.jpg",
+    "folder": "menu-items",
+    "contentType": "image/jpeg",
+    "size": 24576
+  },
+  "error": null,
+  "meta": { "timestamp": "..." }
 }
 ```
-
----
-
-## Media Storage Server Endpoints
-
-**Base**: `http://localhost:5000` (dev) | `https://media.chipmeo.io.vn` (prod)
-**Auth**: `X-Api-Key: <your-api-key>` (write operations only)
-
-| Method | Route | Auth | Description |
-|---|---|---|---|
-| `GET` | `/api/media/folders` | None | List available folders |
-| `GET` | `/api/media?folder={name}` | None | List files in folder |
-| `POST` | `/api/media/upload` | X-Api-Key | Upload file (max 10MB, images only) |
-| `DELETE` | `/api/media/{folder}/{filename}` | X-Api-Key | Delete file |
 
 ---
 
@@ -351,46 +378,17 @@ Response 201:
 
 | Method | Description |
 |---|---|
-| `JoinGroup(groupName)` | Join a notification group |
-| `LeaveGroup(groupName)` | Leave a notification group |
+| `JoinGroup(groupName)` | Join notification group |
+| `LeaveGroup(groupName)` | Leave notification group |
 
 ### Server → Client
 
 | Event | Payload | Description |
 |---|---|---|
-| `OrderStatusChanged` | `{ orderId, status, updatedAt }` | Order status changed |
-| `MenuUpdated` | `{ entity, action }` | Menu/category/addon changed |
-| `TableUpdated` | `{ sourceId, action }` | Table/source changed |
-| `KitchenNotification` | `{ orderId, items }` | New order for kitchen |
-
----
-
-## Error Response Format
-
-```json
-{
-  "type": "https://tools.ietf.org/html/rfc7231#section-6.5.1",
-  "title": "Validation Error",
-  "status": 400,
-  "errors": {
-    "fieldName": ["The field is required."]
-  }
-}
-
-// Unauthorized
-{
-  "status": 401,
-  "title": "Unauthorized",
-  "detail": "Invalid credentials"
-}
-
-// Forbidden (permission denied)
-{
-  "status": 403,
-  "title": "Forbidden",
-  "detail": "You do not have permission: orders.delete"
-}
-```
+| `ReceiveOrderUpdate` | `{ id, status, ... }` | Order changed |
+| `ReceiveTableUpdate` | `{ ... }` | Table/source changed |
+| `ReceiveNewOrder` | `{ ... }` | New order for kitchen |
+| `ReceiveSourceUpdate` | `{ ... }` | Source updated |
 
 ---
 
@@ -403,7 +401,7 @@ Response 201:
 | `preparing` | Kitchen started preparing |
 | `ready` | Ready to serve |
 | `served` | Delivered to customer |
-| `paid` | Payment completed (after POS payment) |
+| `paid` | Payment completed |
 | `cancelled` | Order cancelled |
 
 ## Payment Methods

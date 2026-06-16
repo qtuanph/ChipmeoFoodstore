@@ -1,38 +1,44 @@
 ﻿using ChipmeoApis.Usecase.Interfaces;
 using ChipmeoApis.Usecase.DTOs.MenuItem;
+using ChipmeoApis.Usecase.Utils;
+using ChipmeoApis.Core.Constants;
 using ChipmeoApis.Core.Entities;
 using ChipmeoApis.Core.Utils;
-
-using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Caching.Distributed;
 
 namespace ChipmeoApis.Usecase.Services;
 
-public class MenuItemService(IMenuItemRepository repo, IMemoryCache cache, IMediaService mediaService) : IMenuItemService
+public class MenuItemService : IMenuItemService
 {
-    private readonly IMenuItemRepository _repo = repo;
-    private readonly IMemoryCache _cache = cache;
-    private readonly IMediaService _mediaService = mediaService;
-    private const string CacheKey = "menu_items_all";
+    private readonly IMenuItemRepository _repo;
+    private readonly IDistributedCache _cache;
+    private readonly IMediaService _mediaService;
+
+    public MenuItemService(IMenuItemRepository repo, IDistributedCache cache, IMediaService mediaService)
+    {
+        _repo = repo;
+        _cache = cache;
+        _mediaService = mediaService;
+    }
 
     public async Task<IEnumerable<MenuItemDto>> GetAllAsync(CancellationToken cancellationToken = default)
     {
-        return await _cache.GetOrCreateAsync(CacheKey, async entry =>
+        return await _cache.GetOrSetAsync(CacheKeys.MenuItems.All, async () =>
         {
-            entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10);
             var items = await _repo.GetAllAsync(cancellationToken);
             return items.Select(i => new MenuItemDto(
-                i.Id, 
-                i.CategoryId, 
+                i.Id,
+                i.CategoryId,
                 i.Name,
                 i.Description,
                 i.Price,
                 i.ImageUrl,
-                i.IsActive, 
-                i.CreatedAt, 
+                i.IsActive,
+                i.CreatedAt,
                 i.Category?.Name,
                 i.MenuItemAddons?.Select(ma => new Usecase.DTOs.Addon.AddonDto { Id = ma.Addon.Id, Name = ma.Addon.Name, Price = ma.Addon.Price, IsActive = ma.Addon.IsActive ?? false }).ToList()
-            ));
-        }) ?? Enumerable.Empty<MenuItemDto>();
+            )).ToList();
+        }, TimeSpan.FromMinutes(10), cancellationToken);
     }
 
     public async Task<MenuItemDto?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
@@ -71,7 +77,7 @@ public class MenuItemService(IMenuItemRepository repo, IMemoryCache cache, IMedi
             await _mediaService.LinkMediaToEntityAsync(dto.ImageUrl, "menu_item", created.Id);
         }
 
-        _cache.Remove(CacheKey); // Invalidate cache
+        await _cache.RemoveAsync(CacheKeys.MenuItems.All, cancellationToken);
         return new MenuItemDto(
             created.Id, 
             created.CategoryId, 
@@ -99,7 +105,6 @@ public class MenuItemService(IMenuItemRepository repo, IMemoryCache cache, IMedi
         existing.ImageUrl = dto.ImageUrl;
         existing.IsActive = dto.IsActive;
 
-        // Update addons
         if (dto.AddonIds != null)
         {
             existing.MenuItemAddons ??= new List<MenuItemAddon>();
@@ -117,7 +122,7 @@ public class MenuItemService(IMenuItemRepository repo, IMemoryCache cache, IMedi
             await _mediaService.LinkMediaToEntityAsync(dto.ImageUrl, "menu_item", id);
         }
 
-        _cache.Remove(CacheKey); // Invalidate cache
+        await _cache.RemoveAsync(CacheKeys.MenuItems.All, cancellationToken);
         return true;
     }
 
@@ -127,16 +132,8 @@ public class MenuItemService(IMenuItemRepository repo, IMemoryCache cache, IMedi
         if (existing == null) return false;
         
         await _repo.DeleteAsync(existing, cancellationToken);
-        
-        // Cleanup media
         await _mediaService.DeleteMediaByEntityAsync("menu_item", id);
-
-        _cache.Remove(CacheKey); // Invalidate cache
+        await _cache.RemoveAsync(CacheKeys.MenuItems.All, cancellationToken);
         return true;
     }
 }
-
-
-
-
-
