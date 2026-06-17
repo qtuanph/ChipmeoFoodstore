@@ -73,6 +73,8 @@ Chipmeo Foodstore is a production-ready restaurant management platform designed 
 | **TypeScript 6** | Type-safe development |
 | **Vite 8** (Rolldown/Oxc) | Build tool & dev server |
 | **Tailwind CSS 4** | Utility-first styling |
+| **@iconify/svelte** | Tabler Icons via Iconify (275k+ icons, on-demand) |
+| **Flowbite** | Vanilla JS UI components via data-* API + initFlowbite() |
 | **TipTap** | Rich text editor for blog posts |
 | **ApexCharts** | Interactive analytics charts |
 | **Croppie** | Client-side image cropping |
@@ -147,6 +149,9 @@ ChipmeoFoodstore/
 │   │   ├── lib/
 │   │   │   ├── api/                #   API client modules
 │   │   │   ├── components/         #   Reusable UI components
+│   │   │   │   ├── ui/             #     Base components: Icon, Modal, Button, Sidebar, Table, etc.
+│   │   │   │   ├── editor/         #     TipTap rich text editor
+│   │   │   │   └── media/          #     Media gallery modal
 │   │   │   ├── services/           #   SignalR client
 │   │   │   ├── types/              #   TypeScript interfaces
 │   │   │   ├── utils/              #   Stores & helpers
@@ -236,7 +241,7 @@ PUBLIC_API_URL=http://api:8080
 ```
 
 ### Backend (`appsettings.json`)
-Settings overridden by environment variables in Docker. Key config sections:
+Settings are overridden by environment variables in Docker (via `docker-compose.yml`). The committed `appsettings.json` contains dummy placeholders — real secrets are in `.env` and passed as env vars to containers. Key config sections:
 - `ConnectionStrings:DefaultConnection` — PostgreSQL
 - `ConnectionStrings:Redis` — Redis
 - `S3:Endpoint` / `S3:Bucket` — S3 object storage

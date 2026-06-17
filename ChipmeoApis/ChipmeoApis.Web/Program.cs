@@ -86,8 +86,8 @@ builder.Services.AddSingleton<IAmazonS3>(sp =>
         UseHttp = true
     };
     var credentials = new BasicAWSCredentials(
-        config["S3:AccessKey"] ?? "chipmeo",
-        config["S3:SecretKey"] ?? "REMOVED");
+        config["S3:AccessKey"] ?? throw new InvalidOperationException("S3:AccessKey not configured"),
+        config["S3:SecretKey"] ?? throw new InvalidOperationException("S3:SecretKey not configured"));
     return new AmazonS3Client(credentials, s3Config);
 });
 

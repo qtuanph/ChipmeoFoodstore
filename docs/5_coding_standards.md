@@ -1294,6 +1294,27 @@ if (!allowedTypes.Contains(file.ContentType))
 
 ### 4.2 Git
 
+#### Tag Naming Convention
+
+> This project follows **[Semantic Versioning 2.0.0](https://semver.org/)** — tags use `MAJOR.MINOR.PATCH` format **without** `v` prefix.
+
+```
+1.0.0       # ✅ Correct (pure SemVer)
+v1.0.0      # ❌ Wrong — SemVer spec says "v1.2.3" is NOT a semantic version
+```
+
+| Bump | When | Example |
+|---|---|---|
+| **MAJOR** | Breaking API/DB schema changes, architecture rewrite | `1.0.0` → `2.0.0` |
+| **MINOR** | New features, endpoints, modules (backward compatible) | `1.0.0` → `1.1.0` |
+| **PATCH** | Bug fixes, package updates, refactoring, docs, config | `1.0.0` → `1.0.1` |
+
+**Rules:**
+- Only the **project owner** decides when to tag — AI must ask before creating any tag
+- Tags are applied to `master` branch only
+- Each tag must have a corresponding [GitHub Release](https://docs.github.com/en/repositories/releasing-projects-on-github/managing-releases-in-a-repository)
+- Never force-push tags (delete + recreate instead)
+
 #### Commit Messages
 
 ```

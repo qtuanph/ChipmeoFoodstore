@@ -104,9 +104,12 @@ MAJOR.MINOR.PATCH  (e.g., 1.0.0, 2.3.1)
 |---|---|
 | `1.0.0` | Initial project state |
 | `1.0.1` | Package upgrades + docs + coding standards |
+| `1.1.0` | Docker Compose stack, API v2, env var config |
+| `1.2.0` | Icon migration (Iconify + Tabler), UI refactor, docs update |
 
 ## Important Constraints
 
+- **NO git commands** (`commit`, `push`, `tag`, `checkout`, `rebase`, etc.) unless explicitly requested by the user
 - Do NOT modify `docs/` files without explicit user request
 - Do NOT remove eslint rule overrides without fixing all corresponding violations
 - Do NOT downgrade packages (all are at latest compatible versions)
