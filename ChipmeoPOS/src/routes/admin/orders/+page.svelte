@@ -1,12 +1,13 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
 	import { formatCurrency } from '$lib/utils/index.js';
-	import Button from '$lib/components/Button.svelte';
-	import Card from '$lib/components/Card.svelte';
-	import Toast from '$lib/components/Toast.svelte';
-	import Modal from '$lib/components/Modal.svelte';
+	import Button from '$lib/components/ui/Button.svelte';
+	import Card from '$lib/components/ui/Card.svelte';
+	import Toast from '$lib/components/ui/Toast.svelte';
+	import Modal from '$lib/components/ui/Modal.svelte';
 	import OrderHistory from '$lib/components/OrderHistory.svelte';
 	import { OrdersState } from './orders.svelte.js';
+	import Icon from '$lib/components/ui/Icon.svelte';
 
 	const vm = new OrdersState();
 
@@ -158,14 +159,7 @@
 											class="flex items-center gap-1 text-sm font-medium text-orange-600 hover:text-orange-900"
 											title="Đặt về trạng thái chưa thanh toán"
 										>
-											<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-												<path
-													stroke-linecap="round"
-													stroke-linejoin="round"
-													stroke-width="2"
-													d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-												/>
-											</svg>
+											<Icon name="tabler:refresh" class="h-4 w-4" />
 											Chưa thanh toán
 										</button>
 									{/if}

@@ -8,6 +8,7 @@
 		formatFileSize,
 		type MediaFile
 	} from '$lib/api/mediaStorage.ts';
+	import Icon from '../ui/Icon.svelte';
 
 	interface Props {
 		open: boolean;
@@ -96,8 +97,7 @@
 		if (!confirm(`Xóa ảnh "${selectedFile.fileName}"?`)) return;
 
 		try {
-			const filename = selectedFile.fileUrl.split('/').pop() || '';
-			await deleteMedia(selectedFile.folder, filename);
+			await deleteMedia(selectedFile.fileUrl);
 			mediaFiles = mediaFiles.filter((f) => f.fileUrl !== selectedFile!.fileUrl);
 			selectedFile = null;
 		} catch (err: unknown) {
@@ -242,19 +242,10 @@
 				<!-- Search -->
 				<div class="border-b border-gray-200 p-4">
 					<div class="relative">
-						<svg
+						<Icon
+							name="tabler:search"
 							class="absolute top-1/2 left-3 h-5 w-5 -translate-y-1/2 text-gray-400"
-							fill="none"
-							stroke="currentColor"
-							viewBox="0 0 24 24"
-						>
-							<path
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								stroke-width="2"
-								d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-							></path>
-						</svg>
+						/>
 						<input
 							type="text"
 							id="media-search"

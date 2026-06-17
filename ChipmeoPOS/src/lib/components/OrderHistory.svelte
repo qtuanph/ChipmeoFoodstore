@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { formatTime } from '$lib/utils/index.ts';
 	import type { OrderStatusHistory } from '$lib/types/index.ts';
+	import Icon from './ui/Icon.svelte';
 
 	let { history }: { history: OrderStatusHistory[] } = $props();
 
@@ -29,13 +30,7 @@
 							<span
 								class="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 ring-8 ring-white"
 							>
-								<svg class="h-5 w-5 text-gray-500" viewBox="0 0 20 20" fill="currentColor">
-									<path
-										fill-rule="evenodd"
-										d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"
-										clip-rule="evenodd"
-									/>
-								</svg>
+								<Icon name="tabler:clock" class="h-5 w-5 text-gray-500" />
 							</span>
 						</div>
 						<div class="flex min-w-0 flex-1 justify-between space-x-4 pt-1.5">

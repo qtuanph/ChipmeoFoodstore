@@ -1,14 +1,16 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
-	import { categories, combos, sources, discounts } from '$lib/utils/index.js';
+	import { goto } from '$app/navigation';
+	import { categories, combos, sources, discounts, auth } from '$lib/utils/index.js';
 	import { cart, cartTotals, cartActions } from '$lib/utils/index.js';
 	import { formatCurrency, formatTime } from '$lib/utils/index.js';
-	import Button from '$lib/components/Button.svelte';
-	import Modal from '$lib/components/Modal.svelte';
-	import Toast from '$lib/components/Toast.svelte';
+	import Button from '$lib/components/ui/Button.svelte';
+	import Modal from '$lib/components/ui/Modal.svelte';
+	import Toast from '$lib/components/ui/Toast.svelte';
 	import PaymentModal from '$lib/components/PaymentModal.svelte';
 	import { posStore } from './store.svelte.js';
 	import type { Addon } from '$lib/types/index.js';
+	import Icon from '$lib/components/ui/Icon.svelte';
 
 	onMount(() => {
 		posStore.init();
@@ -17,6 +19,10 @@
 	onDestroy(() => {
 		posStore.cleanup();
 	});
+
+	function handleLogout() {
+		posStore.handleLogout();
+	}
 </script>
 
 <svelte:head><title>POS - Chipmeo Foodstore</title></svelte:head>
@@ -24,66 +30,141 @@
 <div class="flex h-screen overflow-hidden bg-gray-100">
 	<!-- Left Sidebar: Categories & Menu -->
 	<div class="flex min-w-0 flex-1 flex-col">
-		<!-- Header / Search -->
-		<div class="flex items-center gap-4 border-b bg-white p-4">
-			<div class="relative flex-1">
-				<span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">
-					<svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-						<path
-							stroke-linecap="round"
-							stroke-linejoin="round"
-							stroke-width="2"
-							d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-						/>
-					</svg>
-				</span>
-				<input
-					type="text"
-					bind:value={posStore.searchQuery}
-					placeholder="Tìm kiếm món ăn..."
-					class="w-full rounded-lg border border-gray-300 py-2 pr-4 pl-10 focus:border-transparent focus:ring-2 focus:ring-indigo-500"
-				/>
+		<!-- Header -->
+		<div
+			class="flex items-center justify-between gap-4 border-b border-default bg-neutral-primary p-4"
+		>
+			<!-- LEFT: User Avatar Dropdown -->
+			<div class="flex items-center gap-3">
+				<!-- Flowbite User Dropdown Trigger -->
+				<button
+					type="button"
+					data-dropdown-toggle="userDropdown"
+					data-dropdown-placement="bottom-start"
+					class="relative h-10 w-10 overflow-hidden rounded-full cursor-pointer"
+				>
+					{#if $auth.user?.avatarUrl}
+						<img src={$auth.user.avatarUrl} alt="Avatar" class="h-full w-full object-cover" />
+					{:else}
+						<div class="flex h-full w-full items-center justify-center bg-neutral-secondary-medium">
+							<span class="font-medium text-body">
+								{($auth.user?.fullName || $auth.user?.username || 'U')[0].toUpperCase()}
+							</span>
+						</div>
+					{/if}
+				</button>
+
+				<!-- User Dropdown Menu -->
+				<div
+					id="userDropdown"
+					class="z-10 hidden bg-neutral-primary-medium border border-default-medium rounded-base shadow-lg w-72"
+				>
+					<!-- User Header -->
+					<div class="px-4 py-3 border-b border-default-medium">
+						<div class="font-medium text-heading">
+							{$auth.user?.fullName || $auth.user?.username}
+						</div>
+						<div class="truncate text-sm text-body">{$auth.user?.roleName}</div>
+					</div>
+
+					<!-- Navigation Links -->
+					<div class="p-2 border-b border-default-medium">
+						<p class="px-2 py-1 text-xs font-semibold text-body-subtle uppercase tracking-wider">
+							Điều hướng
+						</p>
+						<ul class="mt-1 space-y-1">
+							{#if ['Admin', 'Manager'].includes($auth.user?.roleName || '')}
+								<li>
+									<a
+										href="/admin"
+										class="flex items-center gap-2 rounded-md px-2 py-2 text-sm font-medium text-heading hover:bg-neutral-tertiary-medium hover:text-heading"
+									>
+										<Icon name="tabler:home" class="h-4 w-4" />
+										Dashboard
+									</a>
+								</li>
+							{/if}
+							{#if ['Admin', 'Manager', 'Cashier', 'Thu ngân'].includes($auth.user?.roleName || '')}
+								<li>
+									<a
+										href="/pos"
+										class="flex items-center gap-2 rounded-md px-2 py-2 text-sm font-medium text-heading hover:bg-neutral-tertiary-medium hover:text-heading"
+									>
+										<Icon name="tabler:news" class="h-4 w-4" />
+										POS (Thu ngân)
+									</a>
+								</li>
+							{/if}
+							{#if ['Admin', 'Manager', 'Chef', 'Kitchen', 'Cook', 'Bếp'].includes($auth.user?.roleName || '')}
+								<li>
+									<a
+										href="/kitchen"
+										class="flex items-center gap-2 rounded-md px-2 py-2 text-sm font-medium text-heading hover:bg-neutral-tertiary-medium hover:text-heading"
+									>
+										<Icon name="tabler:clock" class="h-4 w-4" />
+										Kitchen (Bếp)
+									</a>
+								</li>
+							{/if}
+						</ul>
+					</div>
+
+					<!-- Sign out -->
+					<div class="p-2">
+						<button
+							type="button"
+							onclick={handleLogout}
+							class="flex w-full items-center gap-2 rounded-md px-2 py-2 text-sm font-medium text-fg-danger hover:bg-danger-soft"
+						>
+							<Icon name="tabler:door-open" class="h-4 w-4" />
+							Đăng xuất
+						</button>
+					</div>
+				</div>
+
+				<!-- User Name (visible on larger screens) -->
+				<div class="hidden lg:block">
+					<div class="text-sm font-medium text-heading">
+						{$auth.user?.fullName || $auth.user?.username}
+					</div>
+					<div class="text-xs text-body">{$auth.user?.roleName}</div>
+				</div>
 			</div>
-			<!-- Orders Button -->
-			<button
-				onclick={() => posStore.openOrdersModal()}
-				class="flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 font-medium text-gray-700 shadow-sm transition-transform hover:bg-gray-50 active:scale-95"
-			>
-				<svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-					<path
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						stroke-width="2"
-						d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-					/>
-				</svg>
-				<span class="hidden md:inline">Hóa đơn</span>
-			</button>
 
-			<!-- Logout Button -->
-			<button
-				onclick={() => posStore.handleLogout()}
-				class="flex items-center gap-2 rounded-lg border border-red-200 bg-white px-4 py-2 font-medium text-red-600 shadow-sm transition-transform hover:bg-red-50 active:scale-95"
-				title="Đăng xuất"
-			>
-				<svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-					<path
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						stroke-width="2"
-						d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+			<!-- RIGHT: Search + Actions -->
+			<div class="flex flex-1 items-center justify-end gap-3">
+				<!-- Search -->
+				<div class="relative max-w-md flex-1">
+					<span class="absolute inset-y-0 left-0 flex items-center pl-3">
+						<Icon name="tabler:search" class="h-5 w-5 text-body" />
+					</span>
+					<input
+						type="text"
+						bind:value={posStore.searchQuery}
+						placeholder="Tìm kiếm món ăn..."
+						class="w-full rounded-base border border-default-medium bg-neutral-secondary-medium py-2 pl-10 pr-4 text-sm text-heading shadow-xs placeholder:text-body focus:border-brand focus:ring-brand"
 					/>
-				</svg>
-				<span class="hidden md:inline">Đăng xuất</span>
-			</button>
+				</div>
 
-			<!-- Table Selection Button (Mobile/Tablet) -->
-			<button
-				onclick={() => (posStore.showSourceModal = true)}
-				class="rounded-lg bg-indigo-600 px-4 py-2 font-medium text-white shadow-sm transition-transform active:scale-95 md:hidden"
-			>
-				{$cart.selectedSource ? $cart.selectedSource.name : 'Chọn nguồn'}
-			</button>
+				<!-- Orders Button -->
+				<button
+					onclick={() => posStore.openOrdersModal()}
+					class="flex items-center gap-2 rounded-base border border-default-medium bg-neutral-secondary-medium px-4 py-2 text-sm font-medium text-heading shadow-xs hover:bg-neutral-tertiary-medium"
+				>
+					<Icon name="tabler:file-text" class="h-5 w-5" />
+					<span class="hidden lg:inline">Hóa đơn</span>
+				</button>
+
+				<!-- Logout Button -->
+				<button
+					onclick={() => posStore.handleLogout()}
+					class="flex items-center gap-2 rounded-base border border-danger-subtle bg-neutral-secondary-medium px-4 py-2 text-sm font-medium text-fg-danger shadow-xs hover:bg-danger-soft"
+					title="Đăng xuất"
+				>
+					<Icon name="tabler:logout" class="h-5 w-5" />
+					<span class="hidden lg:inline">Đăng xuất</span>
+				</button>
+			</div>
 		</div>
 
 		<!-- Categories -->
@@ -221,14 +302,7 @@
 				class="animate-bounce-subtle relative flex items-center gap-2 rounded-full bg-indigo-600 p-4 text-white shadow-lg"
 				aria-label="Mở giỏ hàng"
 			>
-				<svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-					<path
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						stroke-width="2"
-						d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
-					/>
-				</svg>
+				<Icon name="tabler:shopping-cart" class="h-6 w-6" />
 				<span class="font-bold">{$cart.items.reduce((sum, item) => sum + item.quantity, 0)}</span>
 			</button>
 		</div>
@@ -243,14 +317,7 @@
 		<div class="flex flex-shrink-0 flex-col gap-3 border-b bg-gray-50 p-3 md:p-4">
 			<div class="flex items-center justify-between">
 				<h2 class="flex items-center gap-2 text-lg font-bold text-gray-800">
-					<svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-						<path
-							stroke-linecap="round"
-							stroke-linejoin="round"
-							stroke-width="2"
-							d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
-						/>
-					</svg>
+					<Icon name="tabler:shopping-cart" class="h-5 w-5" />
 					Giỏ hàng ({$cart.items.reduce((sum, item) => sum + item.quantity, 0)})
 				</h2>
 				<div class="flex items-center gap-3">
@@ -267,14 +334,7 @@
 						class="rounded-full bg-gray-100 p-1 text-gray-500 hover:text-gray-700 md:hidden"
 						aria-label="Đóng giỏ hàng"
 					>
-						<svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-							<path
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								stroke-width="2"
-								d="M6 18L18 6M6 6l12 12"
-							/>
-						</svg>
+						<Icon name="tabler:x" class="h-5 w-5" />
 					</button>
 				</div>
 			</div>
@@ -382,14 +442,7 @@
 									class="flex-shrink-0 touch-manipulation rounded-lg p-1.5 text-gray-400 transition-all hover:bg-red-50 hover:text-red-600 active:scale-90"
 									aria-label="Xóa món"
 								>
-									<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-										<path
-											stroke-linecap="round"
-											stroke-linejoin="round"
-											stroke-width="2"
-											d="M6 18L18 6M6 6l12 12"
-										/>
-									</svg>
+									<Icon name="tabler:x" class="h-4 w-4" />
 								</button>
 							</div>
 
@@ -418,14 +471,7 @@
 										disabled={item.quantity <= 1}
 										aria-label="Giảm số lượng"
 									>
-										<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-											<path
-												stroke-linecap="round"
-												stroke-linejoin="round"
-												stroke-width="2"
-												d="M20 12H4"
-											/>
-										</svg>
+										<Icon name="tabler:minus" class="h-4 w-4" />
 									</button>
 									<span class="min-w-[2rem] text-center text-base font-bold text-gray-900"
 										>{item.quantity}</span
@@ -435,14 +481,7 @@
 										class="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-600 text-white transition-all hover:bg-indigo-700 active:scale-90"
 										aria-label="Tăng số lượng"
 									>
-										<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-											<path
-												stroke-linecap="round"
-												stroke-linejoin="round"
-												stroke-width="2"
-												d="M12 4v16m8-8H4"
-											/>
-										</svg>
+										<Icon name="tabler:plus" class="h-4 w-4" />
 									</button>
 								</div>
 								<!-- Item Total Price -->
@@ -538,14 +577,7 @@
 						? 'bg-indigo-100 text-indigo-600'
 						: ''}"
 				>
-					<svg class="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-						<path
-							stroke-linecap="round"
-							stroke-linejoin="round"
-							stroke-width="2"
-							d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-						/>
-					</svg>
+					<Icon name="tabler:building" class="h-8 w-8" />
 				</div>
 				<span class="text-base font-bold md:text-lg">{source.name}</span>
 			</button>
@@ -803,7 +835,7 @@
 				>
 				<input
 					id="customer-phone"
-					name="phone"
+					name="tabler:phone"
 					type="tel"
 					required
 					bind:value={posStore.customerPhone}
@@ -817,7 +849,7 @@
 				>
 				<input
 					id="customer-email"
-					name="email"
+					name="tabler:mail"
 					type="email"
 					class="w-full rounded-lg border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-indigo-500"
 					placeholder="VD: email@example.com"

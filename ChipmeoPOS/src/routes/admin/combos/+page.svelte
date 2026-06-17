@@ -1,10 +1,10 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { formatCurrency } from '$lib/utils/index.js';
-	import Button from '$lib/components/Button.svelte';
-	import Card from '$lib/components/Card.svelte';
-	import Modal from '$lib/components/Modal.svelte';
-	import Toast from '$lib/components/Toast.svelte';
+	import Button from '$lib/components/ui/Button.svelte';
+	import Card from '$lib/components/ui/Card.svelte';
+	import Modal from '$lib/components/ui/Modal.svelte';
+	import Toast from '$lib/components/ui/Toast.svelte';
 	import ImageCropper from '$lib/components/ImageCropper.svelte';
 	import { CombosState } from './combos.svelte.js';
 

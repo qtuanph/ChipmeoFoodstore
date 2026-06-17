@@ -4,9 +4,11 @@
 	import { auth } from '$lib/utils/index.js';
 	import LandscapePrompt from '$lib/components/LandscapePrompt.svelte';
 	import { STORAGE_KEYS } from '$lib/config/index.js';
+	import { initFlowbite } from 'flowbite';
 
 	onMount(() => {
 		auth.checkAuth();
+		initFlowbite();
 	});
 
 	import { page } from '$app/stores';

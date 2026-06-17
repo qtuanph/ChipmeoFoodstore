@@ -44,12 +44,12 @@ export class DashboardState {
 					}
 				],
 				chart: {
-					type: 'area',
+					type: 'area' as const,
 					height: 480,
 					toolbar: { show: false }
 				},
 				colors: ['#4f46e5'],
-				stroke: { curve: 'smooth', width: 2 },
+				stroke: { curve: 'smooth' as const, width: 2 },
 				fill: {
 					type: 'gradient',
 					gradient: {
@@ -93,7 +93,7 @@ export class DashboardState {
 					}
 				],
 				chart: {
-					type: 'bar',
+					type: 'bar' as const,
 					height: 250,
 					toolbar: { show: false }
 				},
@@ -124,7 +124,7 @@ export class DashboardState {
 					}
 				],
 				chart: {
-					type: 'bar',
+					type: 'bar' as const,
 					height: 250,
 					toolbar: { show: false }
 				},
@@ -153,7 +153,7 @@ export class DashboardState {
 			const options = {
 				series: data,
 				chart: {
-					type: 'donut',
+					type: 'donut' as const,
 					height: 200
 				},
 				labels: labels.map((l) =>
@@ -162,7 +162,7 @@ export class DashboardState {
 				colors: ['#22c55e', '#3b82f6', '#f9712e'],
 				stroke: { show: false },
 				dataLabels: { enabled: false },
-				legend: { position: 'bottom' },
+				legend: { position: 'bottom' as const },
 				tooltip: {
 					y: {
 						formatter: (val: number) => formatCurrency(val)
@@ -179,14 +179,14 @@ export class DashboardState {
 			const options = {
 				series: this.stats.serviceTypeStats.map((i: any) => i.quantity),
 				chart: {
-					type: 'donut',
+					type: 'donut' as const,
 					height: 200
 				},
 				labels: this.stats.serviceTypeStats.map((i: any) => i.name),
 				colors: ['#4f46e5', '#ec4899', '#3b82f6', '#10b981', '#f97316'],
 				stroke: { show: false },
 				dataLabels: { enabled: false },
-				legend: { position: 'bottom' },
+				legend: { position: 'bottom' as const },
 				tooltip: {
 					y: {
 						formatter: (val: number) => `${val} đơn`

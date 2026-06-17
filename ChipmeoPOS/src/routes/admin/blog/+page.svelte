@@ -5,6 +5,7 @@
 	import SEOPanel from '$lib/components/editor/SEOPanel.svelte';
 	import MediaLibraryModal from '$lib/components/media/MediaLibraryModal.svelte';
 	import { BlogState } from './blog.svelte.js';
+	import Icon from '$lib/components/ui/Icon.svelte';
 
 	const blog = new BlogState();
 
@@ -59,10 +60,7 @@
 			onclick={() => blog.openNewPost()}
 			class="flex items-center gap-2 rounded-lg bg-amber-600 px-4 py-2 text-white transition-colors hover:bg-amber-700"
 		>
-			<svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"
-				></path>
-			</svg>
+			<Icon name="tabler:plus" class="h-5 w-5" />
 			Tạo bài viết
 		</button>
 	</div>
@@ -236,14 +234,7 @@
 						title="Đóng"
 						aria-label="Đóng"
 					>
-						<svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-							<path
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								stroke-width="2"
-								d="M6 18L18 6M6 6l12 12"
-							></path>
-						</svg>
+						<Icon name="tabler:x" class="h-6 w-6" />
 					</button>
 				</div>
 			</div>
@@ -323,31 +314,13 @@
 											onclick={() => (blog.formData.thumbnailUrl = '')}
 											title="Xóa ảnh"
 										>
-											<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-												><path
-													stroke-linecap="round"
-													stroke-linejoin="round"
-													stroke-width="2"
-													d="M6 18L18 6M6 6l12 12"
-												/></svg
-											>
+											<Icon name="tabler:x" class="h-4 w-4" />
 										</button>
 									{:else}
 										<div
 											class="flex h-full w-full flex-col items-center justify-center text-gray-400"
 										>
-											<svg
-												class="mb-2 h-8 w-8"
-												fill="none"
-												stroke="currentColor"
-												viewBox="0 0 24 24"
-												><path
-													stroke-linecap="round"
-													stroke-linejoin="round"
-													stroke-width="2"
-													d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-												/></svg
-											>
+											<Icon name="tabler:photo" class="mb-2 h-8 w-8" />
 											<span class="text-xs">Chưa có ảnh</span>
 										</div>
 									{/if}
@@ -574,14 +547,7 @@
 							: 'text-gray-400 hover:bg-white/50 hover:text-gray-600'}"
 						title="Thông tin cơ bản"
 					>
-						<svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-							><path
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								stroke-width="2"
-								d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-							/></svg
-						>
+						<Icon name="tabler:info-circle" class="h-5 w-5" />
 					</button>
 					<button
 						onclick={() => (blog.activeSidebarTab = 'seo')}
@@ -590,14 +556,7 @@
 							: 'text-gray-400 hover:bg-white/50 hover:text-gray-600'}"
 						title="Cấu hình SEO"
 					>
-						<svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-							><path
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								stroke-width="2"
-								d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-							/></svg
-						>
+						<Icon name="tabler:search" class="h-5 w-5" />
 					</button>
 					<button
 						onclick={() => (blog.activeSidebarTab = 'analytics')}
@@ -607,14 +566,7 @@
 						title="Phân tích & Điểm số"
 					>
 						<div class="relative">
-							<svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-								><path
-									stroke-linecap="round"
-									stroke-linejoin="round"
-									stroke-width="2"
-									d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-								/></svg
-							>
+							<Icon name="tabler:chart-bar" class="h-5 w-5" />
 							{#if blog.formData.seoScore && blog.formData.seoScore >= 80}
 								<span class="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-green-500"></span>
 							{/if}
@@ -628,19 +580,7 @@
 							: 'text-gray-400 hover:bg-white/50 hover:text-gray-600'}"
 						title="Cài đặt nâng cao"
 					>
-						<svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-							><path
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								stroke-width="2"
-								d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
-							/><path
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								stroke-width="2"
-								d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-							/></svg
-						>
+						<Icon name="tabler:settings" class="h-5 w-5" />
 					</button>
 				</div>
 			</div>

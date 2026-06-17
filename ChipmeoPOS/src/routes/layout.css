@@ -1,40 +1,47 @@
 @import 'tailwindcss';
+@import 'flowbite/src/themes/default';
 @import '@fontsource/inter';
 @plugin 'flowbite/plugin';
-@plugin '@tailwindcss/forms';
 @plugin '@tailwindcss/typography';
 @plugin 'tailwindcss-animate';
 
 @custom-variant dark (&:where(.dark, .dark *));
 
-@source '../../node_modules/flowbite-svelte/dist';
-@source '../../node_modules/flowbite-svelte-icons/dist';
+@source '../node_modules/flowbite';
 
 @theme {
-	--color-brand-brown: #5b3610;
-	--color-brand-gold: #dca840;
-	--color-brand-yellow: #ebd477;
-	--font-brand: 'Inter';
+	--color-primary-50: #fdfdea;
+	--color-primary-100: #fdf6b2;
+	--color-primary-200: #fce96a;
+	--color-primary-300: #faca15;
+	--color-primary-400: #e3a008;
+	--color-primary-500: #c27803;
+	--color-primary-600: #9f580a;
+	--color-primary-700: #8e4b10;
+	--color-primary-800: #723b13;
+	--color-primary-900: #633112;
 
-	/* Flowbite primary color (indigo-600 based) */
-	--color-primary-50: #f0f9ff;
-	--color-primary-100: #e0f2fe;
-	--color-primary-200: #bae6fd;
-	--color-primary-300: #7dd3fc;
-	--color-primary-400: #38bdf8;
-	--color-primary-500: #0ea5e9;
-	--color-primary-600: #0284c7;
-	--color-primary-700: #0369a1;
-	--color-primary-800: #075985;
-	--color-primary-900: #0c4a6e;
+	--color-fg-brand: var(--color-primary-600);
+	--color-fg-brand-strong: var(--color-primary-800);
+	--color-brand-softer: var(--color-primary-50);
+	--color-brand-soft: var(--color-primary-100);
+	--color-brand: var(--color-primary-600);
+	--color-brand-medium: var(--color-primary-200);
+	--color-brand-strong: var(--color-primary-700);
+	--color-brand-subtle: var(--color-primary-200);
+	--color-brand-light: var(--color-primary-500);
 }
 
-:root {
-	--color-primary: 79 70 229; /* indigo-600 */
-	--color-secondary: 107 114 128; /* gray-500 */
-	--color-success: 34 197 94; /* green-500 */
-	--color-danger: 239 68 68; /* red-500 */
-	--color-warning: 251 191 36; /* yellow-500 */
+.dark {
+	--color-fg-brand: var(--color-primary-400);
+	--color-fg-brand-strong: var(--color-primary-300);
+	--color-brand-softer: var(--color-primary-950);
+	--color-brand-soft: var(--color-primary-900);
+	--color-brand: var(--color-primary-500);
+	--color-brand-medium: var(--color-primary-800);
+	--color-brand-strong: var(--color-primary-600);
+	--color-brand-subtle: var(--color-primary-800);
+	--color-brand-light: var(--color-primary-400);
 }
 
 * {
@@ -47,12 +54,11 @@ html {
 
 body {
 	margin: 0;
-	font-family: 'Inter';
+	font-family: 'Inter', sans-serif;
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
 }
 
-/* Custom scrollbar */
 ::-webkit-scrollbar {
 	width: 8px;
 	height: 8px;

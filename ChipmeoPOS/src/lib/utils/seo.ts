@@ -272,7 +272,8 @@ export function calculateSeoChecks(
 	}
 
 	// 8. Internal links (10 points)
-	const internalLinks = content.match(new RegExp(`href=["'][^"']*${SITE_DOMAIN}[^"']*["']`, 'g')) || [];
+	const internalLinks =
+		content.match(new RegExp(`href=["'][^"']*${SITE_DOMAIN}[^"']*["']`, 'g')) || [];
 	if (internalLinks.length >= 1) {
 		checks.push({
 			name: 'Liên kết nội bộ',

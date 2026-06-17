@@ -14,6 +14,7 @@
 | Tailwind Plugins | forms, typography, animate | — | Form resets, prose styles, animations |
 | Rich Text Editor | TipTap (core + 8 extensions) | 3.26.1 | Blog post editing with images, links, SEO |
 | Charts | ApexCharts | 5.15.0 | Analytics dashboards |
+| Icons (Unified) | @iconify/svelte | 5.2.2 | Tabler Icons via Iconify API (275k+ icons) |
 | Image Cropping | Croppie | 2.6.5 | Avatar & menu image cropping |
 | Real-Time | @microsoft/signalr | 10.0.0 | WebSocket client for order/kitchen updates |
 | Markdown | mdsvex | 0.12.7 | Markdown rendering in Svelte |
@@ -30,6 +31,7 @@
 
 ```json
 {
+  "@iconify/svelte": "^5.2.2",
   "@microsoft/signalr": "^10.0.0",
   "@tiptap/core": "^3.26.1",
   "@tiptap/extension-bubble-menu": "^3.26.1",

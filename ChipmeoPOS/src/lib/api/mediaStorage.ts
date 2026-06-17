@@ -26,7 +26,7 @@ export async function uploadMedia(file: File, folder: string = 'misc'): Promise<
 	return api.upload<MediaFile>(`${API_ENDPOINTS.media}/upload`, formData);
 }
 
-export async function deleteMedia(id: number): Promise<void> {
+export async function deleteMedia(id: number | string): Promise<void> {
 	await api.delete(`${API_ENDPOINTS.media}/${id}`);
 }
 

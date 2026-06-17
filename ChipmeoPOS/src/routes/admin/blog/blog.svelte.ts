@@ -164,10 +164,7 @@ export class BlogState {
 		data.append('file', file);
 		data.append('folder', 'blog-content');
 
-		const result = await api.upload<{ fileUrl: string }>(
-			`${API_BASE_URL}/api/media/upload`,
-			data
-		);
+		const result = await api.upload<{ fileUrl: string }>(`${API_BASE_URL}/api/media/upload`, data);
 		return result.fileUrl;
 	}
 

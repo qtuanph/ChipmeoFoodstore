@@ -1,11 +1,12 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import Modal from './Modal.svelte';
-	import Button from './Button.svelte';
+	import Modal from './ui/Modal.svelte';
+	import Button from './ui/Button.svelte';
 	import { formatCurrency, formatTime } from '$lib/utils/index.js';
 	import type { Order } from '$lib/types/index.js';
 	import { posAPI, ordersAPI, api } from '$lib/api/index.js';
 	import { API_ENDPOINTS } from '$lib/config/index.js';
+	import Icon from './ui/Icon.svelte';
 
 	let {
 		open = $bindable(),
@@ -115,19 +116,7 @@
 		{#if success}
 			<div class="flex flex-col items-center justify-center py-8 text-center">
 				<div class="mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-green-100">
-					<svg
-						class="h-10 w-10 text-green-600"
-						fill="none"
-						stroke="currentColor"
-						viewBox="0 0 24 24"
-					>
-						<path
-							stroke-linecap="round"
-							stroke-linejoin="round"
-							stroke-width="3"
-							d="M5 13l4 4L19 7"
-						/>
-					</svg>
+					<Icon name="tabler:check" class="h-10 w-10 text-green-600" />
 				</div>
 				<h3 class="mb-2 text-xl font-bold text-gray-900">Thanh toán hoàn tất!</h3>
 				<p class="text-gray-500">Đang đóng cửa sổ...</p>

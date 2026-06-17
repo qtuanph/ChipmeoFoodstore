@@ -5,6 +5,7 @@
 	import { onMount } from 'svelte';
 
 	import ProfileModal from '$lib/components/ProfileModal.svelte';
+	import Icon from '$lib/components/ui/Icon.svelte';
 
 	let { children } = $props();
 	let showDropdown = $state(false);
@@ -115,14 +116,7 @@
 				class="-ml-2 rounded-lg p-2 text-gray-600 hover:bg-gray-100"
 				aria-label="Toggle sidebar"
 			>
-				<svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-					<path
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						stroke-width="2"
-						d="M4 6h16M4 12h16M4 18h16"
-					/>
-				</svg>
+				<Icon name="tabler:menu" class="h-6 w-6" />
 			</button>
 			<h1 class="text-lg font-bold text-gray-900">Chipmeo Admin</h1>
 		</div>
@@ -239,14 +233,7 @@
 				class="rounded-lg p-2 text-gray-500 hover:bg-gray-200"
 				aria-label="Close sidebar"
 			>
-				<svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-					<path
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						stroke-width="2"
-						d="M6 18L18 6M6 6l12 12"
-					/>
-				</svg>
+				<Icon name="tabler:x" class="h-6 w-6" />
 			</button>
 		</div>
 
@@ -309,19 +296,10 @@
 							{$auth.user?.fullName?.charAt(0).toUpperCase() || 'U'}
 						{/if}
 					</div>
-					<svg
-						class="h-4 w-4 text-gray-400 transition-transform {showDropdown ? 'rotate-180' : ''}"
-						fill="none"
-						stroke="currentColor"
-						viewBox="0 0 24 24"
-					>
-						<path
-							stroke-linecap="round"
-							stroke-linejoin="round"
-							stroke-width="2"
-							d="M19 9l-7 7-7-7"
-						/>
-					</svg>
+					<Icon
+						name="tabler:chevron-down"
+						class="h-4 w-4 text-gray-400 {showDropdown ? 'rotate-180' : ''}"
+					/>
 				</button>
 
 				{#if showDropdown}

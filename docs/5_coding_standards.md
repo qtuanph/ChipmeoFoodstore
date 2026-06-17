@@ -25,6 +25,9 @@
    - [3.6 TypeScript](#36-typescript)
    - [3.7 Styling](#37-styling)
    - [3.8 Naming Conventions](#38-naming-conventions)
+   - [3.9 Frontend Configuration](#39-frontend-configuration-environment-variables)
+   - [3.10 Flowbite Interactive Components](#310-flowbite-interactive-components)
+   - [3.11 Icons (Iconify + Tabler)](#311-icons-iconify--tabler)
 4. [Cross-Cutting Concerns](#4-cross-cutting-concerns)
    - [4.1 Security](#41-security)
    - [4.2 Git](#42-git)
@@ -1065,6 +1068,22 @@ export let orders = $state<Order[]>([]);
 </Button>
 ```
 
+### 3.8 Naming Conventions (Frontend)
+
+| Element | Convention | Example |
+|---|---|---|
+| Components | PascalCase | `Button.svelte`, `OrderHistory.svelte` |
+| Files (lib) | kebab-case | `custom-image.ts`, `auth.ts` |
+| Files (routes) | SvelteKit standard | `+page.svelte`, `+layout.server.ts` |
+| Routes | kebab-case | `/admin/role-permissions/` |
+| Variables | camelCase | `const orderTotal = ...` |
+| Functions | camelCase | `function calculateTotal()` |
+| Constants | SCREAMING_SNAKE_CASE | `const MAX_ITEMS = 10` |
+| API modules | camelCase object | `ordersApi.list()` |
+| Types/Interfaces | PascalCase | `OrderResponse`, `MenuItem` |
+| CSS classes | kebab-case | `card-header`, `menu-grid` |
+| Store names | camelCase | `appState`, `orderStore` |
+
 ### 3.9 Frontend Configuration (Environment Variables)
 
 > Tất cả cấu hình frontend đều qua `PUBLIC_*` env vars, đọc ở runtime bằng `$env/dynamic/public`.
@@ -1116,21 +1135,127 @@ export const API_HOST_URL = API_BASE_URL.replace(/\/v2\/?$/, '');
 - `PUBLIC_AUTH_STORAGE_PREFIX` rỗng → không prefix, key là `token`/`user`.
 - `API_HOST_URL` = `API_BASE_URL` bỏ suffix `/v2` — dùng cho SignalR WebSocket (hub ở root, không dưới `/v2`).
 
-### 3.8 Naming Conventions (Frontend)
+### 3.10 Flowbite Interactive Components
 
-| Element | Convention | Example |
-|---|---|---|
-| Components | PascalCase | `Button.svelte`, `OrderHistory.svelte` |
-| Files (lib) | kebab-case | `custom-image.ts`, `auth.ts` |
-| Files (routes) | SvelteKit standard | `+page.svelte`, `+layout.server.ts` |
-| Routes | kebab-case | `/admin/role-permissions/` |
-| Variables | camelCase | `const orderTotal = ...` |
-| Functions | camelCase | `function calculateTotal()` |
-| Constants | SCREAMING_SNAKE_CASE | `const MAX_ITEMS = 10` |
-| API modules | camelCase object | `ordersApi.list()` |
-| Types/Interfaces | PascalCase | `OrderResponse`, `MenuItem` |
-| CSS classes | kebab-case | `card-header`, `menu-grid` |
-| Store names | camelCase | `appState`, `orderStore` |
+> Flowbite is used for interactive UI components that require JavaScript. It is used via its **vanilla JS API** (data-* attributes + `initFlowbite()`), NOT via Svelte wrappers.
+
+#### Import Pattern
+
+```typescript
+// In any component that needs Flowbite interactivity
+import { onMount } from 'svelte';
+import 'flowbite';
+
+onMount(() => {
+  // Must call after DOM is rendered to activate data-* behaviors
+  initFlowbite();
+});
+```
+
+#### What Uses Flowbite
+
+- **Dropdowns** — `data-dropdown-toggle`
+- **Modals** — `data-modal-target` / `data-modal-toggle`
+- **Tooltips** — `data-tooltip-target`
+- **Collapse / Accordion** — `data-collapse-toggle`
+- **Tabs** — `data-tabs-toggle`
+- **Datepicker** — `datepicker` class + `data-datepicker`
+
+#### DO ✅
+
+```svelte
+<!-- ✅ Correct: Flowbite via data-* attributes + initFlowbite() -->
+<script lang="ts">
+  import { onMount } from 'svelte';
+  import 'flowbite';
+
+  onMount(() => { initFlowbite(); });
+</script>
+
+<button data-dropdown-toggle="myDropdown">Open</button>
+<div id="myDropdown" class="hidden">...</div>
+```
+
+#### DON'T ❌
+
+- ❌ Don't use Flowbite Svelte wrappers (flowbite-svelte) — not installed
+- ❌ Don't import Flowbite CSS directly — Tailwind plugin handles it
+- ❌ Don't call `initFlowbite()` in `$effect` — use `onMount`
+
+#### Component Library (`src/lib/components/ui/`)
+
+Reusable UI components live in `src/lib/components/ui/`:
+- `Icon.svelte` — unified icon component (wraps `@iconify/svelte`)
+- `Modal.svelte` — modal wrapper (uses Flowbite data-* internally)
+- `Accordion.svelte` — accordion component
+- `Breadcrumb.svelte` — breadcrumb navigation
+- `Sidebar.svelte` — admin sidebar
+- `Button.svelte` — button component
+- `Pagination.svelte` — pagination component
+- `Table.svelte` — data table component
+- `Badge.svelte` — status badges
+
+These components are NOT Flowbite wrappers — they use Flowbite JS for interactivity where needed and write their own markup/Tailwind styles.
+
+### 3.11 Icons (Iconify + Tabler)
+
+> All icons use **Tabler Icons** via `@iconify/svelte`. No other icon set or inline `<svg>` should be used for static icons.
+
+#### Icon Component
+
+```svelte
+<script lang="ts">
+  import Icon from '$lib/components/ui/Icon.svelte';
+</script>
+
+<!-- ✅ Correct: Tabler icon via Icon component -->
+<Icon name="tabler:x" class="size-5" />
+<Icon name="tabler:user" class="size-4 text-gray-500" />
+```
+
+#### Icon Naming
+
+All icon names follow the format `tabler:{icon-name}` where `{icon-name}` is the Tabler icon name in kebab-case. Browse available icons at [https://tabler.io/icons](https://tabler.io/icons).
+
+| Icon | Usage |
+|---|---|
+| `tabler:x` | Close / delete / cancel |
+| `tabler:plus` | Add / create |
+| `tabler:check` | Confirm / save |
+| `tabler:pencil` | Edit |
+| `tabler:trash` | Delete |
+| `tabler:arrow-left` `tabler:arrow-right` | Navigation arrows |
+| `tabler:search` | Search |
+| `tabler:loader-2` | Loading spinner (use with `animate-spin`) |
+| `tabler:dots-vertical` | More / context menu |
+| `tabler:menu-2` | Hamburger menu |
+
+#### DO ✅
+
+```svelte
+<!-- ✅ Correct: static icon via Icon component -->
+<Icon name="tabler:user" />
+<button onclick={handleSave}>
+  <Icon name="tabler:check" class="size-4" /> Save
+</button>
+```
+
+#### DON'T ❌
+
+- ❌ Don't use inline `<svg>` for static icons (exception: loading spinners in `Sidebar`, blog, media)
+- ❌ Don't use `<Icon name="general/close">` or any non-`tabler:` prefix
+- ❌ Don't import from `phosphor-svelte` or `flowbite-icons` — packages removed
+- ❌ Don't reference `icons.ts` — file deleted; `@iconify/svelte` loads icons on demand
+
+#### Exceptions (Inline SVGs Kept)
+
+5 inline SVGs remain where dynamic icon sources prevent static `<Icon>` usage:
+
+| File | Reason |
+|---|---|
+| `Sidebar.svelte` | 3 icons use dynamic `<use href={item.icon}>` — SVG sprite reference |
+| `admin/blog/+page.svelte` | 1 loading `animate-spin` SVG |
+| `media/MediaLibraryModal.svelte` | 1 loading `animate-spin` SVG |
 
 ---
 

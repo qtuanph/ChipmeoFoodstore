@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { CustomersState } from './customers.svelte.js';
+	import Icon from '$lib/components/ui/Icon.svelte';
 
 	const vm = new CustomersState();
 
@@ -32,19 +33,10 @@
 	<!-- Search -->
 	<div class="mb-6 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
 		<div class="relative max-w-md">
-			<svg
+			<Icon
+				name="tabler:search"
 				class="absolute top-1/2 left-3 h-5 w-5 -translate-y-1/2 text-gray-400"
-				fill="none"
-				stroke="currentColor"
-				viewBox="0 0 24 24"
-			>
-				<path
-					stroke-linecap="round"
-					stroke-linejoin="round"
-					stroke-width="2"
-					d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-				></path>
-			</svg>
+			/>
 			<input
 				type="text"
 				bind:value={vm.searchTerm}

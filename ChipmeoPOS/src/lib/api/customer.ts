@@ -9,6 +9,8 @@ import type {
 	CustomerUpdateDto
 } from '$lib/types/index.js';
 
+export type { Customer };
+
 export const customerAPI = {
 	async register(data: CustomerRegisterDto): Promise<Customer> {
 		return apiRequest(`${API_ENDPOINTS.customers}/register`, {

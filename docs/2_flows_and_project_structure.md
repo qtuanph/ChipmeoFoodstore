@@ -69,6 +69,7 @@ ChipmeoFoodstore/
 │   │   │   │   ├── index.ts             #     Central exports
 │   │   │   │   └── utils.ts             #     Request helper (JWT auth)
 │   │   │   ├── components/               #   Reusable UI components
+│   │   │   │   ├── ui/                  #     Base UI: Icon, Modal, Accordion, Breadcrumb, Sidebar, Button, Pagination, Table, Badge
 │   │   │   │   ├── editor/              #     TipTap rich text editor
 │   │   │   │   └── media/               #     Media gallery modal
 │   │   │   ├── services/                #   SignalR connection manager

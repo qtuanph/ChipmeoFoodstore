@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { formatDate } from '$lib/utils/index.js';
-	import Button from '$lib/components/Button.svelte';
-	import Toast from '$lib/components/Toast.svelte';
+	import Button from '$lib/components/ui/Button.svelte';
+	import Toast from '$lib/components/ui/Toast.svelte';
 	import { MediaState } from './media.svelte.js';
 
 	const vm = new MediaState();

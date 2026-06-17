@@ -76,6 +76,7 @@
     "api_auth": "JWT Bearer token from POST /api/auth/login",
     "media_auth": "X-Api-Key header (configured in MediaStorageManagement/appsettings.json)",
     "frontend_config": "ChipmeoPOS/src/lib/config/index.ts — auto-detects env",
+    "icon_format": "Use <Icon icon=\"tabler:icon-name\" /> — Tabler Icons via @iconify/svelte",
     "db_connection": "ChipmeoApis/ChipmeoApis.Web/appsettings.json → ConnectionStrings.DefaultConnection"
   },
   "architecture": {
@@ -95,10 +96,12 @@
       "build_tool": "Vite 8 (Rolldown/Oxc)",
       "styling": "Tailwind CSS 4",
       "editor": "TipTap 3",
+      "icons": "@iconify/svelte 5 (Tabler Icons)",
       "charts": "ApexCharts 5",
       "realtime": "@microsoft/signalr 10",
-      "image_cropping": "Croppie 2"
-    },
+    "image_cropping": "Croppie 2",
+    "flowbite": "Vanilla JS (data-* API, initFlowbite)"
+  },
     "backend": {
       "framework": "ASP.NET Core 10",
       "orm": "Entity Framework Core 10",

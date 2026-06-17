@@ -12,6 +12,7 @@
 	"dependencies": {
 		"@fontsource/inter": "^5.2.8",
 		"@microsoft/signalr": "^10.0.0",
+		"@popperjs/core": "^2.11.8",
 		"@tiptap/core": "^3.26.1",
 		"@tiptap/extension-bubble-menu": "^3.26.1",
 		"@tiptap/extension-floating-menu": "^3.26.1",
@@ -24,11 +25,13 @@
 		"@tiptap/starter-kit": "^3.26.1",
 		"apexcharts": "^5.15.0",
 		"croppie": "^2.6.5",
-		"esm-env": "^1.2.2"
+		"esm-env": "^1.2.2",
+		"tailwind-merge": "^3.6.0"
 	},
 	"devDependencies": {
 		"@eslint/compat": "^2.1.0",
 		"@eslint/js": "^10.0.1",
+		"@iconify/svelte": "^5.2.2",
 		"@sveltejs/adapter-node": "^5.5.4",
 		"@sveltejs/kit": "^2.65.1",
 		"@sveltejs/vite-plugin-svelte": "^7.1.2",
@@ -41,10 +44,7 @@
 		"eslint-config-prettier": "^10.1.8",
 		"eslint-plugin-svelte": "^3.19.0",
 		"flowbite": "^4.0.2",
-		"flowbite-svelte": "^1.33.1",
-		"flowbite-svelte-icons": "^3.1.0",
 		"globals": "^17.6.0",
-		"mdsvex": "^0.12.7",
 		"prettier": "^3.8.4",
 		"prettier-plugin-svelte": "^4.1.1",
 		"prettier-plugin-tailwindcss": "^0.8.0",

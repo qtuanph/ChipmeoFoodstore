@@ -3,9 +3,10 @@
 	import { cart, cartTotals, cartActions } from '$lib/utils/index.js';
 	import { posAPI } from '$lib/api/index.ts';
 	import { formatCurrency } from '$lib/utils/index.ts';
-	import Button from '$lib/components/Button.svelte';
-	import Card from '$lib/components/Card.svelte';
-	import Toast from '$lib/components/Toast.svelte';
+	import Button from '$lib/components/ui/Button.svelte';
+	import Card from '$lib/components/ui/Card.svelte';
+	import Toast from '$lib/components/ui/Toast.svelte';
+	import Icon from '$lib/components/ui/Icon.svelte';
 
 	let paymentMethod = $state<'cash' | 'banking' | 'qr'>('cash');
 	let customerName = $state($cart.customerName || '');
@@ -98,14 +99,7 @@
 					class="rounded-lg p-2 transition-colors hover:bg-gray-100"
 					aria-label="Quay lại"
 				>
-					<svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-						<path
-							stroke-linecap="round"
-							stroke-linejoin="round"
-							stroke-width="2"
-							d="M15 19l-7-7 7-7"
-						/>
-					</svg>
+					<Icon name="tabler:chevron-left" class="h-6 w-6" />
 				</button>
 				<div>
 					<h1 class="text-2xl font-bold text-gray-900">Thanh toán</h1>
@@ -306,7 +300,7 @@
 						</div>
 
 						<Button
-							variant="success"
+							variant="primary"
 							fullWidth={true}
 							onclick={handleCheckout}
 							disabled={loading || $cart.items.length === 0}

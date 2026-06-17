@@ -1,7 +1,8 @@
 <script lang="ts">
 	import Croppie from 'croppie';
 	import 'croppie/croppie.css';
-	import Button from './Button.svelte';
+	import Button from './ui/Button.svelte';
+	import Icon from './ui/Icon.svelte';
 
 	let {
 		imageSrc,
@@ -66,14 +67,7 @@
 		<div class="flex items-center justify-between border-b bg-gray-50 p-4">
 			<h3 class="font-bold text-gray-900">Cắt ảnh</h3>
 			<button onclick={onCancel} class="text-gray-500 hover:text-gray-700" aria-label="Close">
-				<svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-					><path
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						stroke-width="2"
-						d="M6 18L18 6M6 6l12 12"
-					/></svg
-				>
+				<Icon name="tabler:x" class="h-6 w-6" />
 			</button>
 		</div>
 

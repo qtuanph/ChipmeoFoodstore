@@ -118,13 +118,13 @@ export class AnalyticsState {
 					}
 				],
 				chart: {
-					type: 'area',
+					type: 'area' as const,
 					height: 280,
 					toolbar: { show: false },
 					zoom: { enabled: false }
 				},
 				dataLabels: { enabled: false },
-				stroke: { curve: 'smooth', width: 2 },
+				stroke: { curve: 'smooth' as const, width: 2 },
 				fill: {
 					type: 'gradient',
 					gradient: {
@@ -168,7 +168,7 @@ export class AnalyticsState {
 					}
 				],
 				chart: {
-					type: 'bar',
+					type: 'bar' as const,
 					height: 280,
 					toolbar: { show: false }
 				},
@@ -208,12 +208,12 @@ export class AnalyticsState {
 					}
 				],
 				chart: {
-					type: 'line',
+					type: 'line' as const,
 					height: 280,
 					toolbar: { show: false }
 				},
 				stroke: {
-					curve: 'smooth',
+					curve: 'smooth' as const,
 					width: 2,
 					dashArray: [5]
 				},
@@ -244,7 +244,7 @@ export class AnalyticsState {
 			const options = {
 				series: this.stats.sourceStats.map((d: any) => d.sold),
 				chart: {
-					type: 'donut',
+					type: 'donut' as const,
 					height: 280
 				},
 				labels: this.stats.sourceStats.map((d: any) => d.name),
@@ -252,7 +252,7 @@ export class AnalyticsState {
 				stroke: { show: false },
 				dataLabels: { enabled: false },
 				legend: {
-					position: 'bottom'
+					position: 'bottom' as const
 				},
 				plotOptions: {
 					pie: {
