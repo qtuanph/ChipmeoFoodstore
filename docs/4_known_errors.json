@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "ChipmeoFoodstore Known Issues & Resolutions",
+  "title": "Foodstore Known Issues & Resolutions",
   "description": "Registry of known errors, their causes, and how to fix them",
   "version": "1.1.0",
   "entries": [
@@ -154,7 +154,7 @@
       "severity": "info",
       "title": "Default Media API key in appsettings.json",
       "file": "MediaStorageManagement/appsettings.json",
-      "description": "The default API key `chipmeo-media-api-key-2024` is committed to the repo.",
+      "description": "The default API key `foodstore-media-api-key-2024` is committed to the repo.",
       "impact": "Anyone with repo access knows the default key.",
       "resolution": "Move API key to environment variable or user secrets. Rotate the key if already deployed.",
       "first_seen": "Project inception",

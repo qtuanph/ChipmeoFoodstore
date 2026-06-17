@@ -1,5 +1,5 @@
 <div align="center">
-  <h1>Chipmeo Foodstore 🍽️</h1>
+  <h1>Foodstore 🍽️</h1>
   <p>
     <strong>Modern Restaurant Management & POS System</strong>
   </p>
@@ -25,7 +25,7 @@
 
 ## Overview
 
-Chipmeo Foodstore is a production-ready restaurant management platform designed for small to medium food & beverage businesses. It handles the entire order lifecycle — from POS ordering and kitchen display to admin management and analytics — with real-time updates via SignalR.
+Foodstore is a production-ready restaurant management platform designed for small to medium food & beverage businesses. It handles the entire order lifecycle — from POS ordering and kitchen display to admin management and analytics — with real-time updates via SignalR.
 
 ## Features
 
@@ -66,7 +66,7 @@ Chipmeo Foodstore is a production-ready restaurant management platform designed 
 
 ## Tech Stack
 
-### Frontend — ChipmeoPOS (`ChipmeoPOS/`)
+### Frontend — Store (`Store/`)
 | Technology | Purpose |
 |---|---|
 | **Svelte 5** + **SvelteKit 2** | UI framework with runes reactivity |
@@ -81,7 +81,7 @@ Chipmeo Foodstore is a production-ready restaurant management platform designed 
 | **SignalR** | Real-time WebSocket communication |
 | **@sveltejs/adapter-node** | Node.js production server (Docker) |
 
-### Backend — ChipmeoApis (`ChipmeoApis/`)
+### Backend — FoodstoreApi (`FoodstoreApi/`)
 | Layer | Technology |
 |---|---|
 | **Core** | .NET 10, EF Core Abstractions |
@@ -136,14 +136,14 @@ The backend follows **Clean Architecture** with 4 layers:
 ## Project Structure
 
 ```
-ChipmeoFoodstore/
-├── ChipmeoApis/                    # Backend (.NET 10)
-│   ├── ChipmeoApis.Core/           #   Domain entities
-│   ├── ChipmeoApis.Usecase/        #   Business logic & DTOs
-│   ├── ChipmeoApis.Infrastructure/ #   EF Core, S3, Redis
+Foodstore/
+├── FoodstoreApi/                    # Backend (.NET 10)
+│   ├── FoodstoreApi.Core/           #   Domain entities
+│   ├── FoodstoreApi.Usecase/        #   Business logic & DTOs
+│   ├── FoodstoreApi.Infrastructure/ #   EF Core, S3, Redis
 │   ├── Dockerfile                  #   Docker image
-│   └── ChipmeoApis.Web/            #   API controllers, hubs
-├── ChipmeoPOS/                     # Frontend (SvelteKit)
+│   └── FoodstoreApi.Web/            #   API controllers, hubs
+├── Store/                     # Frontend (SvelteKit)
 │   ├── Dockerfile                  #   Docker image
 │   ├── src/
 │   │   ├── lib/
@@ -181,8 +181,8 @@ ChipmeoFoodstore/
 
 ```bash
 # Clone & start full stack
-git clone https://github.com/qtuanph/ChipmeoFoodstore.git
-cd ChipmeoFoodstore
+git clone https://github.com/qtuanph/Foodstore.git
+cd Foodstore
 
 # Full stack: traefik + db + redis + rustfs + api + webapp
 docker compose up -d
@@ -199,11 +199,11 @@ Default admin login: **admin** / **admin123**
 docker compose up -d db redis rustfs
 
 # Terminal 2 — Backend API
-cd ChipmeoApis
-dotnet run --project ChipmeoApis.Web   # http://localhost:5142
+cd FoodstoreApi
+dotnet run --project FoodstoreApi.Web   # http://localhost:5142
 
 # Terminal 3 — Frontend
-cd ChipmeoPOS
+cd Store
 npm install
 npm run dev                            # http://localhost:5173
 ```
@@ -221,7 +221,7 @@ docker compose build
 ### Environment (`.env`)
 ```env
 # PostgreSQL
-POSTGRES_USER=chipmeo
+POSTGRES_USER=foodstore
 POSTGRES_DB=pos_shop
 DB_PASSWORD=REMOVED
 
@@ -229,7 +229,7 @@ DB_PASSWORD=REMOVED
 REDIS_PASSWORD=
 
 # S3 (RustFS)
-S3_ACCESS_KEY=chipmeo
+S3_ACCESS_KEY=foodstore
 S3_SECRET_KEY=REMOVED
 S3_BUCKET=food-media
 

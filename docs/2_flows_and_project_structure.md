@@ -3,13 +3,13 @@
 ## Monorepo Structure
 
 ```
-ChipmeoFoodstore/
+Foodstore/
 ├── docker-compose.yml                    # 🐳 Full stack (6 services)
 ├── .env                                  # 🔒 Environment variables
-├── ChipmeoApis/                          # 🖥️ Backend (.NET 10 Clean Architecture)
-│   ├── ChipmeoApis.slnx                  # Solution file
+├── FoodstoreApi/                          # 🖥️ Backend (.NET 10 Clean Architecture)
+│   ├── FoodstoreApi.slnx                  # Solution file
 │   │
-│   ├── ChipmeoApis.Core/                 # 🎯 Domain Layer (zero dependencies)
+│   ├── FoodstoreApi.Core/                 # 🎯 Domain Layer (zero dependencies)
 │   │   ├── Entities/                     #   POCO entities (23 files)
 │   │   │   ├── Category.cs
 │   │   │   ├── MenuItem.cs
@@ -34,9 +34,9 @@ ChipmeoFoodstore/
 │   │   │   ├── BlogPostTag.cs
 │   │   │   ├── MenuItemAddon.cs
 │   │   │   └── Media.cs
-│   │   └── ChipmeoApis.Core.csproj
+│   │   └── FoodstoreApi.Core.csproj
 │   │
-│   ├── ChipmeoApis.Usecase/             # 🧠 Application Layer
+│   ├── FoodstoreApi.Usecase/             # 🧠 Application Layer
 │   │   ├── DTOs/                         #   Data Transfer Objects (16 subdirectories)
 │   │   ├── Interfaces/                   #   Service & Repository interfaces
 │   │   │   ├── Repositories/             #     17 repository interfaces
@@ -45,7 +45,7 @@ ChipmeoFoodstore/
 │   │   ├── Extensions/                   #   DI registration
 │   │   └── Utils/                        #   Shared utilities
 │   │
-│   ├── ChipmeoApis.Infrastructure/       # 📀 Infrastructure Layer
+│   ├── FoodstoreApi.Infrastructure/       # 📀 Infrastructure Layer
 │   │   ├── Data/                         #   EF Core DbContext + Configurations
 │   │   ├── Repositories/                 #   17 repository implementations
 │   │   ├── Handlers/                     #   Media upload handler (S3/AWS SDK)
@@ -54,7 +54,7 @@ ChipmeoFoodstore/
 │   │   └── Mappings/                     #   (future: AutoMapper profiles)
 │   │
 │   ├── Dockerfile                        #   🐳 API Docker image
-│   └── ChipmeoApis.Web/                  # 🌐 Presentation Layer
+│   └── FoodstoreApi.Web/                  # 🌐 Presentation Layer
 │       ├── Controllers/                  #   21 API controllers
 │       ├── Hubs/                         #   SignalR hub
 │       ├── Middleware/                   #   Security headers, rate limiting
@@ -62,7 +62,7 @@ ChipmeoFoodstore/
 │       ├── Program.cs                    #   App startup / composition root
 │       └── appsettings.json             #   Configuration
 │
-├── ChipmeoPOS/                           # 🎨 Frontend (SvelteKit)
+├── Store/                           # 🎨 Frontend (SvelteKit)
 │   ├── src/
 │   │   ├── lib/
 │   │   │   ├── api/                      #   API client (21 modules)
@@ -164,7 +164,7 @@ ChipmeoFoodstore/
 
 ```
 ┌──────────┐     ┌──────────┐     ┌──────────────────┐     ┌────────────────┐
-│  Client  │     │ Traefik  │     │  ChipmeoApis.Web │     │  PostgreSQL    │
+│  Client  │     │ Traefik  │     │  FoodstoreApi.Web │     │  PostgreSQL    │
 ├──────────┤     ├──────────┤     ├──────────────────┤     ├────────────────┤
 │  1. POST │────►│ :80/     │────►│  /api/auth/login │────►│  Find employee │
 │          │     │ /api/*   │     │  (username,pass)  │     │  Verify bcrypt │
@@ -195,7 +195,7 @@ ChipmeoFoodstore/
 
 ```
 ┌──────────┐     ┌──────────┐     ┌──────────────────┐     ┌──────────────────────────┐
-│   POS UI │     │ Traefik  │     │  ChipmeoApis.Web │     │  RustFS (S3 Object Store)│
+│   POS UI │     │ Traefik  │     │  FoodstoreApi.Web │     │  RustFS (S3 Object Store)│
 ├──────────┤     ├──────────┤     ├──────────────────┤     ├──────────────────────────┤
 │  1. POST │────►│ :80/     │────►│  /api/media/     │────►│  PutObjectAsync (AWS SDK)│
 │  (file)  │     │ /api/*   │     │  upload           │     │  Validate file type     │

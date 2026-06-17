@@ -1,4 +1,4 @@
-name: ChipmeoFoodstore
+name: Foodstore
 
 services:
   traefik:
@@ -75,9 +75,9 @@ services:
 
   api:
     build:
-      context: ./ChipmeoApis
+      context: ./foodstore-api
       dockerfile: Dockerfile
-    container_name: api
+    container_name: foodstore-api
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.api.rule=Host(`api.localhost`)"
@@ -91,16 +91,18 @@ services:
       S3__Bucket: ${S3_BUCKET}
       S3__PublicUrl: "http://localhost/uploads/${S3_BUCKET}"
       JwtSettings__SecretKey: ${JWT_SECRET}
-      JwtSettings__Issuer: "ChipmeoApisAPI"
-      JwtSettings__Audience: "ChipmeoApisFrontend"
+      JwtSettings__Issuer: "FoodstoreAPI"
+      JwtSettings__Audience: "FoodstoreFrontend"
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT}
       ASPNETCORE_HTTP_PORTS: "8080"
       AllowedOrigins__0: "http://admin.localhost"
-      AllowedOrigins__1: "http://webapp:3000"
+      AllowedOrigins__1: "http://store.localhost"
       AllowedOrigins__2: "http://localhost"
       AllowedOrigins__3: "http://localhost:4321"
       AllowedOrigins__4: "http://landingpage:4321"
       AllowedOrigins__5: "http://api.localhost"
+      AllowedOrigins__6: "http://admin:3000"
+      AllowedOrigins__7: "http://store:3000"
     depends_on:
       db:
         condition: service_healthy
@@ -111,16 +113,16 @@ services:
     networks:
       - app-network
 
-  webapp:
+  store:
     build:
-      context: ./ChipmeoPOS
+      context: ./foodstore-store
       dockerfile: Dockerfile
-    container_name: webapp
+    container_name: foodstore-store
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.webapp.rule=Host(`admin.localhost`)"
-      - "traefik.http.routers.webapp.priority=5"
-      - "traefik.http.services.webapp.loadbalancer.server.port=3000"
+      - "traefik.http.routers.store.rule=Host(`store.localhost`)"
+      - "traefik.http.routers.store.priority=5"
+      - "traefik.http.services.store.loadbalancer.server.port=3000"
     environment:
       PUBLIC_API_URL: ${PUBLIC_API_URL}
       PUBLIC_AUTH_STORAGE_PREFIX: ${PUBLIC_AUTH_STORAGE_PREFIX}
@@ -130,7 +132,25 @@ services:
       PUBLIC_DEFAULT_QR_TEMPLATE: ${PUBLIC_DEFAULT_QR_TEMPLATE}
       PUBLIC_SITE_DOMAIN: ${PUBLIC_SITE_DOMAIN}
       PUBLIC_DEFAULT_CUSTOMER_PASSWORD: ${PUBLIC_DEFAULT_CUSTOMER_PASSWORD}
-      ORIGIN: "http://admin.localhost"
+      ORIGIN: ${ORIGIN}
+    depends_on:
+      - api
+    networks:
+      - app-network
+
+  admin:
+    build:
+      context: ./foodstore-admin
+      dockerfile: Dockerfile
+    container_name: foodstore-admin
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.admin.rule=Host(`admin.localhost`)"
+      - "traefik.http.routers.admin.priority=10"
+      - "traefik.http.services.admin.loadbalancer.server.port=3000"
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_API_URL: ${PUBLIC_API_URL}
     depends_on:
       - api
     networks:
@@ -138,13 +158,15 @@ services:
 
   landingpage:
     build:
-      context: ./food-landingpage
+      context: ./foodstore-landingpage
       dockerfile: Dockerfile
-    container_name: landingpage
+    container_name: foodstore-landingpage
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.landingpage.rule=Host(`localhost`)"
       - "traefik.http.services.landingpage.loadbalancer.server.port=4321"
+    environment:
+      PUBLIC_API_URL: ${PUBLIC_API_URL}
     networks:
       - app-network
 

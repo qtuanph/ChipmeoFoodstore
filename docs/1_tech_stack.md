@@ -1,8 +1,8 @@
 # Tech Stack
 
-> Detailed breakdown of every technology used across the ChipmeoFoodstore monorepo.
+> Detailed breakdown of every technology used across the Foodstore monorepo.
 
-## Frontend — ChipmeoPOS
+## Frontend — Store
 
 | Category | Technology | Version | Purpose |
 |---|---|---|---|
@@ -48,16 +48,16 @@
 }
 ```
 
-## Backend — ChipmeoApis
+## Backend — FoodstoreApi
 
 ### Layer Dependency Tree
 
 ```
-ChipmeoApis.Web
-  └── ChipmeoApis.Usecase
-        └── ChipmeoApis.Core
-ChipmeoApis.Infrastructure
-  └── ChipmeoApis.Usecase (via DI registration)
+FoodstoreApi.Web
+  └── FoodstoreApi.Usecase
+        └── FoodstoreApi.Core
+FoodstoreApi.Infrastructure
+  └── FoodstoreApi.Usecase (via DI registration)
 ```
 
 ### Core Layer

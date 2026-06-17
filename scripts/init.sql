@@ -427,7 +427,7 @@ VALUES (
     'Root Administrator',
     'admin',
     '$2a$12$89g1rmrXs66X5vlgbx92SuY51m.jizW3DTnsys9q9OUbtIBANrl7q',
-    'chipmeo2304@gmail.com',
+    'foodstore2304@gmail.com',
     '0903282169',
     1,
     true,

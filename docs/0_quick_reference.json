@@ -1,29 +1,29 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "ChipmeoFoodstore Quick Reference",
-  "description": "Quick reference guide for developers working on ChipmeoFoodstore",
+  "title": "Foodstore Quick Reference",
+  "description": "Quick reference guide for developers working on Foodstore",
   "version": "1.1.0",
   "repository": {
-    "url": "https://github.com/qtuanph/ChipmeoFoodstore.git",
+    "url": "https://github.com/qtuanph/Foodstore.git",
     "branch": "master"
   },
   "projects": {
-    "ChipmeoApis": {
-      "path": "ChipmeoApis",
+    "FoodstoreApi": {
+      "path": "FoodstoreApi",
       "type": ".NET 10 Web API",
       "description": "Clean Architecture backend — REST API, SignalR, JWT auth",
       "commands": {
-        "run": "dotnet run --project ChipmeoApis.Web",
+        "run": "dotnet run --project FoodstoreApi.Web",
         "build": "dotnet build",
         "restore": "dotnet restore",
         "publish": "dotnet publish -c Release",
-        "migration_add": "dotnet ef migrations add <Name> --project ChipmeoApis.Web",
-        "migration_apply": "dotnet ef database update --project ChipmeoApis.Web",
-        "migration_remove": "dotnet ef migrations remove --project ChipmeoApis.Web"
+        "migration_add": "dotnet ef migrations add <Name> --project FoodstoreApi.Web",
+        "migration_apply": "dotnet ef database update --project FoodstoreApi.Web",
+        "migration_remove": "dotnet ef migrations remove --project FoodstoreApi.Web"
       },
       "port": 5142,
-      "startup": "ChipmeoApis.Web/Program.cs",
-      "solution": "ChipmeoApis.slnx"
+      "startup": "FoodstoreApi.Web/Program.cs",
+      "solution": "FoodstoreApi.slnx"
     },
     "MediaStorageManagement": {
       "path": "MediaStorageManagement",
@@ -37,8 +37,8 @@
       "auth": "X-Api-Key header",
       "solution": "MediaStorageManagement.slnx"
     },
-    "ChipmeoPOS": {
-      "path": "ChipmeoPOS",
+    "Store": {
+      "path": "Store",
       "type": "SvelteKit 2 + Svelte 5",
       "description": "Frontend — POS, Admin Dashboard, Kitchen Display",
       "commands": {
@@ -64,20 +64,20 @@
       "media_url": "http://localhost:5000"
     },
     "production": {
-      "api_url": "https://api.chipmeo.io.vn",
-      "frontend_url": "https://food.chipmeo.io.vn",
-      "media_url": "https://media.chipmeo.io.vn"
+      "api_url": "https://api.foodstore.local",
+      "frontend_url": "https://food.foodstore.local",
+      "media_url": "https://media.foodstore.local"
     },
     "demo": {
-      "frontend_url": "https://foodchipmeo.vercel.app"
+      "frontend_url": "https://foodstore.vercel.app"
     }
   },
   "key_patterns": {
     "api_auth": "JWT Bearer token from POST /api/auth/login",
     "media_auth": "X-Api-Key header (configured in MediaStorageManagement/appsettings.json)",
-    "frontend_config": "ChipmeoPOS/src/lib/config/index.ts — auto-detects env",
+    "frontend_config": "Store/src/lib/config/index.ts — auto-detects env",
     "icon_format": "Use <Icon icon=\"tabler:icon-name\" /> — Tabler Icons via @iconify/svelte",
-    "db_connection": "ChipmeoApis/ChipmeoApis.Web/appsettings.json → ConnectionStrings.DefaultConnection"
+    "db_connection": "FoodstoreApi/FoodstoreApi.Web/appsettings.json → ConnectionStrings.DefaultConnection"
   },
   "architecture": {
     "backend": "Clean Architecture (4 layers)",

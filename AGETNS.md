@@ -1,4 +1,4 @@
-# AGENTS.md — ChipmeoFoodstore AI Context
+# AGENTS.md — Foodstore AI Context
 
 > ⚠️ **AI agents MUST read all files in `docs/` before performing any task.**
 
@@ -15,9 +15,9 @@ Before any code generation, refactoring, or answering questions:
 
 ## Project Overview
 
-- **Monorepo**: 3 sub-projects under `ChipmeoFoodstore/`
-  - `ChipmeoApis/` — .NET 10 Clean Architecture backend
-  - `ChipmeoPOS/` — SvelteKit 2 + Svelte 5 frontend
+- **Monorepo**: 3 sub-projects under `Foodstore/`
+  - `FoodstoreApi/` — .NET 10 Clean Architecture backend
+  - `Store/` — SvelteKit 2 + Svelte 5 frontend
   - `MediaStorageManagement/` — .NET 10 media file server
 - **Database**: SQL Server 2022+ with EF Core 10
 
@@ -49,8 +49,8 @@ Before any code generation, refactoring, or answering questions:
 
 | Project | Build | Lint | Type Check |
 |---|---|---|---|
-| ChipmeoPOS | `npm run build` | `npm run lint` | `npm run check` |
-| ChipmeoApis | `dotnet build ChipmeoApis` | — | — |
+| Store | `npm run build` | `npm run lint` | `npm run check` |
+| FoodstoreApi | `dotnet build FoodstoreApi` | — | — |
 | MediaStorage | `dotnet build MediaStorageManagement` | — | — |
 
 Run build after every change. Fix errors, not warnings (warnings are accepted tech debt).
@@ -69,14 +69,14 @@ Types: `feat`, `fix`, `chore`, `docs`, `style`, `refactor`, `perf`, `test`
 
 | File | Purpose |
 |---|---|
-| `ChipmeoApis/ChipmeoApis.Web/Program.cs` | API composition root |
-| `ChipmeoApis/ChipmeoApis.Web/Controllers/` | API endpoints |
-| `ChipmeoApis/ChipmeoApis.Infrastructure/Data/StoreDbContext.cs` | EF Core DbContext |
-| `ChipmeoPOS/src/lib/api/utils.ts` | API request helper (JWT auth) |
-| `ChipmeoPOS/src/lib/config/index.ts` | Environment-aware config |
-| `ChipmeoPOS/src/routes/` | SvelteKit file-based routes |
-| `ChipmeoPOS/vite.config.ts` | Vite 8 config (Rolldown bundler) |
-| `ChipmeoPOS/eslint.config.js` | ESLint 10 flat config (warnings for tech debt) |
+| `FoodstoreApi/FoodstoreApi.Web/Program.cs` | API composition root |
+| `FoodstoreApi/FoodstoreApi.Web/Controllers/` | API endpoints |
+| `FoodstoreApi/FoodstoreApi.Infrastructure/Data/StoreDbContext.cs` | EF Core DbContext |
+| `Store/src/lib/api/utils.ts` | API request helper (JWT auth) |
+| `Store/src/lib/config/index.ts` | Environment-aware config |
+| `Store/src/routes/` | SvelteKit file-based routes |
+| `Store/vite.config.ts` | Vite 8 config (Rolldown bundler) |
+| `Store/eslint.config.js` | ESLint 10 flat config (warnings for tech debt) |
 
 ## Tag Versioning Convention
 

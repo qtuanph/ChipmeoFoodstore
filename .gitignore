@@ -18,6 +18,7 @@ dist/
 build/
 .vite/
 .svelte-kit/
+.next/
 
 # IDE
 .idea/

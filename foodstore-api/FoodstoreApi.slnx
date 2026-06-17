@@ -1,0 +1,9 @@
+﻿<Solution>
+  <Project Path="FoodstoreApi.Web/FoodstoreApi.Web.csproj" />
+  <Project Path="FoodstoreApi.Usecase/FoodstoreApi.Usecase.csproj" />
+  <Project Path="FoodstoreApi.Core/FoodstoreApi.Core.csproj" />
+  <Project Path="FoodstoreApi.Infrastructure/FoodstoreApi.Infrastructure.csproj" />
+</Solution>
+
+
+

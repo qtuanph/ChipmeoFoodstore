@@ -1,6 +1,6 @@
 # Coding Standards
 
-> Unified coding conventions for ChipmeoFoodstore — covering both Svelte 5 (frontend) and .NET Clean Architecture (backend).
+> Unified coding conventions for Foodstore — covering both Svelte 5 (frontend) and .NET Clean Architecture (backend).
 
 ---
 
@@ -100,7 +100,7 @@ Infrastructure (EF, FTP) ──► Usecase (via DI)
 
 | Element | Convention | Example |
 |---|---|---|
-| Namespaces | `PascalCase`, dot-separated | `ChipmeoApis.Usecase.Services` |
+| Namespaces | `PascalCase`, dot-separated | `FoodstoreApi.Usecase.Services` |
 | Classes | `PascalCase`, noun | `OrderService`, `MenuController` |
 | Interfaces | `I` + `PascalCase` | `IOrderRepository`, `IAuthService` |
 | Methods | `PascalCase`, verb | `CreateAsync()`, `GetByIdAsync()` |
@@ -116,7 +116,7 @@ Infrastructure (EF, FTP) ──► Usecase (via DI)
 
 | Pattern | Example |
 |---|---|
-| `[Company].[Layer]` | `ChipmeoApis.Core` |
+| `[Company].[Layer]` | `FoodstoreApi.Core` |
 | `[Layer].Services` | `Usecase.Services.OrderService` |
 | `[Layer].Controllers` | `Web.Controllers.OrdersController` |
 | `[Layer].Interfaces.Repositories` | `Usecase.Interfaces.Repositories.IOrderRepository` |
@@ -127,7 +127,7 @@ Infrastructure (EF, FTP) ──► Usecase (via DI)
 Each layer project follows:
 
 ```
-ChipmeoApis.{Layer}/
+FoodstoreApi.{Layer}/
 ├── {Feature}/
 │   ├── {Action}.cs
 │   └── ...
@@ -139,7 +139,7 @@ ChipmeoApis.{Layer}/
 #### Usecase Layer (Application)
 
 ```
-ChipmeoApis.Usecase/
+FoodstoreApi.Usecase/
 ├── DTOs/
 │   ├── Orders/
 │   │   ├── CreateOrderRequest.cs
@@ -163,7 +163,7 @@ ChipmeoApis.Usecase/
 #### Infrastructure Layer
 
 ```
-ChipmeoApis.Infrastructure/
+FoodstoreApi.Infrastructure/
 ├── Data/
 │   ├── StoreDbContext.cs
 │   └── Configurations/
@@ -296,7 +296,7 @@ public class OrderService(IOrderRepository repository, IUnitOfWork uow)
 Each layer has its own `Extensions/DependencyInjection.cs`:
 
 ```csharp
-// ChipmeoApis.Infrastructure/Extensions/DependencyInjection.cs
+// FoodstoreApi.Infrastructure/Extensions/DependencyInjection.cs
 public static class InfrastructureExtensions
 {
     public static IServiceCollection AddInfrastructure(
@@ -472,7 +472,7 @@ public class OrdersController(IOrderService service) : ControllerBase
 **BẮT BUỘC** dùng `ApiResult` helper cho mọi response:
 
 ```csharp
-using ChipmeoApis.Web.ApiResponse;
+using FoodstoreApi.Web.ApiResponse;
 
 // ✅ Success — single resource (HTTP 200)
 return ApiResult.Success(data);
@@ -1090,7 +1090,7 @@ export let orders = $state<Order[]>([]);
 
 #### Nguyên tắc
 
-1. **Single source of truth** — `.env` ở project root, không có file `.env` riêng trong `ChipmeoPOS/`.
+1. **Single source of truth** — `.env` ở project root, không có file `.env` riêng trong `Store/`.
 2. **Runtime, không build-time** — dùng `$env/dynamic/public` thay vì `$env/static/public` để Docker build không cần `.env`.
 3. **Không hardcode fallback** — mọi `PUBLIC_*` đều required trong `.env`, config không có `|| defaultValue`.
 4. **Docker** — biến môi trường được truyền qua `environment:` trong `docker-compose.yml`.
