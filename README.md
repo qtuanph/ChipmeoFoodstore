@@ -4,15 +4,17 @@
     <strong>Modern Restaurant Management & POS System</strong>
   </p>
   <p>
-    A full-stack monorepo featuring a real-time Point of Sale, admin dashboard, kitchen display system, and machine learning-powered analytics.
+    A full-stack monorepo featuring a real-time Point of Sale, admin dashboard, CMS, CRM, kitchen display system, and machine learning-powered analytics.
   </p>
 
   <p>
     <img src="https://img.shields.io/badge/.NET-10.0-512BD4?logo=dotnet" alt=".NET 10">
     <img src="https://img.shields.io/badge/Svelte-5-FF3E00?logo=svelte" alt="Svelte 5">
     <img src="https://img.shields.io/badge/SvelteKit-2-FF3E00?logo=svelte" alt="SvelteKit 2">
+    <img src="https://img.shields.io/badge/Next.js-16-000000?logo=nextdotjs" alt="Next.js 16">
+    <img src="https://img.shields.io/badge/Astro-6-BC52EE?logo=astro" alt="Astro 6">
+    <img src="https://img.shields.io/badge/React-19-61DAFB?logo=react" alt="React 19">
     <img src="https://img.shields.io/badge/TypeScript-6-3178C6?logo=typescript" alt="TypeScript 6">
-    <img src="https://img.shields.io/badge/Vite-8-646CFF?logo=vite" alt="Vite 8">
     <img src="https://img.shields.io/badge/Tailwind_CSS-4-06B6D4?logo=tailwindcss" alt="Tailwind CSS 4">
     <img src="https://img.shields.io/badge/PostgreSQL-18-4169E1?logo=postgresql" alt="PostgreSQL 18">
     <img src="https://img.shields.io/badge/Redis-8-DC382D?logo=redis" alt="Redis 8">
@@ -25,7 +27,7 @@
 
 ## Overview
 
-Foodstore is a production-ready restaurant management platform designed for small to medium food & beverage businesses. It handles the entire order lifecycle — from POS ordering and kitchen display to admin management and analytics — with real-time updates via SignalR.
+Foodstore is a production-ready restaurant management platform designed for small to medium food & beverage businesses. It handles the entire order lifecycle — from POS ordering and kitchen display to admin management, CRM, and CMS with real-time updates via SignalR.
 
 ## Features
 
@@ -42,16 +44,15 @@ Foodstore is a production-ready restaurant management platform designed for smal
 - Sound notifications for new orders
 - Kiosk-friendly layout for tablet/mounted displays
 
-### Admin Dashboard (`/admin`)
+### Admin Dashboard (`/admin` on Next.js + shadcn)
 - **Dashboard KPIs**: revenue, orders, customers, popular items
 - **Analytics**: time-series charts, ML-powered sales forecasting, combo recommendations
 - **Menu management**: categories, menu items, add-ons, combos with image upload
 - **Order management**: full order lifecycle, status tracking, payment processing, refunds
-- **Employee management**: staff accounts, role assignment, login tracking
-- **Role-Based Access Control**: granular permissions per module/action
-- **Customer management**: profiles, loyalty points, order history
+- **Employee management**: staff accounts, role assignment, RBAC
+- **Customer management (CRM)**: profiles, loyalty points, QR code, leaderboard
 - **Discount codes**: percentage/fixed, usage limits, date ranges
-- **Blog & SEO**: rich text editor (TipTap), meta fields, Open Graph, tag management
+- **CMS (Blog)**: rich text editor (TipTap), categories, tags, SEO, scheduling, revision history
 - **Media gallery**: upload, usage tracking, unused image cleanup
 - **Payment settings**: VietQR bank configuration
 - **Sources/Tables**: order source management for dine-in
@@ -66,7 +67,7 @@ Foodstore is a production-ready restaurant management platform designed for smal
 
 ## Tech Stack
 
-### Frontend — Store (`Store/`)
+### Frontend — foodstore-store (`foodstore-store/`)
 | Technology | Purpose |
 |---|---|
 | **Svelte 5** + **SvelteKit 2** | UI framework with runes reactivity |
@@ -74,14 +75,32 @@ Foodstore is a production-ready restaurant management platform designed for smal
 | **Vite 8** (Rolldown/Oxc) | Build tool & dev server |
 | **Tailwind CSS 4** | Utility-first styling |
 | **@iconify/svelte** | Tabler Icons via Iconify (275k+ icons, on-demand) |
-| **Flowbite** | Vanilla JS UI components via data-* API + initFlowbite() |
+| **Flowbite** | Vanilla JS UI components (programmatic API) |
 | **TipTap** | Rich text editor for blog posts |
 | **ApexCharts** | Interactive analytics charts |
 | **Croppie** | Client-side image cropping |
 | **SignalR** | Real-time WebSocket communication |
 | **@sveltejs/adapter-node** | Node.js production server (Docker) |
 
-### Backend — FoodstoreApi (`FoodstoreApi/`)
+### Frontend — foodstore-admin (`foodstore-admin/`)
+| Technology | Purpose |
+|---|---|
+| **Next.js 16** + **React 19** | React framework with App Router |
+| **shadcn/ui** (Base UI) | 55+ accessible UI components |
+| **Tailwind CSS 4** | Utility-first styling |
+| **lucide-react** | Icons |
+| **next-themes** | Dark/light mode |
+| **recharts** | Analytics charts |
+| **sonner** | Toast notifications |
+| **Better Auth** | BFF authentication with HttpOnly session cookies |
+
+### Frontend — foodstore-landingpage (`foodstore-landingpage/`)
+| Technology | Purpose |
+|---|---|
+| **Astro 6** | Static content site |
+| **Tailwind CSS 4** | Utility-first styling |
+
+### Backend — foodstore-api (`foodstore-api/`)
 | Layer | Technology |
 |---|---|
 | **Core** | .NET 10, EF Core Abstractions |
@@ -91,7 +110,7 @@ Foodstore is a production-ready restaurant management platform designed for smal
 
 ### Database
 - **PostgreSQL 18** with Vietnamese collation (`vi-VN-x-ICU`)
-- 23 tables covering the full restaurant domain model
+- 30+ tables covering the full restaurant domain model
 - Entity Framework Core 10 with Npgsql provider
 
 ### Caching
@@ -111,20 +130,20 @@ Internet (port 80)
      │
      ▼
 ┌──────────┐
-│  Traefik  │  ← Reverse Proxy (latest)
+│  Traefik  │  ← Reverse Proxy
 └────┬─────┘
      │
-     ├── /api/* , /hubs/* ────────► api:8080 (ASP.NET Core 10)
+     ├── host(localhost) ───────────► landingpage:4321 (Astro)
+     ├── host(store.localhost) ─────► store:3000 (SvelteKit)
+     ├── host(admin.localhost) ─────► admin:3000 (Next.js)
+     ├── host(api.localhost) ───────► api:8080 (.NET 10)
      │
-     └── Host(localhost) ─────────► webapp:3000 (SvelteKit Node)
-                                        │
-                                        ▼
-                                   api:8080 (SSR internal)
-                                        │
-                               ┌────────┼────────┐
-                               ▼        ▼        ▼
-                            db:5432  redis:6379  rustfs:9000
-                          (PG 18)   (Redis 8)   (S3 Storage)
+     └── /uploads/* ────────────────► rustfs:9000 (S3)
+                                         │
+                                 ┌────────┼────────┐
+                                 ▼        ▼        ▼
+                              db:5432  redis:6379  rustfs:9000
+                            (PG 18)   (Redis 8)   (S3 Storage)
 ```
 
 The backend follows **Clean Architecture** with 4 layers:
@@ -136,37 +155,42 @@ The backend follows **Clean Architecture** with 4 layers:
 ## Project Structure
 
 ```
-Foodstore/
-├── FoodstoreApi/                    # Backend (.NET 10)
-│   ├── FoodstoreApi.Core/           #   Domain entities
+ChipmeoFoodstore/
+├── foodstore-api/                   # Backend (.NET 10)
+│   ├── FoodstoreApi.Core/           #   Domain entities (30+ entities)
 │   ├── FoodstoreApi.Usecase/        #   Business logic & DTOs
-│   ├── FoodstoreApi.Infrastructure/ #   EF Core, S3, Redis
+│   ├── FoodstoreApi.Infrastructure/ #   EF Core, S3, Redis, Migrations
 │   ├── Dockerfile                  #   Docker image
-│   └── FoodstoreApi.Web/            #   API controllers, hubs
-├── Store/                     # Frontend (SvelteKit)
-│   ├── Dockerfile                  #   Docker image
+│   └── FoodstoreApi.Web/            #   25 API controllers, hubs
+├── foodstore-store/                 # POS & Kitchen (SvelteKit)
+│   ├── Dockerfile
 │   ├── src/
 │   │   ├── lib/
 │   │   │   ├── api/                #   API client modules
-│   │   │   ├── components/         #   Reusable UI components
-│   │   │   │   ├── ui/             #     Base components: Icon, Modal, Button, Sidebar, Table, etc.
-│   │   │   │   ├── editor/         #     TipTap rich text editor
-│   │   │   │   └── media/          #     Media gallery modal
-│   │   │   ├── services/           #   SignalR client
-│   │   │   ├── types/              #   TypeScript interfaces
-│   │   │   ├── utils/              #   Stores & helpers
-│   │   │   └── config/             #   Environment config
+│   │   │   ├── components/         #   Base UI components
+│   │   │   ├── types/
+│   │   │   ├── utils/
+│   │   │   └── config/
 │   │   └── routes/
 │   │       ├── pos/                #   Point of Sale
 │   │       ├── kitchen/            #   Kitchen display
-│   │       ├── admin/              #   Admin dashboard
-│   │       ├── logout/
-│   │       └── error/
-│   └── ...
-├── scripts/                        # DB init scripts
-│   └── init.sql                    # PostgreSQL schema + seed
-├── docker-compose.yml              # Full stack orchestration
-├── .env                            # Environment variables
+│   │       └── admin/              #   Legacy admin (SvelteKit)
+├── foodstore-admin/                 # Admin Dashboard (Next.js + shadcn)
+│   ├── Dockerfile
+│   ├── src/
+│   │   ├── app/admin/
+│   │   │   ├── cms/                #   CMS module (posts, categories, tags, settings)
+│   │   │   ├── crm/                #   CRM module (customers, leaderboard)
+│   │   │   ├── employees/          #   Employee management
+│   │   │   └── food/               #   Menu & orders management
+│   │   ├── components/             #   shadcn/ui + custom components
+│   │   └── lib/                    #   Auth, API client, services
+├── foodstore-landingpage/           # Landing Page (Astro)
+├── scripts/                         # DB init scripts
+│   └── init.sql
+├── docker-compose.yml               # Full stack orchestration
+├── .env                             # Environment variables
+├── .env.example                     # Environment template
 └── docs/
 ```
 
@@ -181,16 +205,19 @@ Foodstore/
 
 ```bash
 # Clone & start full stack
-git clone https://github.com/qtuanph/Foodstore.git
-cd Foodstore
+git clone https://github.com/qtuanph/ChipmeoFoodstore.git
+cd ChipmeoFoodstore
 
-# Full stack: traefik + db + redis + rustfs + api + webapp
+# Full stack: 8 services
 docker compose up -d
 ```
 
-Open **http://localhost** → Traefik routes to webapp.
-
-Default admin login: **admin** / **admin123**
+| URL | Service |
+|-----|---------|
+| `http://localhost` | Landing page (Astro) |
+| `http://store.localhost` | POS + Kitchen + Legacy Admin (SvelteKit) |
+| `http://admin.localhost` | Admin Dashboard (Next.js + shadcn) |
+| `http://api.localhost` | API (Swagger UI) |
 
 ### 2. Local Development (without Docker)
 
@@ -199,19 +226,23 @@ Default admin login: **admin** / **admin123**
 docker compose up -d db redis rustfs
 
 # Terminal 2 — Backend API
-cd FoodstoreApi
+cd foodstore-api
 dotnet run --project FoodstoreApi.Web   # http://localhost:5142
 
-# Terminal 3 — Frontend
-cd Store
-npm install
-npm run dev                            # http://localhost:5173
+# Terminal 3 — foodstore-store
+cd foodstore-store
+npm install && npm run dev              # http://localhost:5173
+
+# Terminal 4 — foodstore-admin
+cd foodstore-admin
+npm install && npm run dev              # http://localhost:3000
+
+# Terminal 5 — foodstore-landingpage
+cd foodstore-landingpage
+npm install && npm run dev              # http://localhost:4321
 ```
 
-> The Vite dev server proxies `/api` and `/hubs` to `localhost:5142` automatically.
-
 ### 3. Build Docker Images
-
 ```bash
 docker compose build
 ```
@@ -222,84 +253,42 @@ docker compose build
 ```env
 # PostgreSQL
 POSTGRES_USER=foodstore
-POSTGRES_DB=pos_shop
-DB_PASSWORD=REMOVED
-
-# Redis
-REDIS_PASSWORD=
+POSTGRES_DB=foodstore_shop
+DB_PASSWORD=your_password_here
 
 # S3 (RustFS)
 S3_ACCESS_KEY=foodstore
-S3_SECRET_KEY=REMOVED
+S3_SECRET_KEY=your_secret_here
 S3_BUCKET=food-media
 
 # JWT
-JWT_SECRET=REMOVED
+JWT_SECRET=your_jwt_secret_here
 
 # Frontend
 PUBLIC_API_URL=http://api:8080
 ```
 
 ### Backend (`appsettings.json`)
-Settings are overridden by environment variables in Docker (via `docker-compose.yml`). The committed `appsettings.json` contains dummy placeholders — real secrets are in `.env` and passed as env vars to containers. Key config sections:
-- `ConnectionStrings:DefaultConnection` — PostgreSQL
-- `ConnectionStrings:Redis` — Redis
-- `S3:Endpoint` / `S3:Bucket` — S3 object storage
-- `JwtSettings:SecretKey` — JWT signing key
-
-### Frontend (`src/lib/config/index.ts`)
-Auto-detects environment. In Docker, server-side uses `PUBLIC_API_URL=http://api:8080`; browser uses relative URLs via Traefik proxy.
-
-## API Overview
-
-All API requests go through Traefik at `http://localhost/api/*`.
-
-### Authentication
-- `POST /api/auth/login` — Employee login (JWT)
-- `POST /api/auth/refresh` — Refresh token
-- `POST /api/customers/register` — Customer registration
-- `POST /api/customers/login` — Customer login
-
-### POS
-- `GET /pos/menu` — Full menu data
-- `POST /pos/orders` — Create order
-- `PUT /pos/orders/{id}/status` — Update order status
-- `POST /pos/orders/{id}/payment` — Process payment
-
-### Admin
-- Full CRUD for categories, menu items, add-ons, combos, discounts, sources, employees, roles, customers, blog posts, tags, payment settings
-
-### Kitchen
-- `GET /api/kitchen/orders` — Order queue
-- `PUT /api/kitchen/orders/{id}/start` — Start preparing
-- `PUT /api/kitchen/orders/{id}/complete` — Complete order
-
-### Media
-- `POST /api/media/upload` — Upload file (saved to S3)
-- `GET /api/media` — List media
-- `DELETE /api/media/{id}` — Delete media
-
-### SignalR Hub
-- **Endpoint**: `/hubs/app`
-- **Events**: order updates, menu updates, table updates, kitchen notifications
+Settings are overridden by environment variables in Docker (via `docker-compose.yml`). The committed `appsettings.json` contains placeholder values (`__CHANGE_ME__`, `overridden_by_env`) — real secrets are in `.env` and passed as env vars to containers.
 
 ## Docker Compose Services
 
-| Service | Image | Internal Port | External | Depends On |
-|---------|-------|--------------|----------|------------|
-| **traefik** | `traefik:latest` | `:8080` (web) | **`:80`** | — |
-| **db** | `postgres:18-alpine` | `:5432` | — | — |
-| **redis** | `redis:8-alpine` | `:6379` | — | — |
-| **rustfs** | `rustfs/rustfs:latest` | `:9000` (S3), `:9001` (console) | — | — |
-| **api** | `chipmeofoodstore-api` (build) | `:8080` | — | db, redis, rustfs (healthy) |
-| **webapp** | `chipmeofoodstore-webapp` (build) | `:3000` | — | api |
+| Service | Image | Internal Port | Host (Traefik) |
+|---------|-------|--------------|----|
+| **traefik** | `traefik:latest` | `:8080` (web) | — |
+| **db** | `postgres:18-alpine` | `:5432` | — |
+| **redis** | `redis:8-alpine` | `:6379` | — |
+| **rustfs** | `rustfs/rustfs:latest` | `:9000` (S3) | uploads.localhost |
+| **api** | `chipmeofoodstore-api` (build) | `:8080` | api.localhost |
+| **store** | `foodstore-store` (build) | `:3000` | store.localhost |
+| **admin** | `foodstore-admin` (build) | `:3000` | admin.localhost |
+| **landingpage** | `foodstore-landingpage` (build) | `:4321` | localhost |
 
-### Data Volumes
-| Volume | Mount | Purpose |
-|--------|-------|---------|
-| `postgres_data` | `/var/lib/postgresql` | PostgreSQL data |
-| `redis_data` | `/data` | Redis persistence |
-| `s3_data` | `/data` | RustFS object storage |
+## API Proxy
+
+Next.js admin routes all API calls through a proxy:
+- `/api/proxy/:path*` → `http://api:8080/v2/api/:path*`
+- `/api/proxy/hubs/:path*` → `http://api:8080/hubs/:path*` (SignalR)
 
 ## Deployment
 
@@ -308,7 +297,10 @@ docker compose up -d
 ```
 
 ### Roadmap
-- [x] Docker Compose (Traefik + PostgreSQL + Redis + RustFS + API + Frontend)
+- [x] Docker Compose (Traefik + PostgreSQL + Redis + RustFS + API + 3 Frontends)
+- [x] Monorepo with 4 sub-projects (API, Store, Admin, Landing)
+- [x] CMS system (Blog, Categories, Tags, SEO, Scheduling, Revisions)
+- [x] CRM module (Customer management, Loyalty points, Leaderboard)
 - [ ] Customer mobile ordering via QR code
 - [ ] Multi-branch/outlet support
 - [ ] Offline POS mode
@@ -317,7 +309,3 @@ docker compose up -d
 - [ ] E-invoice integration
 - [ ] i18n (Vietnamese/English)
 - [ ] PWA support
-
-## License
-
-This project is private software. All rights reserved.

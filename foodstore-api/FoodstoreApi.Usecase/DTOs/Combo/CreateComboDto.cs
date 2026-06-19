@@ -13,10 +13,6 @@ public class CreateComboDto
 
 public class CreateComboItemDto
 {
-    public int MenuItemId { get; set; }
+    public Guid MenuItemId { get; set; }
     public int Quantity { get; set; }
 }
-
-
-
-

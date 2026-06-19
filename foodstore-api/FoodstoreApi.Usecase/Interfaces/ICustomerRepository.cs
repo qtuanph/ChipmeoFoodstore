@@ -4,7 +4,8 @@ namespace FoodstoreApi.Usecase.Interfaces;
 
 public interface ICustomerRepository
 {
-    Task<Customer?> GetByIdAsync(int id);
+    Task<Customer?> GetByIdAsync(Guid id);
+    Task<Customer?> GetByUserIdAsync(Guid userId);
     Task<Customer?> GetByEmailAsync(string email);
     Task<Customer?> GetByPhoneAsync(string phone);
     Task<IEnumerable<Customer>> GetAllAsync();
@@ -12,7 +13,3 @@ public interface ICustomerRepository
     Task UpdateAsync(Customer customer);
     Task DeleteAsync(Customer customer);
 }
-
-
-
-

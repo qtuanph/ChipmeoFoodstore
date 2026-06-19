@@ -1,12 +1,14 @@
 ﻿namespace FoodstoreApi.Usecase.DTOs.Tag;
 
 public record TagDto(
-    int Id,
+    Guid Id,
     string Name,
     string Slug,
     string? Description,
     string Color,
-    int PostCount
+    int PostCount,
+    DateTime CreatedAt,
+    DateTime UpdatedAt
 );
 
 public record CreateTagDto(
@@ -20,7 +22,3 @@ public record UpdateTagDto(
     string? Description,
     string? Color
 );
-
-
-
-

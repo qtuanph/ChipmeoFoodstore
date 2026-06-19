@@ -3,126 +3,168 @@
 ## Monorepo Structure
 
 ```
-Foodstore/
-├── docker-compose.yml                    # 🐳 Full stack (6 services)
+ChipmeoFoodstore/
+├── docker-compose.yml                    # 🐳 Full stack (8 services)
 ├── .env                                  # 🔒 Environment variables
-├── FoodstoreApi/                          # 🖥️ Backend (.NET 10 Clean Architecture)
+├── foodstore-api/                         # 🖥️ Backend (.NET 10 Clean Architecture)
 │   ├── FoodstoreApi.slnx                  # Solution file
 │   │
 │   ├── FoodstoreApi.Core/                 # 🎯 Domain Layer (zero dependencies)
-│   │   ├── Entities/                     #   POCO entities (23 files)
+│   │   ├── Entities/                     #   POCO entities (30+ files)
+│   │   │   ├── Identity/
+│   │   │   │   ├── ApplicationUser.cs     #     Better Auth user entity
+│   │   │   │   └── ApplicationRole.cs     #     Better Auth role entity
+│   │   │   ├── Employee.cs               #     user_id → users, role_id → roles
+│   │   │   ├── Customer.cs               #     user_id → users, loyalty_points
+│   │   │   ├── Role.cs                   #     is_system flag
+│   │   │   ├── Permission.cs
+│   │   │   ├── RolePermission.cs
+│   │   │   ├── RefreshToken.cs
+│   │   │   ├── IAuditableEntity.cs       #     Auditable interface
 │   │   │   ├── Category.cs
 │   │   │   ├── MenuItem.cs
 │   │   │   ├── Addon.cs
+│   │   │   ├── MenuItemAddon.cs
 │   │   │   ├── Combo.cs
 │   │   │   ├── ComboItem.cs
 │   │   │   ├── Discount.cs
 │   │   │   ├── Source.cs
-│   │   │   ├── Role.cs
-│   │   │   ├── Permission.cs
-│   │   │   ├── RolePermission.cs
-│   │   │   ├── Employee.cs
-│   │   │   ├── Customer.cs
 │   │   │   ├── Order.cs
 │   │   │   ├── OrderItem.cs
 │   │   │   ├── OrderItemAddon.cs
 │   │   │   ├── OrderStatusHistory.cs
 │   │   │   ├── Payment.cs
 │   │   │   ├── PaymentSetting.cs
-│   │   │   ├── BlogPost.cs
+│   │   │   ├── Media.cs
 │   │   │   ├── Tag.cs
+│   │   │   ├── BlogPost.cs               #     Extended: scheduledAt, reviewedBy, isFeatured, etc.
+│   │   │   ├── BlogCategory.cs
+│   │   │   ├── BlogPostCategory.cs
 │   │   │   ├── BlogPostTag.cs
-│   │   │   ├── MenuItemAddon.cs
-│   │   │   └── Media.cs
-│   │   └── FoodstoreApi.Core.csproj
+│   │   │   ├── BlogPostRevision.cs
+│   │   │   ├── BlogPostBlock.cs
+│   │   │   └── BlogSetting.cs
+│   │   ├── Configuration/
+│   │   ├── Constants/
+│   │   └── Utils/
 │   │
 │   ├── FoodstoreApi.Usecase/             # 🧠 Application Layer
-│   │   ├── DTOs/                         #   Data Transfer Objects (16 subdirectories)
+│   │   ├── DTOs/                         #   18 DTO subdirectories
 │   │   ├── Interfaces/                   #   Service & Repository interfaces
-│   │   │   ├── Repositories/             #     17 repository interfaces
-│   │   │   └── Services/                 #     16 service interfaces
-│   │   ├── Services/                     #   Service implementations
+│   │   │   ├── IBlogService.cs           #     + IBlogBlockService, IBlogCategoryService,
+│   │   │   ├── IBlogBlockService.cs      #       IBlogRevisionService, IBlogSettingService
+│   │   │   └── ...                       #     20+ interfaces total
+│   │   ├── Services/                     #   Service implementations (20+)
 │   │   ├── Extensions/                   #   DI registration
 │   │   └── Utils/                        #   Shared utilities
 │   │
 │   ├── FoodstoreApi.Infrastructure/       # 📀 Infrastructure Layer
-│   │   ├── Data/                         #   EF Core DbContext + Configurations
-│   │   ├── Repositories/                 #   17 repository implementations
+│   │   ├── Data/                         #   EF Core DbContext + Configurations + Migrations
+│   │   ├── Repositories/                 #   22 repository implementations
 │   │   ├── Handlers/                     #   Media upload handler (S3/AWS SDK)
-│   │   ├── Extensions/                   #   DI registration
-│   │   ├── Caching/                      #   (empty — planned)
-│   │   └── Mappings/                     #   (future: AutoMapper profiles)
+│   │   ├── Caching/                      #   Redis caching implementation
+│   │   └── Extensions/                   #   DI registration
 │   │
 │   ├── Dockerfile                        #   🐳 API Docker image
 │   └── FoodstoreApi.Web/                  # 🌐 Presentation Layer
-│       ├── Controllers/                  #   21 API controllers
+│       ├── Controllers/                  #   25 API controllers
 │       ├── Hubs/                         #   SignalR hub
 │       ├── Middleware/                   #   Security headers, rate limiting
 │       ├── Authorization/               #   Custom RBAC (policy provider + handler)
+│       ├── Seed/                         #   Database seeding
 │       ├── Program.cs                    #   App startup / composition root
 │       └── appsettings.json             #   Configuration
 │
-├── Store/                           # 🎨 Frontend (SvelteKit)
+├── foodstore-admin/                     # 🛡️ Admin Dashboard (Next.js 16)
+│   ├── src/
+│   │   ├── app/
+│   │   │   ├── admin/
+│   │   │   │   ├── cms/                  #   /admin/cms — CMS module
+│   │   │   │   │   ├── dashboard/        #     Dashboard stats
+│   │   │   │   │   ├── posts/            #     Bài viết (list + editor [id])
+│   │   │   │   │   ├── categories/       #     Danh mục
+│   │   │   │   │   ├── tags/             #     Thẻ
+│   │   │   │   │   └── settings/         #     Cài đặt CMS
+│   │   │   │   ├── crm/                  #   /admin/crm — CRM module
+│   │   │   │   │   ├── dashboard/        #     Dashboard stats
+│   │   │   │   │   ├── customers/        #     Khách hàng (DataTable + Sheet CRUD)
+│   │   │   │   │   └── leaderboard/      #     Bảng xếp hạng điểm
+│   │   │   │   ├── employees/            #   /admin/employees — Nhân viên
+│   │   │   │   │   ├── dashboard/        #     Dashboard stats
+│   │   │   │   │   ├── all/              #     Danh sách nhân viên
+│   │   │   │   │   ├── roles/            #     Vai trò
+│   │   │   │   │   └── role-permissions/ #     Phân quyền
+│   │   │   │   ├── food/                 #   /admin/food — Thực đơn (legacy)
+│   │   │   │   ├── layout.tsx            #   SidebarProvider + AppSidebar + Auth guard
+│   │   │   │   └── page.tsx              #   Redirect → /admin/cms/dashboard
+│   │   │   ├── login/                   #   /login — Login page
+│   │   │   ├── layout.tsx               #   Root layout + AuthProvider + ThemeProvider
+│   │   │   └── page.tsx                 #   Redirect → /admin
+│   │   ├── components/
+│   │   │   ├── app-sidebar.tsx          #   Sidebar + module switcher
+│   │   │   ├── team-switcher.tsx        #   Dropdown chọn phân hệ
+│   │   │   ├── nav-user.tsx             #   Avatar dropdown
+│   │   │   ├── nav-main.tsx             #   Sidebar navigation
+│   │   │   ├── nav-projects.tsx         #   Project navigation
+│   │   │   ├── settings-dialog.tsx      #   Modal: profile edit + avatar upload + theme
+│   │   │   ├── data-table.tsx           #   Generic DataTable (sort, search, pagination)
+│   │   │   ├── crud-sheet.tsx           #   CRUD Sheet component
+│   │   │   ├── confirm-dialog.tsx       #   DeleteConfirmDialog
+│   │   │   ├── status-badge.tsx         #   Status badge component
+│   │   │   ├── search-input.tsx         #   Search input
+│   │   │   ├── skeleton-table.tsx       #   Loading skeleton
+│   │   │   ├── image-upload.tsx         #   Image upload component
+│   │   │   ├── editor/
+│   │   │   │   └── tiptap.tsx           #   TipTap rich text editor
+│   │   │   └── ui/                      #   shadcn/ui components (55+)
+│   │   ├── lib/
+│   │   │   ├── auth-context.tsx         #   AuthProvider + useAuth() hook
+│   │   │   ├── auth-service.ts           #   Login/logout/profile
+│   │   │   ├── api-client.ts            #   Fetch proxy → .NET API
+│   │   │   ├── services/                #   Blog, CRM, Employee, Media services
+│   │   │   ├── types/                   #   TypeScript interfaces
+│   │   │   └── utils.ts                 #   Date utils (UTC → GMT+7)
+│   │   ├── hooks/                       #   Custom React hooks
+│   │   └── proxy.ts                    #   Next.js rewrites proxy config
+│   ├── next.config.ts
+│   ├── package.json
+│   └── tsconfig.json
+│
+├── foodstore-store/                      # 🎨 Frontend (SvelteKit)
 │   ├── src/
 │   │   ├── lib/
-│   │   │   ├── api/                      #   API client (21 modules)
-│   │   │   │   ├── index.ts             #     Central exports
-│   │   │   │   └── utils.ts             #     Request helper (JWT auth)
-│   │   │   ├── components/               #   Reusable UI components
-│   │   │   │   ├── ui/                  #     Base UI: Icon, Modal, Accordion, Breadcrumb, Sidebar, Button, Pagination, Table, Badge
-│   │   │   │   ├── editor/              #     TipTap rich text editor
-│   │   │   │   └── media/               #     Media gallery modal
+│   │   │   ├── api/                     #   API client (21 modules)
+│   │   │   ├── components/              #   UI: Icon, Modal, Accordion, Sidebar, Table...
+│   │   │   │   ├── ui/
+│   │   │   │   ├── editor/
+│   │   │   │   └── media/
 │   │   │   ├── services/                #   SignalR connection manager
-│   │   │   ├── types/                    #   TypeScript interfaces (16 files)
-│   │   │   ├── utils/                    #   State stores, cart, auth, helpers
-│   │   │   └── config/                  #   Environment-aware API URL config
-│   │   └── routes/                       #   File-based routing
-│   │       ├── +layout.svelte           #     Root layout
-│   │       ├── +page.svelte             #     Landing page
-│   │       ├── admin/                    #     /admin — Dashboard
-│   │       │   ├── +layout.svelte
-│   │       │   ├── +page.svelte
-│   │       │   ├── dashboard.svelte.ts
-│   │       │   ├── analytics/
-│   │       │   ├── menu/
-│   │       │   ├── categories/
-│   │       │   ├── addons/
-│   │       │   ├── combos/
-│   │       │   ├── discounts/
-│   │       │   ├── orders/
-│   │       │   ├── employees/
-│   │       │   ├── roles/
-│   │       │   ├── role-permissions/
-│   │       │   ├── customers/
-│   │       │   ├── blog/
-│   │       │   ├── media/
-│   │       │   ├── sources/
-│   │       │   ├── tags/
-│   │       │   └── payment-settings/
-│   │       ├── pos/                      #     /pos — Point of Sale
-│   │       │   ├── +layout.svelte
-│   │       │   ├── +page.svelte
-│   │       │   ├── store.svelte.ts
-│   │       │   └── checkout/
-│   │       ├── kitchen/                  #     /kitchen — KDS
-│   │       │   ├── +layout.svelte
-│   │       │   ├── +page.svelte
-│   │       │   └── kitchen.svelte.ts
+│   │   │   ├── types/                   #   16 TypeScript interface files
+│   │   │   ├── utils/                   #   State stores, cart, auth, helpers
+│   │   │   └── config/                  #   Environment-aware config
+│   │   └── routes/                      #   File-based routing
+│   │       ├── +layout.svelte
+│   │       ├── +page.svelte
+│   │       ├── admin/                   #   Legacy SvelteKit admin (20+ sub-routes)
+│   │       ├── pos/                     #   /pos — Point of Sale
+│   │       ├── kitchen/                 #   /kitchen — KDS
 │   │       ├── logout/
 │   │       └── error/
-│   ├── Dockerfile                        #   🐳 Frontend Docker image
-│   ├── static/
+│   ├── Dockerfile
 │   ├── svelte.config.js
 │   ├── vite.config.ts
-│   ├── tsconfig.json
-│   ├── eslint.config.js
 │   └── package.json
 │
-├── scripts/                              # 📜 Database
-│   └── init.sql                          #   PostgreSQL schema + seed data
+├── foodstore-landingpage/               # 🌐 Landing Page (Astro)
+│   ├── src/
+│   │   ├── components/
+│   │   ├── layouts/
+│   │   └── pages/
+│   ├── Dockerfile
+│   └── astro.config.mjs
 │
-├── docker-compose.yml                    # 🐳 Full stack orchestration
-├── .env                                  # 🔒 Environment variables
+├── scripts/                              # 📜 Database
+│   └── init.sql                          #   PostgreSQL schema (28+ tables)
 │
 ├── docs/                                 # 📚 Documentation
 │   ├── 0_quick_reference.json
@@ -133,6 +175,7 @@ Foodstore/
 │   └── 5_coding_standards.md
 │
 ├── README.md
+├── AGENTS.md                             # 🤖 AI context file
 └── .gitignore
 ```
 
@@ -146,38 +189,56 @@ Foodstore/
 ┌──────────┐     ┌───────────┐     ┌───────────┐     ┌───────┐     ┌────────┐     ┌──────┐
 │  Pending  │ ──► │ Confirmed │ ──► │ Preparing │ ──► │ Ready │ ──► │ Served │ ──► │ Paid │
 └──────────┘     └───────────┘     └───────────┘     └───────┘     └────────┘     └──────┘
-                                                                                      │
-                                                                                      ▼
-                                                                                 ┌─────────┐
-                                                                                 │Cancelled│
-                                                                                 └─────────┘
+                                                                                       │
+                                                                                       ▼
+                                                                                  ┌─────────┐
+                                                                                  │Cancelled│
+                                                                                  └─────────┘
 ```
 
-- **POS** creates order → status = `pending`
-- Payment processed → status = `paid`
-- Kitchen sees `paid` orders → starts preparing → status = `preparing`
-- Kitchen completes → status = `served`
+- POS creates order → status = `pending`, payment processed → `paid`
+- Kitchen sees `paid` orders → starts preparing → `preparing`
+- Kitchen completes → `served`
 - Admin can cancel at any point
-- SignalR broadcasts every status change to all connected clients
+- SignalR broadcasts every status change
 
-### 2. Authentication Flow
+### 2a. Authentication Flow — Next.js Admin (BFF)
 
 ```
-┌──────────┐     ┌──────────┐     ┌──────────────────┐     ┌────────────────┐
-│  Client  │     │ Traefik  │     │  FoodstoreApi.Web │     │  PostgreSQL    │
-├──────────┤     ├──────────┤     ├──────────────────┤     ├────────────────┤
-│  1. POST │────►│ :80/     │────►│  /api/auth/login │────►│  Find employee │
-│          │     │ /api/*   │     │  (username,pass)  │     │  Verify bcrypt │
-│          │◄────│          │◄────│  JWT + Refresh   │     │                │
-│          │     │          │     │  (in response)   │     │                │
-│          │     │          │     │                  │     │                │
-│  2. GET  │────►│ :80/     │────►│  /admin/xxx      │     │                │
-│   /admin │     │ /admin/* │     │  Authorization:  │     │                │
-│          │     │          │     │  Bearer <jwt>    │     │                │
-│          │◄────│          │◄────│  Check JWT sig   │     │                │
-│          │     │          │     │  Check permission│────►│  role_perms    │
-│          │     │          │     │  Return data     │     │                │
-└──────────┘     └──────────┘     └──────────────────┘     └────────────────┘
+┌──────────┐     ┌──────────────────┐     ┌──────────────────────────┐
+│  Browser │     │  Next.js Server  │     │  .NET API               │
+│          │     │  (foodstore-admin)│    │                          │
+├──────────┤     ├──────────────────┤     ├──────────────────────────┤
+│  1. Form │────►│  Better Auth     │────►│  /api/auth/login        │
+│  POST    │     │  validate        │     │  Validate credentials   │
+│  /login  │     │  set HttpOnly    │     │  Return user + perms    │
+│          │◄────│  session cookie  │────│                          │
+│          │     │                  │     │                          │
+│  2. GET  │────►│  middleware      │────►│  /api/proxy/:path*      │
+│  /admin  │     │  verify session  │     │  .NET API proxy         │
+│          │◄────│  Return page     │────│                          │
+└──────────┘     └──────────────────┘     └──────────────────────────┘
+```
+
+- Better Auth sets HttpOnly session cookie on login
+- Next.js middleware verifies session on each request
+- API proxy: `/api/proxy/:path*` → `http://api:8080/v2/api/:path*`
+- SignalR proxy: `/api/proxy/hubs/:path*` → `http://api:8080/hubs/:path*`
+
+### 2b. Authentication Flow — Store / POS (.NET API JWT)
+
+```
+┌──────────┐     ┌──────────┐     ┌──────────────────┐
+│  Client  │     │ Traefik  │     │  FoodstoreApi.Web │
+├──────────┤     ├──────────┤     ├──────────────────┤
+│  1. POST │────►│ :80/     │────►│  /api/auth/login  │
+│          │     │ /api/*   │     │  JWT response    │
+│          │◄────│          │◄────│  Bearer token    │
+│          │     │          │     │                  │
+│  2. GET  │────►│ :80/     │────►│  /api/xxx        │
+│          │     │ /api/*   │     │  Bearer <jwt>    │
+│          │◄────│          │◄────│  Return data     │
+└──────────┘     └──────────┘     └──────────────────┘
 ```
 
 ### 3. Real-Time Updates (SignalR)
@@ -195,52 +256,63 @@ Foodstore/
 
 ```
 ┌──────────┐     ┌──────────┐     ┌──────────────────┐     ┌──────────────────────────┐
-│   POS UI │     │ Traefik  │     │  FoodstoreApi.Web │     │  RustFS (S3 Object Store)│
+│   UI     │     │ Traefik  │     │  FoodstoreApi.Web │     │  RustFS (S3 Object Store)│
 ├──────────┤     ├──────────┤     ├──────────────────┤     ├──────────────────────────┤
-│  1. POST │────►│ :80/     │────►│  /api/media/     │────►│  PutObjectAsync (AWS SDK)│
-│  (file)  │     │ /api/*   │     │  upload           │     │  Validate file type     │
-│          │     │          │     │                   │     │  Save to S3 bucket      │
-│          │     │          │     │◄──────────────────│────│  Return public URL      │
-│          │◄────│          │◄────│  {id, url}        │     │                          │
+│  POST/   │────►│ :80/     │────►│  /api/media/     │────►│  PutObjectAsync (AWS SDK)│
+│  upload  │     │ /api/*   │     │  upload           │     │  Validate & save         │
+│          │     │          │     │                   │◄────│  Return public URL      │
+│          │◄────│          │◄────│  {id, url}       │     │                          │
 └──────────┘     └──────────┘     └──────────────────┘     └──────────────────────────┘
 ```
 
-### 5. Data Fetching (Frontend → Backend)
+### 5. CMS Post Lifecycle
+
+```
+┌─────────┐    ┌───────────┐    ┌──────────┐    ┌───────────┐    ┌────────────┐
+│  Draft  │──► │  Reviewed  │──► │Scheduled │──► │ Published  │──► │ Increment  │
+│         │    │  (duyệt)   │    │(lên lịch)│    │ (xuất bản) │    │ view count │
+└─────────┘    └───────────┘    └──────────┘    └───────────┘    └────────────┘
+     │              │               │                │
+     └──────────────┴───────────────┴────────────────┘
+                            │
+                       ┌────▼────┐
+                       │ Deleted │
+                       └─────────┘
+```
+
+- Posts support full workflow: draft → reviewed → scheduled/published
+- Revisions auto-created on publish, view count tracking
+- SEO metadata: meta title, description, focus keyword, OG image
+- Categories + Tags via many-to-many relationships
+
+### 6. Data Fetching — Next.js Admin (Proxy Pattern)
 
 ```
 ┌──────────────┐     ┌──────────────┐     ┌──────────────┐
-│ Svelte Route  │     │  API Module   │     │  .NET API    │
-│ (+page.svelte)│     │ (lib/api/*)  │     │  Controller  │
+│ Client Page  │     │  Next.js     │     │  .NET API    │
+│ ("use client")│    │  Server      │     │  Controller  │
 ├──────────────┤     ├──────────────┤     ├──────────────┤
-│ onMount      │────►│ fetch()      │────►│ Auth check   │
-│ or load fn   │     │ + JWT header │     │ (JWT + perm) │
-│              │     │              │     │              │
+│ apiClient()  │────►│ fetch proxy  │────►│ Auth + perm  │
+│ /api/proxy/  │     │ /api/proxy/  │     │ check        │
+│ blog/posts   │     │ → api:8080/  │     │              │
 │              │◄────│ parsed JSON  │◄────│ JSON result  │
-│              │     │  (typed)     │     │              │
-│ Renders      │     │              │     │              │
 └──────────────┘     └──────────────┘     └──────────────┘
 ```
 
-### 6. Authorization (RBAC)
+### 7. Authorization (RBAC)
 
 ```
 Request ──► JWT Middleware (validate token)
                └── ClaimsPrincipal with userId, roleId, permissions
-                    └── [RequirePermission("orders.view")] attribute
+                    └── [RequirePermission("module.action")] attribute
                          └── PermissionPolicyProvider
                               └── PermissionAuthorizationHandler
                                    └── bool (allow/deny)
 ```
 
-Permissions follow the pattern `"{module}.{action}"`:
-- `menu.view`, `menu.create`, `menu.edit`, `menu.delete`
-- `orders.view`, `orders.edit`, `orders.delete`
-- `employees.manage`
-- `roles.manage`
-- `dashboard.view`
-- `settings.manage`
+Permissions follow `"{module}.{action}"`: `menu.view`, `blog.create`, `crm.view`, `dashboard.view`, etc.
 
-### 7. Dashboard ML Flow
+### 8. Dashboard ML Flow
 
 ```
 ┌──────────────┐     ┌───────────────┐     ┌──────────────────┐
@@ -263,11 +335,9 @@ Permissions follow the pattern `"{module}.{action}"`:
 |---|---|
 | **Clean Architecture** | Isolates business rules from frameworks; swappable DB/UI |
 | **RBAC with flat permissions** | Simpler than hierarchical roles; each action explicitly checked |
-| **RustFS for media** | S3-compatible object storage (MinIO/RustFS/Garage) via AWS SDK — vendor-neutral |
+| **RustFS for media** | S3-compatible object storage (MinIO/RustFS/Garage) via AWS SDK |
 | **SignalR + MessagePack** | Binary protocol reduces payload size for real-time updates |
-| **Vite dev proxy** | Avoids CORS issues during local development |
-| **Environment-aware config** | Frontend auto-detects local/demo/production without manual switches |
-| **ML.NET (not Python API)** | Keeps ML in-process with .NET; no extra infrastructure |
-| **Redis (not IMemoryCache)** | Distributed caching suitable for multi-instance Docker deployments |
-| **Traefik ingress** | Single entry point (`:80`), path-based routing: `/api/*` & `/hubs/*` → API, rest → webapp |
-| **Build cache mounts** | NuGet (`/root/.nuget/packages`) & npm (`/root/.npm`) cached via Docker BuildKit — rebuild nhanh hơn |
+| **TipTap for blog editor** | HTML output (compatible with Astro `set:html`), extensible |
+| **Better Auth BFF** | HttpOnly cookie, no client-side token exposure |
+| **CMS workflow** | Draft → reviewed → scheduled/published, revision history, SEO metadata |
+| **React #418 guard** | `useState(mounted)` + `useEffect` + `return null` pattern for Dialog/Sheet/TipTap |

@@ -3,7 +3,6 @@ using FoodstoreApi.Usecase.DTOs.Source;
 using FoodstoreApi.Usecase.Utils;
 using FoodstoreApi.Core.Constants;
 using FoodstoreApi.Core.Entities;
-using FoodstoreApi.Core.Utils;
 using Microsoft.Extensions.Caching.Distributed;
 
 namespace FoodstoreApi.Usecase.Services;
@@ -28,7 +27,7 @@ public class SourceService : ISourceService
         }, TimeSpan.FromMinutes(30), cancellationToken);
     }
 
-    public async Task<SourceDto?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
+    public async Task<SourceDto?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var source = await _repository.GetByIdAsync(id, cancellationToken);
         return source == null ? null : MapToDto(source);
@@ -40,7 +39,7 @@ public class SourceService : ISourceService
         {
             Name = dto.Name,
             IsActive = dto.IsActive,
-            CreatedAt = TimeUtils.GetVietnamTime()
+
         };
 
         var created = await _repository.CreateAsync(source, cancellationToken);
@@ -48,7 +47,7 @@ public class SourceService : ISourceService
         return MapToDto(created);
     }
 
-    public async Task<bool> UpdateAsync(int id, CreateSourceDto dto, CancellationToken cancellationToken = default)
+    public async Task<bool> UpdateAsync(Guid id, CreateSourceDto dto, CancellationToken cancellationToken = default)
     {
         var source = await _repository.GetByIdAsync(id, cancellationToken);
         if (source == null) return false;
@@ -65,7 +64,7 @@ public class SourceService : ISourceService
         return result;
     }
 
-    public async Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default)
+    public async Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var result = await _repository.DeleteAsync(id, cancellationToken);
         if (result)
@@ -83,7 +82,10 @@ public class SourceService : ISourceService
             Id = source.Id,
             Name = source.Name,
             IsActive = source.IsActive ?? true,
-            CreatedAt = source.CreatedAt ?? TimeUtils.GetVietnamTime()
+            CreatedAt = source.CreatedAt,
+            UpdatedAt = source.UpdatedAt,
+            CreatedBy = source.CreatedBy,
+            UpdatedBy = source.UpdatedBy
         };
     }
 }

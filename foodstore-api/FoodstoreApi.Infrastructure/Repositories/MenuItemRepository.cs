@@ -1,7 +1,6 @@
 ﻿using FoodstoreApi.Usecase.Interfaces;
 using FoodstoreApi.Core.Entities;
 using FoodstoreApi.Infrastructure.Data;
-using FoodstoreApi.Core.Utils;
 using Microsoft.EntityFrameworkCore;
 
 namespace FoodstoreApi.Infrastructure.Repositories;
@@ -24,7 +23,7 @@ public class MenuItemRepository : IMenuItemRepository
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<MenuItem?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
+    public async Task<MenuItem?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return await _db.MenuItems
             .Include(m => m.Category)
@@ -34,7 +33,6 @@ public class MenuItemRepository : IMenuItemRepository
 
     public async Task<MenuItem> AddAsync(MenuItem item, CancellationToken cancellationToken = default)
     {
-        item.CreatedAt = TimeUtils.GetVietnamTime();
         _db.MenuItems.Add(item);
         await _db.SaveChangesAsync(cancellationToken);
         return item;
@@ -52,7 +50,3 @@ public class MenuItemRepository : IMenuItemRepository
         await _db.SaveChangesAsync(cancellationToken);
     }
 }
-
-
-
-

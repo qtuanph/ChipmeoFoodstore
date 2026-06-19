@@ -2,7 +2,7 @@
 
 public class MediaDto
 {
-    public int Id { get; set; }
+    public Guid Id { get; set; }
     public string FileName { get; set; } = null!;
     public string Folder { get; set; } = "misc";
     public string FileUrl { get; set; } = null!;
@@ -10,10 +10,9 @@ public class MediaDto
     public long? FileSize { get; set; }
     public string? AltText { get; set; }
     public string? EntityType { get; set; }
-    public int? EntityId { get; set; }
-    public DateTime? CreatedAt { get; set; }
+    public Guid? EntityId { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
+    public Guid? CreatedBy { get; set; }
+    public Guid? UpdatedBy { get; set; }
 }
-
-
-
-

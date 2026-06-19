@@ -83,11 +83,11 @@ export const API_ENDPOINTS = {
 		delete: (id: number) => `${API_BASE_URL}/api/admin/categories/${id}`
 	},
 	menuItems: {
-		list: `${API_BASE_URL}/api/admin/menuitems`,
-		create: `${API_BASE_URL}/api/admin/menuitems`,
-		detail: (id: number) => `${API_BASE_URL}/api/admin/menuitems/${id}`,
-		update: (id: number) => `${API_BASE_URL}/api/admin/menuitems/${id}`,
-		delete: (id: number) => `${API_BASE_URL}/api/admin/menuitems/${id}`
+		list: `${API_BASE_URL}/api/admin/menu-items`,
+		create: `${API_BASE_URL}/api/admin/menu-items`,
+		detail: (id: number) => `${API_BASE_URL}/api/admin/menu-items/${id}`,
+		update: (id: number) => `${API_BASE_URL}/api/admin/menu-items/${id}`,
+		delete: (id: number) => `${API_BASE_URL}/api/admin/menu-items/${id}`
 	},
 	addons: {
 		list: `${API_BASE_URL}/api/admin/addons`,

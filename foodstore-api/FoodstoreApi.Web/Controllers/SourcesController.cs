@@ -28,9 +28,9 @@ public class SourcesController(ISourceService service, IHubContext<AppHub> hubCo
 
 
 
-    [HttpGet("{id:int}")]
+    [HttpGet("{id:guid}")]
     [RequirePermission("source.view")]
-    public async Task<IActionResult> GetById(int id, CancellationToken cancellationToken)
+    public async Task<IActionResult> GetById(Guid id, CancellationToken cancellationToken)
     {
         var source = await _service.GetByIdAsync(id, cancellationToken);
         if (source == null) return ApiResult.NotFound();
@@ -46,9 +46,9 @@ public class SourcesController(ISourceService service, IHubContext<AppHub> hubCo
         return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
     }
 
-    [HttpPut("{id:int}")]
+    [HttpPut("{id:guid}")]
     [RequirePermission("source.update")]
-    public async Task<IActionResult> Update(int id, [FromBody] CreateSourceDto dto, CancellationToken cancellationToken)
+    public async Task<IActionResult> Update(Guid id, [FromBody] CreateSourceDto dto, CancellationToken cancellationToken)
     {
         var ok = await _service.UpdateAsync(id, dto, cancellationToken);
         if (!ok) return ApiResult.NotFound();
@@ -56,9 +56,9 @@ public class SourcesController(ISourceService service, IHubContext<AppHub> hubCo
         return NoContent();
     }
 
-    [HttpDelete("{id:int}")]
+    [HttpDelete("{id:guid}")]
     [RequirePermission("source.delete")]
-    public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
+    public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
         try
         {

@@ -2,7 +2,7 @@
 
 public class DiscountDto
 {
-    public int Id { get; set; }
+    public Guid Id { get; set; }
     public string Code { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public string? Description { get; set; }
@@ -16,8 +16,7 @@ public class DiscountDto
     public DateTime? EndDate { get; set; }
     public bool IsActive { get; set; }
     public DateTime CreatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
+    public Guid? CreatedBy { get; set; }
+    public Guid? UpdatedBy { get; set; }
 }
-
-
-
-

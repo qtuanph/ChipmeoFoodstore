@@ -2,7 +2,6 @@
 using FoodstoreApi.Web.Authorization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using FoodstoreApi.Core.Utils;
 using FoodstoreApi.Web.ApiResponse;
 
 namespace FoodstoreApi.Web.Controllers;
@@ -33,7 +32,7 @@ public class DashboardController(IReportService reportService) : ControllerBase
         [FromQuery] string groupBy = "day",
         CancellationToken cancellationToken = default)
     {
-        var now = TimeUtils.GetVietnamTime();
+        var now = DateTime.UtcNow;
         var end = toDate?.Date.AddDays(1).AddTicks(-1) ?? now.Date.AddDays(1).AddTicks(-1);
         var start = fromDate ?? now.Date.AddDays(-7);
 

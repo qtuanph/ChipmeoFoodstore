@@ -30,9 +30,9 @@ public class AddonsController(IAddonService service) : ControllerBase
         return ApiResult.Success(addons);
     }
 
-    [HttpGet("{id:int}")]
+    [HttpGet("{id:guid}")]
     [RequirePermission("addon.view")]
-    public async Task<IActionResult> GetById(int id, CancellationToken cancellationToken)
+    public async Task<IActionResult> GetById(Guid id, CancellationToken cancellationToken)
     {
         var addon = await _service.GetByIdAsync(id, cancellationToken);
         if (addon == null) return ApiResult.NotFound();
@@ -47,18 +47,18 @@ public class AddonsController(IAddonService service) : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
     }
 
-    [HttpPut("{id:int}")]
+    [HttpPut("{id:guid}")]
     [RequirePermission("addon.update")]
-    public async Task<IActionResult> Update(int id, [FromBody] CreateAddonDto dto, CancellationToken cancellationToken)
+    public async Task<IActionResult> Update(Guid id, [FromBody] CreateAddonDto dto, CancellationToken cancellationToken)
     {
         var ok = await _service.UpdateAsync(id, dto, cancellationToken);
         if (!ok) return ApiResult.NotFound();
         return NoContent();
     }
 
-    [HttpDelete("{id:int}")]
+    [HttpDelete("{id:guid}")]
     [RequirePermission("addon.delete")]
-    public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
+    public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
         try
         {

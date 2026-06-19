@@ -2,19 +2,26 @@
 
 public class CustomerDto
 {
-    public int Id { get; set; }
-    public string FullName { get; set; } = null!;
-    public string? Phone { get; set; }
+    public Guid Id { get; set; }
+    public Guid UserId { get; set; }
+    public string CustomerCode { get; set; } = null!;
+    public string Name { get; set; } = null!;
+    public string Username { get; set; } = null!;
     public string Email { get; set; } = null!;
+    public string? Phone { get; set; }
     public string? AvatarUrl { get; set; }
-    public int Points { get; set; }
-    public bool IsActive { get; set; }
-    public DateTime? CreatedAt { get; set; }
+    public int LoyaltyPoints { get; set; }
+    public string? MembershipLevel { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
+    public Guid? CreatedBy { get; set; }
+    public Guid? UpdatedBy { get; set; }
 }
 
 public class CustomerRegisterDto
 {
-    public string FullName { get; set; } = null!;
+    public string Name { get; set; } = null!;
+    public string Username { get; set; } = null!;
     public string Email { get; set; } = null!;
     public string Password { get; set; } = null!;
     public string? Phone { get; set; }
@@ -22,7 +29,7 @@ public class CustomerRegisterDto
 
 public class CustomerLoginDto
 {
-    public string Email { get; set; } = null!;
+    public string Username { get; set; } = null!;
     public string Password { get; set; } = null!;
 }
 
@@ -34,30 +41,28 @@ public class CustomerLoginResultDto
 
 public class CustomerUpdateDto
 {
-    public string? FullName { get; set; }
+    public string? Name { get; set; }
     public string? Phone { get; set; }
     public string? AvatarUrl { get; set; }
     public bool? IsActive { get; set; }
     public int? Points { get; set; }
 }
+
 public class CreateCustomerDto
 {
-    public string FullName { get; set; } = null!;
-    public string Email { get; set; } = null!;
-    public string Password { get; set; } = null!;
+    public string Name { get; set; } = null!;
+    public string? Username { get; set; }
+    public string? Email { get; set; }
+    public string? Password { get; set; }
     public string? Phone { get; set; }
     public bool IsActive { get; set; } = true;
 }
 
 public class UpdateCustomerAdminDto
 {
-    public string? FullName { get; set; }
+    public string? Name { get; set; }
     public string? Phone { get; set; }
     public string? AvatarUrl { get; set; }
     public bool? IsActive { get; set; }
     public int? Points { get; set; }
 }
-
-
-
-

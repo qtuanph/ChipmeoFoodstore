@@ -3,7 +3,6 @@ using FoodstoreApi.Usecase.DTOs.Addon;
 using FoodstoreApi.Usecase.Utils;
 using FoodstoreApi.Core.Constants;
 using FoodstoreApi.Core.Entities;
-using FoodstoreApi.Core.Utils;
 using Microsoft.Extensions.Caching.Distributed;
 
 namespace FoodstoreApi.Usecase.Services;
@@ -28,7 +27,7 @@ public class AddonService : IAddonService
         }, TimeSpan.FromMinutes(30), cancellationToken);
     }
 
-    public async Task<AddonDto?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
+    public async Task<AddonDto?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var addon = await _repository.GetByIdAsync(id, cancellationToken);
         return addon == null ? null : MapToDto(addon);
@@ -41,7 +40,7 @@ public class AddonService : IAddonService
             Name = dto.Name,
             Price = dto.Price,
             IsActive = dto.IsActive,
-            CreatedAt = TimeUtils.GetVietnamTime()
+
         };
 
         var created = await _repository.CreateAsync(addon, cancellationToken);
@@ -50,7 +49,7 @@ public class AddonService : IAddonService
         return MapToDto(created);
     }
 
-    public async Task<bool> UpdateAsync(int id, CreateAddonDto dto, CancellationToken cancellationToken = default)
+    public async Task<bool> UpdateAsync(Guid id, CreateAddonDto dto, CancellationToken cancellationToken = default)
     {
         var addon = await _repository.GetByIdAsync(id, cancellationToken);
         if (addon == null) return false;
@@ -69,7 +68,7 @@ public class AddonService : IAddonService
         return result;
     }
 
-    public async Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default)
+    public async Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var result = await _repository.DeleteAsync(id, cancellationToken);
         if (result)
@@ -89,7 +88,10 @@ public class AddonService : IAddonService
             Name = addon.Name,
             Price = addon.Price,
             IsActive = addon.IsActive ?? true,
-            CreatedAt = addon.CreatedAt ?? TimeUtils.GetVietnamTime()
+            CreatedAt = addon.CreatedAt,
+            UpdatedAt = addon.UpdatedAt,
+            CreatedBy = addon.CreatedBy,
+            UpdatedBy = addon.UpdatedBy
         };
     }
 }

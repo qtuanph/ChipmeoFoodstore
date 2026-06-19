@@ -1,15 +1,14 @@
 ﻿namespace FoodstoreApi.Core.Entities;
 
-public class BlogPostTag
+public class BlogPostTag : IAuditableEntity
 {
-    public int PostId { get; set; }
-    public int TagId { get; set; }
+    public Guid PostId { get; set; }
+    public Guid TagId { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
+    public Guid? CreatedBy { get; set; }
+    public Guid? UpdatedBy { get; set; }
 
-    // Navigation
     public virtual BlogPost Post { get; set; } = null!;
     public virtual Tag Tag { get; set; } = null!;
 }
-
-
-
-

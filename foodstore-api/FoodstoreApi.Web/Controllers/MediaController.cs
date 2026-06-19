@@ -1,7 +1,6 @@
 ﻿using FoodstoreApi.Web.Authorization;
 using FoodstoreApi.Web.Extensions;
 using FoodstoreApi.Usecase.Interfaces;
-using FoodstoreApi.Usecase.DTOs.Media;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using FoodstoreApi.Web.ApiResponse;
@@ -13,10 +12,14 @@ namespace FoodstoreApi.Web.Controllers;
 public class MediaController : ControllerBase
 {
     private readonly IMediaService _mediaService;
+    private readonly IEmployeeRepository _employeeRepo;
+    private readonly ICustomerRepository _customerRepo;
 
-    public MediaController(IMediaService mediaService)
+    public MediaController(IMediaService mediaService, IEmployeeRepository employeeRepo, ICustomerRepository customerRepo)
     {
         _mediaService = mediaService;
+        _employeeRepo = employeeRepo;
+        _customerRepo = customerRepo;
     }
 
     [HttpPost("upload")]
@@ -27,16 +30,24 @@ public class MediaController : ControllerBase
             return ApiResult.BadRequest("No file uploaded");
 
         var userId = User.GetUserId();
-        try
+
+        var employee = await _employeeRepo.GetByUserIdAsync(userId);
+        if (employee != null)
         {
             using var stream = file.OpenReadStream();
-            var media = await _mediaService.UploadFileAsync(stream, file.FileName, file.ContentType, file.Length, userId, folder ?? "blog");
+            var media = await _mediaService.UploadFileAsync(stream, file.FileName, file.ContentType, file.Length, employee.Id, folder ?? "blog");
             return ApiResult.Success(media);
         }
-        catch (ArgumentException ex)
+
+        var customer = await _customerRepo.GetByUserIdAsync(userId);
+        if (customer != null)
         {
-            return ApiResult.BadRequest(ex.Message);
+            using var stream = file.OpenReadStream();
+            var media = await _mediaService.UploadFileForCustomerAsync(stream, file.FileName, file.ContentType, file.Length, customer.Id, folder ?? "blog");
+            return ApiResult.Success(media);
         }
+
+        return ApiResult.BadRequest("User profile not found");
     }
 
     [HttpGet]
@@ -47,9 +58,9 @@ public class MediaController : ControllerBase
         return ApiResult.Success(media);
     }
 
-    [HttpDelete("{id}")]
+    [HttpDelete("{id:guid}")]
     [RequirePermission("media.delete")]
-    public async Task<IActionResult> DeleteMedia(int id)
+    public async Task<IActionResult> DeleteMedia(Guid id)
     {
         var result = await _mediaService.DeleteMediaAsync(id);
         if (!result) return ApiResult.NotFound();

@@ -24,9 +24,9 @@ public class OrdersController(IOrderService service, IHubContext<AppHub> hubCont
         return ApiResult.Success(orders);
     }
 
-    [HttpGet("{id:int}")]
+    [HttpGet("{id:guid}")]
     [RequirePermission("order.view")]
-    public async Task<IActionResult> GetById(int id, CancellationToken cancellationToken)
+    public async Task<IActionResult> GetById(Guid id, CancellationToken cancellationToken)
     {
         var order = await service.GetByIdAsync(id, cancellationToken);
         if (order == null) return ApiResult.NotFound();
@@ -47,14 +47,14 @@ public class OrdersController(IOrderService service, IHubContext<AppHub> hubCont
         return await ProcessCreateOrder(dto, cancellationToken);
     }
 
-    [HttpPut("{id:int}")]
+    [HttpPut("{id:guid}")]
     [RequirePermission("order.update")]
-    public async Task<IActionResult> Update(int id, [FromBody] CreateOrderDto dto, CancellationToken cancellationToken)
+    public async Task<IActionResult> Update(Guid id, [FromBody] CreateOrderDto dto, CancellationToken cancellationToken)
     {
         try
         {
             var employeeId = User.GetUserId();
-            if (employeeId == 0) return Unauthorized();
+            if (employeeId == Guid.Empty) return Unauthorized();
 
             var updated = await service.UpdateAsync(id, dto, employeeId, cancellationToken);
             await hubContext.Clients.All.SendAsync("ReceiveOrderUpdate", updated, cancellationToken);
@@ -67,14 +67,14 @@ public class OrdersController(IOrderService service, IHubContext<AppHub> hubCont
         }
     }
 
-    [HttpPost("/api/pos/orders/{id}/payment")]
+    [HttpPost("/api/pos/orders/{id:guid}/payment")]
     [RequirePermission("order.update")]
-    public async Task<IActionResult> ProcessPayment(int id, [FromBody] ProcessPaymentDto dto, CancellationToken cancellationToken)
+    public async Task<IActionResult> ProcessPayment(Guid id, [FromBody] ProcessPaymentDto dto, CancellationToken cancellationToken)
     {
         try
         {
             var employeeId = User.GetUserId();
-            var order = await service.ProcessPaymentAsync(id, dto, employeeId > 0 ? employeeId : null, cancellationToken);
+            var order = await service.ProcessPaymentAsync(id, dto, employeeId != Guid.Empty ? employeeId : null, cancellationToken);
 
             await hubContext.Clients.All.SendAsync("ReceiveOrderUpdate", order, cancellationToken);
             await hubContext.Clients.All.SendAsync("ReceiveTableUpdate", cancellationToken);
@@ -92,7 +92,7 @@ public class OrdersController(IOrderService service, IHubContext<AppHub> hubCont
         try
         {
             var employeeId = User.GetUserId();
-            if (employeeId == 0) return Unauthorized();
+            if (employeeId == Guid.Empty) return Unauthorized();
 
             var created = await service.CreateAsync(dto, employeeId, cancellationToken);
             await hubContext.Clients.All.SendAsync("ReceiveOrderUpdate", created, cancellationToken);
@@ -105,26 +105,26 @@ public class OrdersController(IOrderService service, IHubContext<AppHub> hubCont
         }
     }
 
-    [HttpPut("{id}/status")]
+    [HttpPut("{id:guid}/status")]
     [RequirePermission("order.update")]
-    public async Task<IActionResult> UpdateStatus(int id, [FromBody] UpdateOrderStatusRequest request, CancellationToken cancellationToken)
+    public async Task<IActionResult> UpdateStatus(Guid id, [FromBody] UpdateOrderStatusRequest request, CancellationToken cancellationToken)
     {
         return await ProcessUpdateStatus(id, request, cancellationToken);
     }
 
-    [HttpPut("/api/pos/orders/{id}/status")]
+    [HttpPut("/api/pos/orders/{id:guid}/status")]
     [RequirePermission("order.update")]
-    public async Task<IActionResult> PosUpdateStatus(int id, [FromBody] UpdateOrderStatusRequest request, CancellationToken cancellationToken)
+    public async Task<IActionResult> PosUpdateStatus(Guid id, [FromBody] UpdateOrderStatusRequest request, CancellationToken cancellationToken)
     {
         return await ProcessUpdateStatus(id, request, cancellationToken);
     }
 
-    private async Task<IActionResult> ProcessUpdateStatus(int id, UpdateOrderStatusRequest request, CancellationToken cancellationToken)
+    private async Task<IActionResult> ProcessUpdateStatus(Guid id, UpdateOrderStatusRequest request, CancellationToken cancellationToken)
     {
         try
         {
             var employeeId = User.GetUserId();
-            var result = await service.UpdateStatusAsync(id, request.Status, employeeId > 0 ? employeeId : null, request.PaymentMethod, request.PaymentAmount, cancellationToken);
+            var result = await service.UpdateStatusAsync(id, request.Status, employeeId != Guid.Empty ? employeeId : null, request.PaymentMethod, request.PaymentAmount, cancellationToken);
 
             if (!result) return ApiResult.NotFound();
             await hubContext.Clients.All.SendAsync("ReceiveOrderUpdate", new { Id = id, Status = request.Status }, cancellationToken);
@@ -155,9 +155,9 @@ public class OrdersController(IOrderService service, IHubContext<AppHub> hubCont
         return ApiResult.Success(orders);
     }
 
-    [HttpPut("{id}/set-unpaid")]
+    [HttpPut("{id:guid}/set-unpaid")]
     [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> SetUnpaid(int id, CancellationToken cancellationToken)
+    public async Task<IActionResult> SetUnpaid(Guid id, CancellationToken cancellationToken)
     {
         try
         {
@@ -165,7 +165,7 @@ public class OrdersController(IOrderService service, IHubContext<AppHub> hubCont
             if (order == null) return ApiResult.NotFound();
 
             var employeeId = User.GetUserId();
-            var result = await service.UpdateStatusAsync(id, OrderStatus.Pending, employeeId > 0 ? employeeId : null, null, null, cancellationToken);
+            var result = await service.UpdateStatusAsync(id, OrderStatus.Pending, employeeId != Guid.Empty ? employeeId : null, null, null, cancellationToken);
             if (!result) return ApiResult.BadRequest("Failed to update order status");
 
             await hubContext.Clients.All.SendAsync("ReceiveOrderUpdate", new { Id = id, Status = OrderStatus.Pending }, cancellationToken);
@@ -189,9 +189,9 @@ public class OrdersController(IOrderService service, IHubContext<AppHub> hubCont
         return ApiResult.Paged(items.ToList(), page, pageSize, totalCount);
     }
 
-    [HttpDelete("{id:int}")]
+    [HttpDelete("{id:guid}")]
     [RequirePermission("order.delete")]
-    public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
+    public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
         var result = await service.DeleteAsync(id, cancellationToken);
         if (!result) return ApiResult.NotFound();

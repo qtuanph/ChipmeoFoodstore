@@ -22,7 +22,7 @@ public class ComboRepository : IComboRepository
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<Combo?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
+    public async Task<Combo?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return await _context.Combos
             .Include(c => c.ComboItems)
@@ -58,7 +58,7 @@ public class ComboRepository : IComboRepository
         return await _context.SaveChangesAsync(cancellationToken) > 0;
     }
 
-    public async Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default)
+    public async Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var combo = await _context.Combos
             .Include(c => c.ComboItems)
@@ -70,7 +70,3 @@ public class ComboRepository : IComboRepository
         return await _context.SaveChangesAsync(cancellationToken) > 0;
     }
 }
-
-
-
-

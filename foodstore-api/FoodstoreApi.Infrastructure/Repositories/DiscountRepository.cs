@@ -19,7 +19,7 @@ public class DiscountRepository : IDiscountRepository
         return await _context.Discounts.ToListAsync(cancellationToken);
     }
 
-    public async Task<Discount?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
+    public async Task<Discount?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return await _context.Discounts.FindAsync(new object[] { id }, cancellationToken);
     }
@@ -43,7 +43,7 @@ public class DiscountRepository : IDiscountRepository
         return await _context.SaveChangesAsync(cancellationToken) > 0;
     }
 
-    public async Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default)
+    public async Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var discount = await _context.Discounts.FindAsync(new object[] { id }, cancellationToken);
         if (discount == null) return false;
@@ -52,7 +52,3 @@ public class DiscountRepository : IDiscountRepository
         return await _context.SaveChangesAsync(cancellationToken) > 0;
     }
 }
-
-
-
-

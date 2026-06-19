@@ -1,9 +1,11 @@
 ﻿using FoodstoreApi.Core.Configuration;
+using FoodstoreApi.Core.Entities.Identity;
 using FoodstoreApi.Infrastructure.Data;
 using FoodstoreApi.Infrastructure.Extensions;
 using FoodstoreApi.Usecase.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using FoodstoreApi.Web.Authorization;
@@ -19,6 +21,7 @@ using FluentValidation.AspNetCore;
 using Microsoft.OpenApi;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using FoodstoreApi.Web.Seed;
 
 AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 
@@ -63,8 +66,11 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
-builder.Services.AddDbContext<StoreDbContext>(options =>
-    options.UseNpgsql(connectionString));
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<AuditSaveChangesInterceptor>();
+builder.Services.AddDbContext<StoreDbContext>((sp, options) =>
+    options.UseNpgsql(connectionString)
+           .AddInterceptors(sp.GetRequiredService<AuditSaveChangesInterceptor>()));
 
 var redisConnection = builder.Configuration.GetConnectionString("Redis") ?? throw new InvalidOperationException("Connection string 'Redis' not found.");
 builder.Services.AddStackExchangeRedisCache(options =>
@@ -98,6 +104,22 @@ builder.Services.AddApplicationServices();
 var jwtSettings = builder.Configuration.GetSection(JwtSettings.SectionName).Get<JwtSettings>()
     ?? throw new InvalidOperationException("JwtSettings not configured");
 
+// ASP.NET Core Identity
+builder.Services.AddIdentityCore<ApplicationUser>(options =>
+{
+    options.User.RequireUniqueEmail = true;
+    options.Password.RequireDigit = false;
+    options.Password.RequiredLength = 6;
+    options.Password.RequireNonAlphanumeric = false;
+    options.Password.RequireUppercase = false;
+    options.Password.RequireLowercase = false;
+})
+.AddRoles<ApplicationRole>()
+.AddEntityFrameworkStores<StoreDbContext>()
+.AddSignInManager<SignInManager<ApplicationUser>>()
+.AddDefaultTokenProviders();
+
+// JWT Bearer Authentication
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -110,6 +132,16 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidIssuer = jwtSettings.Issuer,
             ValidAudience = jwtSettings.Audience,
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.SecretKey))
+        };
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                var token = context.Request.Cookies["auth_token"];
+                if (!string.IsNullOrEmpty(token))
+                    context.Token = token;
+                return Task.CompletedTask;
+            }
         };
     });
 
@@ -154,6 +186,14 @@ var app = builder.Build();
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 app.UseMiddleware<SecurityHeadersMiddleware>();
+
+// Auto-migrate and seed
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<StoreDbContext>();
+    await db.Database.MigrateAsync();
+    await DataSeeder.SeedAsync(scope.ServiceProvider);
+}
 
 if (app.Environment.IsDevelopment())
 {

@@ -19,7 +19,7 @@ public class AddonRepository : IAddonRepository
         return await _context.Addons.ToListAsync(cancellationToken);
     }
 
-    public async Task<Addon?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
+    public async Task<Addon?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return await _context.Addons.FindAsync(new object[] { id }, cancellationToken);
     }
@@ -37,7 +37,7 @@ public class AddonRepository : IAddonRepository
         return await _context.SaveChangesAsync(cancellationToken) > 0;
     }
 
-    public async Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default)
+    public async Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var addon = await _context.Addons.FindAsync(new object[] { id }, cancellationToken);
         if (addon == null) return false;
@@ -46,7 +46,3 @@ public class AddonRepository : IAddonRepository
         return await _context.SaveChangesAsync(cancellationToken) > 0;
     }
 }
-
-
-
-

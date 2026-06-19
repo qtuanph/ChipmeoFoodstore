@@ -1,6 +1,6 @@
 # Coding Standards
 
-> Unified coding conventions for Foodstore — covering both Svelte 5 (frontend) and .NET Clean Architecture (backend).
+> Unified coding conventions for Foodstore — covering Svelte 5 (foodstore-store), Astro (foodstore-landingpage), Next.js + shadcn/ui (foodstore-admin), and .NET Clean Architecture (foodstore-api).
 
 ---
 
@@ -16,7 +16,7 @@
    - [2.6 Entity Framework Core](#26-entity-framework-core)
    - [2.7 Controllers & API](#27-controllers--api)
    - [2.8 Error Handling](#28-error-handling)
-3. [Svelte 5 / Frontend Standards](#3-svelte-5--frontend-standards)
+3. [Svelte 5 / Frontend Standards (foodstore-store)](#3-svelte-5--frontend-standards-foodstore-store)
    - [3.1 Runes (Reactivity)](#31-runes-reactivity)
    - [3.2 Component Conventions](#32-component-conventions)
    - [3.3 SvelteKit Routing](#33-sveltekit-routing)
@@ -28,7 +28,15 @@
    - [3.9 Frontend Configuration](#39-frontend-configuration-environment-variables)
    - [3.10 Flowbite Interactive Components](#310-flowbite-interactive-components)
    - [3.11 Icons (Iconify + Tabler)](#311-icons-iconify--tabler)
-4. [Cross-Cutting Concerns](#4-cross-cutting-concerns)
+4. [Astro Standards (foodstore-landingpage)](#4-astro-standards-foodstore-landingpage)
+5. [Next.js + shadcn/ui Standards (foodstore-admin)](#5-nextjs--shadcnui-standards-foodstore-admin)
+   - [5.1 Project Structure](#51-project-structure)
+   - [5.2 Component Conventions](#52-component-conventions)
+   - [5.3 shadcn/ui Usage](#53-shadcnui-usage)
+   - [5.4 Styling](#54-styling)
+   - [5.5 API Calls](#55-api-calls)
+   - [5.6 Naming Conventions](#56-naming-conventions)
+6. [Cross-Cutting Concerns](#6-cross-cutting-concerns)
    - [4.1 Security](#41-security)
    - [4.2 Git](#42-git)
    - [4.3 Testing](#43-testing)
@@ -304,7 +312,7 @@ public static class InfrastructureExtensions
         IConfiguration configuration)
     {
         services.AddDbContext<StoreDbContext>(options =>
-            options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")));
+            options.UseNpgsql(configuration.GetConnectionString("DefaultConnection")));
 
         services.AddScoped<IOrderRepository, OrderRepository>();
 
@@ -512,6 +520,21 @@ return Forbid();
 - ❌ `return BadRequest("string")` — thiếu error code
 - ❌ `return StatusCode(500, new { error = ... })` — thiếu envelope
 
+#### AllowedOrigins (CORS)
+
+CORS origins được cấu hình trong `docker-compose.yml` qua biến môi trường `AllowedOrigins__*`:
+
+| Origin | Service | Notes |
+|--------|---------|-------|
+| `http://localhost` | landingpage | Dev |
+| `http://store.localhost` | foodstore-store | Traefik |
+| `http://admin.localhost` | foodstore-admin | Traefik |
+| `http://api.localhost` | foodstore-api | Traefik |
+| `http://localhost:4321` | landingpage | Dev (Astro) |
+| `http://landingpage:4321` | landingpage | Docker internal |
+| `http://admin:3000` | foodstore-admin | Docker internal |
+| `http://store:3000` | foodstore-store | Docker internal |
+
 #### Response Envelope Format
 
 Mọi response (trừ 204 No Content) đều theo format:
@@ -588,7 +611,7 @@ Middleware (`Middleware/ExceptionHandlingMiddleware.cs`) tự động bắt mọ
 
 ---
 
-## 3. Svelte 5 / Frontend Standards
+## 3. Svelte 5 / Frontend Standards (foodstore-store)
 
 ### 3.1 Runes (Reactivity)
 
@@ -1137,41 +1160,54 @@ export const API_HOST_URL = API_BASE_URL.replace(/\/v2\/?$/, '');
 
 ### 3.10 Flowbite Interactive Components
 
-> Flowbite is used for interactive UI components that require JavaScript. It is used via its **vanilla JS API** (data-* attributes + `initFlowbite()`), NOT via Svelte wrappers.
+> Flowbite is used for interactive UI components. **Current standard: programmatic API via `$state` + `$effect`** (e.g., `new Modal()`, `new Dropdown()`), NOT `data-*` attributes + `initFlowbite()`.
 
-#### Import Pattern
+#### ✅ Current Standard — Programmatic API
 
-```typescript
-// In any component that needs Flowbite interactivity
-import { onMount } from 'svelte';
-import 'flowbite';
+```svelte
+<script lang="ts">
+  import { onMount, onDestroy, tick } from 'svelte';
+  import { Modal } from 'flowbite';
+  import type { ModalOptions, ModalInterface } from 'flowbite';
 
-onMount(() => {
-  // Must call after DOM is rendered to activate data-* behaviors
-  initFlowbite();
-});
+  let { open = $bindable(false) } = $props();
+  let modalEl = $state<ModalInterface | null>(null);
+
+  onMount(async () => {
+    await tick();
+    const el = document.getElementById('myModal');
+    if (!el) return;
+    modalEl = new Modal(el, { closable: true, onHide: () => { open = false; } });
+    if (open) modalEl.show();
+  });
+
+  $effect(() => {
+    if (!modalEl) return;
+    if (open) modalEl.show();
+    else modalEl.hide();
+  });
+
+  onDestroy(() => { modalEl?.destroyAndRemoveInstance(); });
+</script>
 ```
 
 #### What Uses Flowbite
 
-- **Dropdowns** — `data-dropdown-toggle`
-- **Modals** — `data-modal-target` / `data-modal-toggle`
-- **Tooltips** — `data-tooltip-target`
-- **Collapse / Accordion** — `data-collapse-toggle`
-- **Tabs** — `data-tabs-toggle`
-- **Datepicker** — `datepicker` class + `data-datepicker`
+| Component | API | Usage |
+|-----------|-----|-------|
+| **Modals** | `new Modal()` + `$state` + `$effect` | `Modal.svelte` |
+| **Dropdowns** | `new Dropdown()` + `$state` + toggle handler | Inline in pages |
 
-#### DO ✅
+#### ❌ Legacy (Avoid)
+
+These patterns still exist in 1 place (`pos/+page.svelte` dropdown) but should be migrated:
 
 ```svelte
-<!-- ✅ Correct: Flowbite via data-* attributes + initFlowbite() -->
+<!-- ❌ Legacy: data-* + initFlowbite() -->
 <script lang="ts">
-  import { onMount } from 'svelte';
-  import 'flowbite';
-
+  import { initFlowbite } from 'flowbite';
   onMount(() => { initFlowbite(); });
 </script>
-
 <button data-dropdown-toggle="myDropdown">Open</button>
 <div id="myDropdown" class="hidden">...</div>
 ```
@@ -1180,13 +1216,14 @@ onMount(() => {
 
 - ❌ Don't use Flowbite Svelte wrappers (flowbite-svelte) — not installed
 - ❌ Don't import Flowbite CSS directly — Tailwind plugin handles it
-- ❌ Don't call `initFlowbite()` in `$effect` — use `onMount`
+- ❌ Don't call `initFlowbite()` — use programmatic `new Modal()` / `new Dropdown()`
+- ❌ Don't use `data-modal-hide`, `data-modal-toggle`, `data-dropdown-toggle` — use programmatic API
 
 #### Component Library (`src/lib/components/ui/`)
 
 Reusable UI components live in `src/lib/components/ui/`:
 - `Icon.svelte` — unified icon component (wraps `@iconify/svelte`)
-- `Modal.svelte` — modal wrapper (uses Flowbite data-* internally)
+- `Modal.svelte` — modal wrapper (programmatic Flowbite API)
 - `Accordion.svelte` — accordion component
 - `Breadcrumb.svelte` — breadcrumb navigation
 - `Sidebar.svelte` — admin sidebar
@@ -1194,8 +1231,6 @@ Reusable UI components live in `src/lib/components/ui/`:
 - `Pagination.svelte` — pagination component
 - `Table.svelte` — data table component
 - `Badge.svelte` — status badges
-
-These components are NOT Flowbite wrappers — they use Flowbite JS for interactivity where needed and write their own markup/Tailwind styles.
 
 ### 3.11 Icons (Iconify + Tabler)
 
@@ -1259,9 +1294,231 @@ All icon names follow the format `tabler:{icon-name}` where `{icon-name}` is the
 
 ---
 
-## 4. Cross-Cutting Concerns
+## 4. Astro Standards (foodstore-landingpage)
 
-### 4.1 Security
+> The landing page uses **Astro** with minimal JavaScript. It's a static/content-focused site — no client-side framework.
+
+### 4.1 Project Structure
+
+> Astro uses an opinionated folder layout. The only mandatory directory is `src/pages/`.
+
+```
+foodstore-landingpage/
+├── src/
+│   ├── components/        # .astro components (reusable)
+│   ├── layouts/           # Layout.astro — shared UI shells
+│   ├── pages/             # File-based routing — REQUIRED
+│   │   ├── index.astro    # Home page
+│   │   └── about.astro
+│   ├── styles/            # Global CSS
+│   └── images/            # Images processed by Astro
+├── public/                # Static assets (non-processed)
+│   ├── favicon.svg
+│   └── robots.txt
+├── astro.config.mjs       # Astro config (integrations, server, build)
+├── tsconfig.json          # TypeScript config
+└── package.json
+```
+
+### 4.2 Convention
+
+| Rule | Details |
+|------|---------|
+| **Default to `.astro`** | Zero JS shipped — use `.astro` components, not framework components |
+| **Frontmatter** | Server-side logic in `---` block (data fetching, imports) |
+| **Minimal client JS** | Use `<script>` only for interactivity islands; avoid framework hydration |
+| **Images** | Always use Astro's built-in `<Image />` / `<Picture />` for optimization |
+| **CSS** | Tailwind via `@tailwindcss/vite` plugin; keep global CSS in `src/styles/` |
+| **Env vars** | `import.meta.env.PUBLIC_*` (server-read only, not exposed to browser unless prefixed) |
+| **Pages** | File-based: `index.astro` → `/`, `about.astro` → `/about`, `blog/[slug].astro` → `/blog/my-post` |
+| **Layouts** | Wrap page content via `<Layout>` component using `<slot/>` |
+
+### 4.3 Routing
+
+| File | Route |
+|------|-------|
+| `src/pages/index.astro` | `/` |
+| `src/pages/about.astro` | `/about` |
+| `src/pages/blog/[slug].astro` | `/blog/:slug` |
+| `src/pages/rss.xml.js` | `/rss.xml` (endpoint) |
+
+### 4.4 Build & Run
+
+```bash
+npm run dev       # Dev server on :4321
+npm run build     # Static export → dist/
+npm run preview   # Preview production build
+```
+
+---
+
+## 5. Next.js + shadcn/ui Standards (foodstore-admin)
+
+> The admin dashboard uses **Next.js 16** with **React 19**, **shadcn/ui** components (via `Base UI` primitives), and **Tailwind CSS 4**.
+
+### 5.1 Project Structure
+
+> Next.js App Router uses file-based routing in `app/`. Use route groups `(group)` for organization, private folders `_folder` for internals.
+
+```
+foodstore-admin/
+├── src/
+│   ├── app/                     # App Router (file-based routing)
+│   │   ├── (dashboard)/         #   Route group (no URL impact)
+│   │   │   ├── layout.tsx       #     Dashboard shell (sidebar, header)
+│   │   │   ├── page.tsx         #     / → dashboard home
+│   │   │   ├── orders/
+│   │   │   │   ├── page.tsx     #     /orders
+│   │   │   │   └── [id]/
+│   │   │   │       └── page.tsx #     /orders/123
+│   │   │   └── _components/     #     Private folder (not routable)
+│   │   │       └── SideNav.tsx
+│   │   ├── login/
+│   │   │   └── page.tsx         #     /login
+│   │   ├── layout.tsx           #   Root layout (<html>, providers)
+│   │   └── globals.css          #   Global styles
+│   ├── components/
+│   │   └── ui/                  #   shadcn/ui components (Button, Card, etc.)
+│   ├── hooks/                   #   Custom React hooks (useAuth, useMediaQuery)
+│   └── lib/                     #   Utilities, API client
+├── public/                      # Static assets
+├── components.json              # shadcn/ui config
+├── next.config.ts               # Next.js config
+├── eslint.config.mjs            # ESLint flat config
+└── tsconfig.json
+```
+
+#### App Router File Conventions
+
+| File | Purpose |
+|------|---------|
+| `layout.tsx` | Shared UI (persists across navigation) |
+| `page.tsx` | Route UI (publicly accessible) |
+| `loading.tsx` | Loading skeleton (Suspense boundary) |
+| `error.tsx` | Error UI (Error boundary) |
+| `not-found.tsx` | 404 UI |
+| `route.ts` | API endpoint (no UI) |
+| `template.tsx` | Re-rendered layout (resets state on navigation) |
+
+#### Structure Patterns
+
+| Pattern | Usage |
+|---------|-------|
+| `(group)` | Route groups — organize without affecting URL (`(dashboard)`, `(marketing)`) |
+| `_folder` | Private folders — non-routable internals (`_components`, `_lib`) |
+| `[slug]` | Dynamic segments — `app/orders/[id]/page.tsx` → `/orders/123` |
+| `[...slug]` | Catch-all — `app/docs/[...slug]/page.tsx` → `/docs/a/b/c` |
+| `@slot` | Parallel routes — side-by-side layouts |
+
+### 5.2 Component Conventions
+
+- Use **server components** by default (no `"use client"` unless interactivity needed)
+- Keep `"use client"` boundary as low as possible (only interactive leaves)
+- Prefer **shadcn/ui** components over custom HTML for all UI elements
+- Use **React Server Actions** for form mutations where possible
+- Use `useEffect` sparingly — prefer Server Components + Server Actions
+- Use `fetch()` directly in Server Components (Next.js extends it with caching)
+- Prefer `app/` directory colocation — keep page-specific components inside route segments
+- Use `_folder` private folders inside `app/` for non-routable internals
+- Use `(group)` route groups to organize routes without affecting URLs
+
+```tsx
+// ✅ Server Component (default)
+export default async function Page() {
+  const data = await fetchData();
+  return <ClientList data={data} />;
+}
+
+// ✅ Client Component — only when interactivity is needed
+"use client";
+export function DeleteButton({ id }: { id: string }) {
+  return <Button onClick={() => deleteAction(id)}>Delete</Button>;
+}
+```
+
+### 5.3 shadcn/ui Usage
+
+- **All** UI components come from `src/components/ui/` (generated by `npx shadcn add`)
+- Do NOT manually edit shadcn/ui components — any customization goes in wrapper components
+- Use `cn()` utility (from `src/lib/utils.ts`) for conditional class merging
+- Follow shadcn/ui's base theme; customize via `tailwind.config.ts` or CSS variables
+
+```tsx
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+
+// ✅ Correct: shadcn/ui Button with cn for conditional styles
+<Button className={cn("gap-2", variant === "destructive" && "bg-red-600")}>
+  Save
+</Button>
+```
+
+#### Available shadcn/ui Components
+
+The admin includes all 55 shadcn/ui components: Accordion, Alert, AlertDialog, Badge, Breadcrumb, Button, Calendar, Card, Carousel, Chart, Checkbox, Collapsible, Combobox, Command, ContextMenu, DataTable, DatePicker, Dialog, Drawer, DropdownMenu, Form, HoverCard, Input, InputOTP, Label, Menubar, NavigationMenu, Pagination, Popover, Progress, RadioGroup, Resizable, ScrollArea, Select, Separator, Sheet, Sidebar, Skeleton, Slider, Sonner, Switch, Table, Tabs, Textarea, Toast, Toggle, ToggleGroup, Tooltip.
+
+### 5.4 Styling
+
+- **Tailwind CSS 4** — all styling via utility classes
+- **`tw-animate-css`** — animation utilities
+- **`next-themes`** — dark/light mode via `<ThemeProvider>`
+- **`lucide-react`** — icons (used internally by shadcn/ui, also available directly)
+- Custom CSS only for complex animations or layout edge cases
+
+```tsx
+// ✅ Correct: Tailwind + lucide-react + shadcn/ui
+import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
+
+<Button>
+  <Plus className="h-4 w-4" /> Add Item
+</Button>
+```
+
+### 5.5 API Calls
+
+- Use `fetch` directly (no Axios needed — Next.js extends `fetch` with caching)
+- Server Components: `fetch()` directly in the component or Server Action
+- Client Components: use a thin API utility wrapper that reads `NEXT_PUBLIC_API_URL`
+
+```typescript
+// src/lib/api.ts — client-side API helper
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
+export async function apiGet<T>(path: string): Promise<T> {
+  const res = await fetch(`${API_URL}${path}`, {
+    headers: { "Content-Type": "application/json" },
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+```
+
+### 5.6 Naming Conventions
+
+| Element | Convention | Example |
+|---------|-----------|---------|
+| Components | PascalCase | `Button.tsx`, `UserTable.tsx` |
+| shadcn/ui files | kebab-case | `button.tsx`, `data-table.tsx` |
+| Pages (App Router) | kebab-case folders | `app/dashboard/orders/` |
+| API routes | kebab-case | `app/api/orders/route.ts` |
+| Hooks | camelCase, `use` prefix | `useMediaQuery`, `useAuth` |
+| Utility functions | camelCase | `formatDate`, `cn` |
+| Constants | SCREAMING_SNAKE_CASE | `MAX_PAGE_SIZE` |
+| Types/Interfaces | PascalCase | `OrderResponse`, `User` |
+| CSS classes | kebab-case (via Tailwind) | `gap-2`, `text-sm` |
+
+| Layout | Purpose |
+|--------|---------|
+| `app/layout.tsx` | Root layout (html, body, providers) |
+| `app/(dashboard)/layout.tsx` | Dashboard shell (sidebar, header) |
+| `app/login/page.tsx` | Login page (no sidebar) |
+
+---
+
+## 6. Cross-Cutting Concerns
+
+### 6.1 Security
 
 #### Frontend
 
@@ -1292,7 +1549,7 @@ if (!allowedTypes.Contains(file.ContentType))
 // ✅ Correct: validate all inputs with Data Annotations or FluentValidation
 ```
 
-### 4.2 Git
+### 6.2 Git
 
 #### Tag Naming Convention
 
@@ -1352,7 +1609,7 @@ chore(deps): update all NuGet packages to 10.0.9
 - Fix branches: `fix/{name}` — for bug fixes
 - Always squash-merge feature branches
 
-### 4.3 Testing
+### 6.3 Testing
 
 #### Backend (xUnit)
 
@@ -1418,3 +1675,15 @@ describe('cart calculations', () => {
 - [ ] Event handlers are named functions or inline arrows
 - [ ] `{#each}` blocks always have a `key`
 - [ ] No `any` types (use `warn` level, aim to eliminate)
+- [ ] Use programmatic Flowbite API (`new Modal()`, `new Dropdown()`) — not `initFlowbite()` + `data-*`
+
+### Next.js / shadcn/ui Checklist
+
+- [ ] Default to Server Components — only add `"use client"` when necessary
+- [ ] All UI from `src/components/ui/` (shadcn) — not raw HTML elements
+- [ ] Use `cn()` utility for conditional classes
+- [ ] Use `lucide-react` for icons
+- [ ] Use `next-themes` `ThemeProvider` for dark mode
+- [ ] Server Actions for form mutations
+- [ ] `fetch()` directly in Server Components (no extra client lib)
+- [ ] Keep `"use client"` boundary as low as possible

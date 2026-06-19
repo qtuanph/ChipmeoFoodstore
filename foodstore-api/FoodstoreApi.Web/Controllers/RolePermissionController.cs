@@ -1,68 +1,53 @@
 ﻿using FoodstoreApi.Usecase.Interfaces;
+using FoodstoreApi.Web.Authorization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using FoodstoreApi.Web.ApiResponse;
 
 namespace FoodstoreApi.Web.Controllers;
 
-/// <summary>
-/// Controller for managing role-permission assignments
-/// </summary>
 [ApiController]
 [Route("api/admin/roles/{roleId}/permissions")]
-[Authorize(Roles = "Admin")]
-public class RolePermissionController : ControllerBase
+[Authorize]
+public class RolePermissionController(IPermissionService permissionService) : ControllerBase
 {
-    private readonly IPermissionService _permissionService;
+    private readonly IPermissionService _permissionService = permissionService;
 
-    public RolePermissionController(IPermissionService permissionService)
-    {
-        _permissionService = permissionService;
-    }
-
-    /// <summary>
-    /// Get all permissions for a specific role
-    /// </summary>
     [HttpGet]
-    public async Task<IActionResult> GetRolePermissions(int roleId, CancellationToken cancellationToken)
+    [RequirePermission("role.view")]
+    public async Task<IActionResult> GetRolePermissions(Guid roleId, CancellationToken cancellationToken)
     {
-        var permissionIds = await _permissionService.GetRolePermissionIdsAsync(roleId, cancellationToken);
-        return ApiResult.Success(permissionIds);
+        var permissionCodes = await _permissionService.GetRolePermissionCodesAsync(roleId, cancellationToken);
+        return ApiResult.Success(permissionCodes);
     }
 
-    /// <summary>
-    /// Assign a single permission to a role
-    /// </summary>
-    [HttpPost("{permissionId}")]
-    public async Task<IActionResult> AssignPermission(int roleId, int permissionId, CancellationToken cancellationToken)
+    [HttpPost("{permissionCode}")]
+    [RequirePermission("role.update")]
+    public async Task<IActionResult> AssignPermission(Guid roleId, string permissionCode, CancellationToken cancellationToken)
     {
-        await _permissionService.AssignPermissionToRoleAsync(roleId, permissionId, cancellationToken);
+        await _permissionService.AssignPermissionToRoleAsync(roleId, permissionCode, cancellationToken);
         return ApiResult.Success(new { message = "Permission assigned successfully" });
     }
 
-    /// <summary>
-    /// Remove a permission from a role
-    /// </summary>
-    [HttpDelete("{permissionId}")]
-    public async Task<IActionResult> RemovePermission(int roleId, int permissionId, CancellationToken cancellationToken)
+    [HttpDelete("{permissionCode}")]
+    [RequirePermission("role.update")]
+    public async Task<IActionResult> RemovePermission(Guid roleId, string permissionCode, CancellationToken cancellationToken)
     {
-        await _permissionService.RemovePermissionFromRoleAsync(roleId, permissionId, cancellationToken);
+        await _permissionService.RemovePermissionFromRoleAsync(roleId, permissionCode, cancellationToken);
         return ApiResult.Success(new { message = "Permission removed successfully" });
     }
 
-    /// <summary>
-    /// Bulk update role permissions (replaces all permissions for the role)
-    /// </summary>
     [HttpPut]
+    [RequirePermission("role.update")]
     public async Task<IActionResult> BulkUpdatePermissions(
-        int roleId,
-        [FromBody] List<int> permissionIds,
+        Guid roleId,
+        [FromBody] List<string> permissionCodes,
         CancellationToken cancellationToken)
     {
         try
         {
-            await _permissionService.BulkUpdateRolePermissionsAsync(roleId, permissionIds, cancellationToken);
-            return ApiResult.Success(new { message = "Permissions updated successfully", count = permissionIds.Count });
+            await _permissionService.BulkUpdateRolePermissionsAsync(roleId, permissionCodes, cancellationToken);
+            return ApiResult.Success(new { message = "Permissions updated successfully", count = permissionCodes.Count });
         }
         catch (Exception ex)
         {
@@ -71,24 +56,13 @@ public class RolePermissionController : ControllerBase
     }
 }
 
-/// <summary>
-/// Controller for managing all permissions (read-only for now)
-/// </summary>
 [ApiController]
 [Route("api/admin/permissions")]
 [Authorize]
-public class PermissionController : ControllerBase
+public class PermissionController(IPermissionService permissionService) : ControllerBase
 {
-    private readonly IPermissionService _permissionService;
+    private readonly IPermissionService _permissionService = permissionService;
 
-    public PermissionController(IPermissionService permissionService)
-    {
-        _permissionService = permissionService;
-    }
-
-    /// <summary>
-    /// Get all permissions grouped by module
-    /// </summary>
     [HttpGet]
     public async Task<IActionResult> GetAllPermissions(CancellationToken cancellationToken)
     {
@@ -96,7 +70,3 @@ public class PermissionController : ControllerBase
         return ApiResult.Success(permissions);
     }
 }
-
-
-
-

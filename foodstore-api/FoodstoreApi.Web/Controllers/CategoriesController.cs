@@ -25,9 +25,9 @@ public class CategoriesController : ControllerBase
         return ApiResult.Success(items);
     }
 
-    [HttpGet("{id:int}")]
+    [HttpGet("{id:guid}")]
     [RequirePermission("category.view")]
-    public async Task<IActionResult> GetById(int id, CancellationToken cancellationToken)
+    public async Task<IActionResult> GetById(Guid id, CancellationToken cancellationToken)
     {
         var item = await _service.GetByIdAsync(id, cancellationToken);
         if (item == null) return ApiResult.NotFound();
@@ -42,25 +42,21 @@ public class CategoriesController : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
     }
 
-    [HttpPut("{id:int}")]
+    [HttpPut("{id:guid}")]
     [RequirePermission("category.update")]
-    public async Task<IActionResult> Update(int id, CreateCategoryDto dto, CancellationToken cancellationToken)
+    public async Task<IActionResult> Update(Guid id, CreateCategoryDto dto, CancellationToken cancellationToken)
     {
         var ok = await _service.UpdateAsync(id, dto, cancellationToken);
         if (!ok) return ApiResult.NotFound();
         return NoContent();
     }
 
-    [HttpDelete("{id:int}")]
+    [HttpDelete("{id:guid}")]
     [RequirePermission("category.delete")]
-    public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
+    public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
         var ok = await _service.DeleteAsync(id, cancellationToken);
         if (!ok) return ApiResult.NotFound();
         return NoContent();
     }
 }
-
-
-
-

@@ -19,7 +19,7 @@ public class SourceRepository : ISourceRepository
         return await _context.Sources.ToListAsync(cancellationToken);
     }
 
-    public async Task<Source?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
+    public async Task<Source?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return await _context.Sources.FindAsync(new object[] { id }, cancellationToken);
     }
@@ -37,7 +37,7 @@ public class SourceRepository : ISourceRepository
         return await _context.SaveChangesAsync(cancellationToken) > 0;
     }
 
-    public async Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default)
+    public async Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var source = await _context.Sources.FindAsync(new object[] { id }, cancellationToken);
         if (source == null) return false;
@@ -46,7 +46,3 @@ public class SourceRepository : ISourceRepository
         return await _context.SaveChangesAsync(cancellationToken) > 0;
     }
 }
-
-
-
-

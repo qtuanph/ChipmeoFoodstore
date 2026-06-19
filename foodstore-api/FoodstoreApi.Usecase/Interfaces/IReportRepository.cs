@@ -20,10 +20,10 @@ public class SalesDataDto
 
 public class ComboRecommendationDataDto
 {
-    public int? MenuItemId { get; set; }
+    public Guid? MenuItemId { get; set; }
     public string? MenuItemName { get; set; }
     public decimal UnitPrice { get; set; }
-    public int OrderId { get; set; }
+    public Guid OrderId { get; set; }
 }
 
 

@@ -1,0 +1,13 @@
+node_modules
+.git
+.env
+.env.local
+.env.*.local
+.gitignore
+README.md
+AGENTS.md
+CLAUDE.md
+.vscode
+*.md
+.DS_Store
+.next

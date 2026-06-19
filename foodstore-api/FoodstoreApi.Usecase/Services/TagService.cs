@@ -8,13 +8,13 @@ namespace FoodstoreApi.Usecase.Services;
 public interface ITagService
 {
     Task<IEnumerable<TagDto>> GetAllAsync(CancellationToken cancellationToken = default);
-    Task<TagDto?> GetByIdAsync(int id, CancellationToken cancellationToken = default);
+    Task<TagDto?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
     Task<TagDto?> GetBySlugAsync(string slug, CancellationToken cancellationToken = default);
     Task<TagDto> CreateAsync(CreateTagDto dto, CancellationToken cancellationToken = default);
-    Task<TagDto?> UpdateAsync(int id, UpdateTagDto dto, CancellationToken cancellationToken = default);
-    Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default);
-    Task<IEnumerable<TagDto>> GetByPostIdAsync(int postId, CancellationToken cancellationToken = default);
-    Task SetPostTagsAsync(int postId, IEnumerable<int> tagIds, CancellationToken cancellationToken = default);
+    Task<TagDto?> UpdateAsync(Guid id, UpdateTagDto dto, CancellationToken cancellationToken = default);
+    Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<IEnumerable<TagDto>> GetByPostIdAsync(Guid postId, CancellationToken cancellationToken = default);
+    Task SetPostTagsAsync(Guid postId, IEnumerable<Guid> tagIds, CancellationToken cancellationToken = default);
 }
 
 public class TagService : ITagService
@@ -32,7 +32,7 @@ public class TagService : ITagService
         return tags.Select(MapToDto);
     }
 
-    public async Task<TagDto?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
+    public async Task<TagDto?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var tag = await _repository.GetByIdAsync(id, cancellationToken);
         return tag != null ? MapToDto(tag) : null;
@@ -52,14 +52,14 @@ public class TagService : ITagService
             Slug = GenerateSlug(dto.Name),
             Description = dto.Description,
             Color = dto.Color ?? "#f59e0b",
-            CreatedAt = DateTime.UtcNow
+
         };
 
         var created = await _repository.CreateAsync(tag, cancellationToken);
         return MapToDto(created);
     }
 
-    public async Task<TagDto?> UpdateAsync(int id, UpdateTagDto dto, CancellationToken cancellationToken = default)
+    public async Task<TagDto?> UpdateAsync(Guid id, UpdateTagDto dto, CancellationToken cancellationToken = default)
     {
         var tag = await _repository.GetByIdAsync(id, cancellationToken);
         if (tag == null) return null;
@@ -76,18 +76,18 @@ public class TagService : ITagService
         return MapToDto(tag);
     }
 
-    public async Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default)
+    public async Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return await _repository.DeleteAsync(id, cancellationToken);
     }
 
-    public async Task<IEnumerable<TagDto>> GetByPostIdAsync(int postId, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<TagDto>> GetByPostIdAsync(Guid postId, CancellationToken cancellationToken = default)
     {
         var tags = await _repository.GetByPostIdAsync(postId, cancellationToken);
         return tags.Select(MapToDto);
     }
 
-    public async Task SetPostTagsAsync(int postId, IEnumerable<int> tagIds, CancellationToken cancellationToken = default)
+    public async Task SetPostTagsAsync(Guid postId, IEnumerable<Guid> tagIds, CancellationToken cancellationToken = default)
     {
         await _repository.SetPostTagsAsync(postId, tagIds, cancellationToken);
     }
@@ -100,7 +100,9 @@ public class TagService : ITagService
             tag.Slug,
             tag.Description,
             tag.Color,
-            tag.BlogPostTags?.Count ?? 0
+            tag.BlogPostTags?.Count ?? 0,
+            tag.CreatedAt,
+            tag.UpdatedAt
         );
     }
 
@@ -152,7 +154,3 @@ public class TagService : ITagService
         return text;
     }
 }
-
-
-
-

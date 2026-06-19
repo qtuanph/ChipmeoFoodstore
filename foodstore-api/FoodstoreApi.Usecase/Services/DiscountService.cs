@@ -3,7 +3,6 @@ using FoodstoreApi.Usecase.DTOs.Discount;
 using FoodstoreApi.Usecase.Utils;
 using FoodstoreApi.Core.Constants;
 using FoodstoreApi.Core.Entities;
-using FoodstoreApi.Core.Utils;
 using Microsoft.Extensions.Caching.Distributed;
 
 namespace FoodstoreApi.Usecase.Services;
@@ -28,7 +27,7 @@ public class DiscountService : IDiscountService
         }, TimeSpan.FromMinutes(5), cancellationToken);
     }
 
-    public async Task<DiscountDto?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
+    public async Task<DiscountDto?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var discount = await _repository.GetByIdAsync(id, cancellationToken);
         return discount == null ? null : MapToDto(discount);
@@ -49,7 +48,7 @@ public class DiscountService : IDiscountService
             StartDate = dto.StartDate,
             EndDate = dto.EndDate,
             IsActive = dto.IsActive,
-            CreatedAt = TimeUtils.GetVietnamTime()
+
         };
 
         var created = await _repository.CreateAsync(discount, cancellationToken);
@@ -57,7 +56,7 @@ public class DiscountService : IDiscountService
         return MapToDto(created);
     }
 
-    public async Task<bool> UpdateAsync(int id, CreateDiscountDto dto, CancellationToken cancellationToken = default)
+    public async Task<bool> UpdateAsync(Guid id, CreateDiscountDto dto, CancellationToken cancellationToken = default)
     {
         var discount = await _repository.GetByIdAsync(id, cancellationToken);
         if (discount == null) return false;
@@ -82,7 +81,7 @@ public class DiscountService : IDiscountService
         return result;
     }
 
-    public async Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default)
+    public async Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var result = await _repository.DeleteAsync(id, cancellationToken);
         if (result)
@@ -109,7 +108,10 @@ public class DiscountService : IDiscountService
             StartDate = discount.StartDate,
             EndDate = discount.EndDate,
             IsActive = discount.IsActive ?? true,
-            CreatedAt = discount.CreatedAt ?? TimeUtils.GetVietnamTime()
+            CreatedAt = discount.CreatedAt,
+            UpdatedAt = discount.UpdatedAt,
+            CreatedBy = discount.CreatedBy,
+            UpdatedBy = discount.UpdatedBy
         };
     }
 }

@@ -52,9 +52,9 @@ public class KitchenController(IOrderService orderService, IHubContext<AppHub> h
     /// <summary>
     /// Start preparing an order (paid → preparing)
     /// </summary>
-    [HttpPut("orders/{id}/start")]
+    [HttpPut("orders/{id:guid}/start")]
     [RequirePermission("order.update")]
-    public async Task<IActionResult> StartPreparing(int id, CancellationToken cancellationToken)
+    public async Task<IActionResult> StartPreparing(Guid id, CancellationToken cancellationToken)
     {
         try
         {
@@ -75,9 +75,9 @@ public class KitchenController(IOrderService orderService, IHubContext<AppHub> h
     /// <summary>
     /// Complete an order (preparing → completed)
     /// </summary>
-    [HttpPut("orders/{id}/complete")]
+    [HttpPut("orders/{id:guid}/complete")]
     [RequirePermission("order.update")]
-    public async Task<IActionResult> CompleteOrder(int id, CancellationToken cancellationToken)
+    public async Task<IActionResult> CompleteOrder(Guid id, CancellationToken cancellationToken)
     {
         try
         {

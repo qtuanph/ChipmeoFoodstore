@@ -12,6 +12,7 @@ obj/
 node_modules/
 .env
 .env.local
+.env.*
 
 # Build
 dist/

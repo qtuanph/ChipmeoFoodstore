@@ -1,7 +1,6 @@
 ﻿using FoodstoreApi.Core.Constants;
 using FoodstoreApi.Usecase.Interfaces;
 using FoodstoreApi.Usecase.DTOs.Report;
-using FoodstoreApi.Core.Utils;
 using FoodstoreApi.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -13,7 +12,7 @@ public class ReportRepository(StoreDbContext context) : IReportRepository
 
     public async Task<DashboardOverviewDto> GetOverviewAsync(CancellationToken cancellationToken = default)
     {
-        var today = TimeUtils.GetVietnamTime().Date;
+        var today = DateTime.UtcNow.Date;
         var tomorrow = today.AddDays(1);
 
         var todayOrdersQuery = _context.Orders.AsNoTracking()
@@ -26,8 +25,7 @@ public class ReportRepository(StoreDbContext context) : IReportRepository
         var avgOrderValue = todayOrdersCount > 0 ? todayRevenue / todayOrdersCount : 0;
 
         var hourlyOrders = await todayOrdersQuery
-            .Where(o => o.CreatedAt.HasValue)
-            .GroupBy(o => o.CreatedAt!.Value.Hour)
+            .GroupBy(o => o.CreatedAt.Hour)
             .Select(g => new { Hour = g.Key, Count = g.Count() })
             .OrderByDescending(x => x.Count)
             .FirstOrDefaultAsync(cancellationToken);
@@ -82,7 +80,7 @@ public class ReportRepository(StoreDbContext context) : IReportRepository
         if (groupBy == "month")
         {
             var grouped = ordersList
-                .GroupBy(o => new { o.CreatedAt!.Value.Year, o.CreatedAt!.Value.Month })
+                .GroupBy(o => new { o.CreatedAt.Year, o.CreatedAt.Month })
                 .Select(g => new
                 {
                     Label = $"{g.Key.Year}-{g.Key.Month:D2}",
@@ -98,7 +96,7 @@ public class ReportRepository(StoreDbContext context) : IReportRepository
         else
         {
             var grouped = ordersList
-                .GroupBy(o => o.CreatedAt!.Value.Date)
+                .GroupBy(o => o.CreatedAt.Date)
                 .Select(g => new
                 {
                     Label = g.Key.ToString("yyyy-MM-dd"),
@@ -171,7 +169,7 @@ public class ReportRepository(StoreDbContext context) : IReportRepository
     {
         return await _context.Orders.AsNoTracking()
             .Where(o => o.CreatedAt >= fromDate && o.CreatedAt < toDate && OrderStatus.ActiveSet.Contains(o.Status!))
-            .GroupBy(o => o.CreatedAt!.Value.Date)
+            .GroupBy(o => o.CreatedAt.Date)
             .Select(g => new SalesDataDto
             {
                 Date = g.Key,
@@ -183,7 +181,7 @@ public class ReportRepository(StoreDbContext context) : IReportRepository
 
     public async Task<DashboardLegacyDto> GetLegacyDashboardStatsAsync(CancellationToken cancellationToken = default)
     {
-        var now = TimeUtils.GetVietnamTime();
+        var now = DateTime.UtcNow;
         var todayStart = now.Date;
         var monthStart = new DateTime(now.Year, now.Month, 1);
 
@@ -193,10 +191,10 @@ public class ReportRepository(StoreDbContext context) : IReportRepository
             .Include(o => o.Source)
             .ToListAsync(cancellationToken);
 
-        var todayOrders = paidOrders.Where(o => o.CreatedAt.HasValue && o.CreatedAt.Value >= todayStart).ToList();
+        var todayOrders = paidOrders.Where(o => o.CreatedAt >= todayStart).ToList();
         var todayRevenue = todayOrders.Sum(o => o.TotalAmount ?? 0);
 
-        var monthOrders = paidOrders.Where(o => o.CreatedAt.HasValue && o.CreatedAt.Value >= monthStart).ToList();
+        var monthOrders = paidOrders.Where(o => o.CreatedAt >= monthStart).ToList();
         var monthRevenue = monthOrders.Sum(o => o.TotalAmount ?? 0);
 
         var totalRevenue = paidOrders.Sum(o => o.TotalAmount ?? 0);
@@ -234,7 +232,7 @@ public class ReportRepository(StoreDbContext context) : IReportRepository
         var last7Days = Enumerable.Range(0, 7).Select(i => todayStart.AddDays(-i)).ToList();
         var dailyRevenue = last7Days.Select(day =>
         {
-            var dayOrders = paidOrders.Where(o => o.CreatedAt.HasValue && o.CreatedAt.Value.Date == day).ToList();
+            var dayOrders = paidOrders.Where(o => o.CreatedAt.Date == day).ToList();
             return new DailyRevenueDto(
                 day.ToString("yyyy-MM-dd"),
                 dayOrders.Sum(o => o.TotalAmount ?? 0),
@@ -251,7 +249,7 @@ public class ReportRepository(StoreDbContext context) : IReportRepository
         var monthlyRevenue = last6Months.Select(month =>
         {
             var nextMonth = month.AddMonths(1);
-            var mOrders = paidOrders.Where(o => o.CreatedAt.HasValue && o.CreatedAt.Value >= month && o.CreatedAt.Value < nextMonth).ToList();
+            var mOrders = paidOrders.Where(o => o.CreatedAt >= month && o.CreatedAt < nextMonth).ToList();
             return new MonthlyRevenueDto(
                 month.ToString("yyyy-MM"),
                 mOrders.Sum(o => o.TotalAmount ?? 0),
@@ -262,8 +260,7 @@ public class ReportRepository(StoreDbContext context) : IReportRepository
         var avgOrderValue = paidOrders.Any() ? paidOrders.Average(o => o.TotalAmount ?? 0) : 0;
 
         var hourlyOrders = paidOrders
-            .Where(o => o.CreatedAt.HasValue)
-            .GroupBy(o => o.CreatedAt!.Value.Hour)
+            .GroupBy(o => o.CreatedAt.Hour)
             .Select(g => new { Hour = g.Key, Count = g.Count() })
             .OrderByDescending(x => x.Count)
             .FirstOrDefault();

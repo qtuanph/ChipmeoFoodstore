@@ -26,7 +26,7 @@ public class PaymentRepository(StoreDbContext context) : IPaymentRepository
         return payment;
     }
 
-    public async Task<IEnumerable<Payment>> GetByOrderIdAsync(int orderId, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<Payment>> GetByOrderIdAsync(Guid orderId, CancellationToken cancellationToken = default)
     {
         return await _context.Payments
             .Where(p => p.OrderId == orderId)

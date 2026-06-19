@@ -36,6 +36,11 @@ public class ExceptionHandlingMiddleware
             _logger.LogWarning(ex, "Unauthorized access: {Message}", ex.Message);
             await WriteErrorResponse(context, HttpStatusCode.Forbidden, "FORBIDDEN", ex.Message);
         }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarning(ex, "Invalid operation: {Message}", ex.Message);
+            await WriteErrorResponse(context, HttpStatusCode.BadRequest, "INVALID_OPERATION", ex.Message);
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Unhandled exception: {Message}", ex.Message);

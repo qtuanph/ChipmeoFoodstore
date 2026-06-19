@@ -31,9 +31,9 @@ public class DiscountsController : ControllerBase
         return ApiResult.Success(items);
     }
 
-    [HttpGet("{id:int}")]
+    [HttpGet("{id:guid}")]
     [RequirePermission("discount.view")]
-    public async Task<IActionResult> GetById(int id, CancellationToken cancellationToken)
+    public async Task<IActionResult> GetById(Guid id, CancellationToken cancellationToken)
     {
         var item = await _service.GetByIdAsync(id, cancellationToken);
         if (item == null) return ApiResult.NotFound();
@@ -49,9 +49,9 @@ public class DiscountsController : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
     }
 
-    [HttpPut("{id:int}")]
+    [HttpPut("{id:guid}")]
     [RequirePermission("discount.update")]
-    public async Task<IActionResult> Update(int id, CreateDiscountDto dto, CancellationToken cancellationToken)
+    public async Task<IActionResult> Update(Guid id, CreateDiscountDto dto, CancellationToken cancellationToken)
     {
         var ok = await _service.UpdateAsync(id, dto, cancellationToken);
         if (!ok) return ApiResult.NotFound();
@@ -59,9 +59,9 @@ public class DiscountsController : ControllerBase
         return NoContent();
     }
 
-    [HttpDelete("{id:int}")]
+    [HttpDelete("{id:guid}")]
     [RequirePermission("discount.delete")]
-    public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
+    public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
         try
         {

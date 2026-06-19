@@ -1,138 +1,96 @@
-﻿using FoodstoreApi.Usecase.DTOs.Permission;
+﻿using System.Security.Claims;
+using FoodstoreApi.Core.Constants;
+using FoodstoreApi.Core.Entities.Identity;
+using FoodstoreApi.Usecase.DTOs.Permission;
 using FoodstoreApi.Usecase.Interfaces;
-using FoodstoreApi.Core.Entities;
-using FoodstoreApi.Core.Utils;
+using Microsoft.AspNetCore.Identity;
 
 namespace FoodstoreApi.Usecase.Services;
 
-public class PermissionService(IPermissionRepository repository, IRoleRepository roleRepository) : IPermissionService
+public class PermissionService(RoleManager<ApplicationRole> roleManager) : IPermissionService
 {
-    private readonly IPermissionRepository _repository = repository;
-    private readonly IRoleRepository _roleRepository = roleRepository;
+    private readonly RoleManager<ApplicationRole> _roleManager = roleManager;
 
-    public async Task<IEnumerable<PermissionDto>> GetAllAsync(CancellationToken cancellationToken = default)
+    public Task<Dictionary<string, List<PermissionDto>>> GetAllPermissionsGroupedByModuleAsync(CancellationToken cancellationToken = default)
     {
-        var permissions = await _repository.GetAllAsync(cancellationToken);
-        return permissions.Select(p => new PermissionDto
-        {
-            Id = p.Id,
-            Code = p.Code,
-            Name = p.Name,
-            Description = p.Description,
-            Module = p.Module ?? ""
-        });
-    }
-
-    public async Task<Dictionary<string, List<PermissionDto>>> GetAllPermissionsGroupedByModuleAsync(CancellationToken cancellationToken = default)
-    {
-        var permissions = await _repository.GetAllAsync(cancellationToken);
-        return permissions
-            .GroupBy(p => p.Module ?? "Other")
+        var grouped = Permissions.All
+            .GroupBy(p => p.Module)
             .ToDictionary(
                 g => g.Key,
                 g => g.Select(p => new PermissionDto
                 {
-                    Id = p.Id,
                     Code = p.Code,
                     Name = p.Name,
                     Description = p.Description,
-                    Module = p.Module ?? ""
+                    Module = p.Module
                 }).ToList()
             );
+
+        return Task.FromResult(grouped);
     }
 
-    public async Task<List<int>> GetRolePermissionIdsAsync(int roleId, CancellationToken cancellationToken = default)
+    public async Task<List<string>> GetRolePermissionCodesAsync(Guid roleId, CancellationToken cancellationToken = default)
     {
-        var rolePermissions = await _roleRepository.GetRolePermissionsAsync(roleId, cancellationToken);
-        return rolePermissions
-            .Where(rp => rp.IsActive)
-            .Select(rp => rp.PermissionId)
+        var role = await _roleManager.FindByIdAsync(roleId.ToString());
+        if (role == null) return new List<string>();
+
+        var claims = await _roleManager.GetClaimsAsync(role);
+        return claims
+            .Where(c => c.Type == "Permission")
+            .Select(c => c.Value)
             .ToList();
     }
 
-    public async Task AssignPermissionToRoleAsync(int roleId, int permissionId, CancellationToken cancellationToken = default)
+    public async Task AssignPermissionToRoleAsync(Guid roleId, string permissionCode, CancellationToken cancellationToken = default)
     {
-        var rolePermissions = await _roleRepository.GetRolePermissionsAsync(roleId, cancellationToken);
-        var existing = rolePermissions.FirstOrDefault(rp => rp.PermissionId == permissionId);
+        var role = await _roleManager.FindByIdAsync(roleId.ToString());
+        if (role == null) return;
 
-        if (existing != null)
+        var existingClaims = await _roleManager.GetClaimsAsync(role);
+        if (!existingClaims.Any(c => c.Type == "Permission" && c.Value == permissionCode))
         {
-            if (!existing.IsActive)
-            {
-                existing.IsActive = true;
-                await _roleRepository.UpdateRolePermissionsAsync(new[] { existing }, cancellationToken);
-            }
-        }
-        else
-        {
-            await _roleRepository.AddRolePermissionsAsync(new[]
-            {
-                new RolePermission
-                {
-                    RoleId = roleId,
-                    PermissionId = permissionId,
-                    IsActive = true,
-                    CreatedAt = TimeUtils.GetVietnamTime()
-                }
-            }, cancellationToken);
+            await _roleManager.AddClaimAsync(role, new Claim("Permission", permissionCode));
         }
     }
 
-    public async Task RemovePermissionFromRoleAsync(int roleId, int permissionId, CancellationToken cancellationToken = default)
+    public async Task RemovePermissionFromRoleAsync(Guid roleId, string permissionCode, CancellationToken cancellationToken = default)
     {
-        var rolePermissions = await _roleRepository.GetRolePermissionsAsync(roleId, cancellationToken);
-        var existing = rolePermissions.FirstOrDefault(rp => rp.PermissionId == permissionId);
+        var role = await _roleManager.FindByIdAsync(roleId.ToString());
+        if (role == null) return;
 
-        if (existing != null && existing.IsActive)
+        var claims = await _roleManager.GetClaimsAsync(role);
+        var claim = claims.FirstOrDefault(c => c.Type == "Permission" && c.Value == permissionCode);
+        if (claim != null)
         {
-            existing.IsActive = false;
-            await _roleRepository.UpdateRolePermissionsAsync(new[] { existing }, cancellationToken);
+            await _roleManager.RemoveClaimAsync(role, claim);
         }
     }
 
-    public async Task BulkUpdateRolePermissionsAsync(int roleId, List<int> permissionIds, CancellationToken cancellationToken = default)
+    public async Task BulkUpdateRolePermissionsAsync(Guid roleId, List<string> permissionCodes, CancellationToken cancellationToken = default)
     {
-        var rolePermissions = (await _roleRepository.GetRolePermissionsAsync(roleId, cancellationToken)).ToList();
-        var requestedIds = permissionIds.Distinct().ToHashSet();
-        
-        var toUpdate = new List<RolePermission>();
-        var toAdd = new List<RolePermission>();
+        var role = await _roleManager.FindByIdAsync(roleId.ToString());
+        if (role == null) return;
 
-        // Update existing
-        foreach (var rp in rolePermissions)
+        var existingClaims = await _roleManager.GetClaimsAsync(role);
+        var existingPermissions = existingClaims.Where(c => c.Type == "Permission").ToList();
+        var requestedCodes = permissionCodes.Distinct().ToHashSet();
+
+        // Remove
+        foreach (var claim in existingPermissions)
         {
-            bool shouldBeActive = requestedIds.Contains(rp.PermissionId);
-            if (rp.IsActive != shouldBeActive)
+            if (!requestedCodes.Contains(claim.Value))
             {
-                rp.IsActive = shouldBeActive;
-                toUpdate.Add(rp);
+                await _roleManager.RemoveClaimAsync(role, claim);
             }
         }
 
-        // Add new
-        var existingIds = rolePermissions.Select(rp => rp.PermissionId).ToHashSet();
-        foreach (var id in requestedIds)
+        // Add
+        foreach (var code in requestedCodes)
         {
-            if (!existingIds.Contains(id))
+            if (!existingPermissions.Any(c => c.Value == code))
             {
-                toAdd.Add(new RolePermission
-                {
-                    RoleId = roleId,
-                    PermissionId = id,
-                    IsActive = true,
-                    CreatedAt = TimeUtils.GetVietnamTime()
-                });
+                await _roleManager.AddClaimAsync(role, new Claim("Permission", code));
             }
         }
-
-        if (toUpdate.Any())
-            await _roleRepository.UpdateRolePermissionsAsync(toUpdate, cancellationToken);
-            
-        if (toAdd.Any())
-            await _roleRepository.AddRolePermissionsAsync(toAdd, cancellationToken);
     }
 }
-
-
-
-

@@ -18,7 +18,7 @@ public class PaymentSettingService(IPaymentSettingRepository repository) : IPaym
         return settings.ToList();
     }
 
-    public async Task<PaymentSetting?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
+    public async Task<PaymentSetting?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return await _repository.GetByIdAsync(id, cancellationToken);
     }
@@ -59,7 +59,7 @@ public class PaymentSettingService(IPaymentSettingRepository repository) : IPaym
         return setting;
     }
 
-    public async Task SetDefaultAsync(int id, CancellationToken cancellationToken = default)
+    public async Task SetDefaultAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var setting = await _repository.GetByIdAsync(id, cancellationToken);
         if (setting == null)
@@ -75,7 +75,7 @@ public class PaymentSettingService(IPaymentSettingRepository repository) : IPaym
         await _repository.UpdateAsync(setting, cancellationToken);
     }
 
-    public async Task DeleteAsync(int id, CancellationToken cancellationToken = default)
+    public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var setting = await _repository.GetByIdAsync(id, cancellationToken);
         if (setting == null)
@@ -92,7 +92,3 @@ public class PaymentSettingService(IPaymentSettingRepository repository) : IPaym
         await _repository.DeleteAsync(setting, cancellationToken);
     }
 }
-
-
-
-

@@ -1,4 +1,5 @@
-﻿using FoodstoreApi.Usecase.Interfaces;
+﻿using System;
+using FoodstoreApi.Usecase.Interfaces;
 using FoodstoreApi.Web.Authorization;
 using FoodstoreApi.Core.Entities;
 using Microsoft.AspNetCore.Authorization;
@@ -40,9 +41,9 @@ public class PaymentSettingsController : ControllerBase
     /// <summary>
     /// Get payment setting by ID
     /// </summary>
-    [HttpGet("{id}")]
+    [HttpGet("{id:guid}")]
     [RequirePermission("payment.view")]
-    public async Task<IActionResult> GetById(int id, CancellationToken cancellationToken)
+    public async Task<IActionResult> GetById(Guid id, CancellationToken cancellationToken)
     {
         var setting = await _service.GetByIdAsync(id, cancellationToken);
         if (setting == null)
@@ -73,9 +74,9 @@ public class PaymentSettingsController : ControllerBase
     /// <summary>
     /// Update specific payment setting
     /// </summary>
-    [HttpPut("{id}")]
+    [HttpPut("{id:guid}")]
     [RequirePermission("payment.update")]
-    public async Task<IActionResult> Update(int id, [FromBody] PaymentSetting setting, CancellationToken cancellationToken)
+    public async Task<IActionResult> Update(Guid id, [FromBody] PaymentSetting setting, CancellationToken cancellationToken)
     {
         setting.Id = id;
         try
@@ -92,9 +93,9 @@ public class PaymentSettingsController : ControllerBase
     /// <summary>
     /// Set payment setting as default
     /// </summary>
-    [HttpPut("{id}/set-default")]
+    [HttpPut("{id:guid}/set-default")]
     [RequirePermission("payment.update")]
-    public async Task<IActionResult> SetDefault(int id, CancellationToken cancellationToken)
+    public async Task<IActionResult> SetDefault(Guid id, CancellationToken cancellationToken)
     {
         try
         {
@@ -110,9 +111,9 @@ public class PaymentSettingsController : ControllerBase
     /// <summary>
     /// Delete payment setting (cannot delete default)
     /// </summary>
-    [HttpDelete("{id}")]
+    [HttpDelete("{id:guid}")]
     [RequirePermission("payment.delete")]
-    public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
+    public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
         try
         {

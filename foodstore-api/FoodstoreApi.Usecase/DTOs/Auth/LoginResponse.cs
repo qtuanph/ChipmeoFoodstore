@@ -10,17 +10,15 @@ public class LoginResponse
 
 public class UserInfo
 {
-    public int Id { get; set; }
-    public string FullName { get; set; } = string.Empty;
+    public Guid Id { get; set; }
+    public Guid EmployeeId { get; set; }
+    public string Name { get; set; } = string.Empty;
     public string Username { get; set; } = string.Empty;
-    public string? Email { get; set; }
+    public string Email { get; set; } = string.Empty;
+    public string EmployeeCode { get; set; } = string.Empty;
     public string? AvatarUrl { get; set; }
-    public int RoleId { get; set; }
+    public Guid RoleId { get; set; }
     public string RoleName { get; set; } = string.Empty;
     public string? DefaultRoute { get; set; }
     public List<string> Permissions { get; set; } = new();
 }
-
-
-
-

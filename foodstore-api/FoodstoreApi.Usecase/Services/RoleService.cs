@@ -1,150 +1,130 @@
-﻿using FoodstoreApi.Usecase.Interfaces;
+﻿using System.Security.Claims;
+using FoodstoreApi.Core.Constants;
+using FoodstoreApi.Core.Entities.Identity;
 using FoodstoreApi.Usecase.DTOs.Role;
-using FoodstoreApi.Core.Entities;
-using FoodstoreApi.Core.Utils;
+using FoodstoreApi.Usecase.Interfaces;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 
 namespace FoodstoreApi.Usecase.Services;
 
-public class RoleService(IRoleRepository repository, IPermissionRepository permissionRepository) : IRoleService
+public class RoleService(RoleManager<ApplicationRole> roleManager) : IRoleService
 {
-    private readonly IRoleRepository _repository = repository;
-    private readonly IPermissionRepository _permissionRepository = permissionRepository;
+    private readonly RoleManager<ApplicationRole> _roleManager = roleManager;
 
     public async Task<IEnumerable<RoleDto>> GetAllAsync(CancellationToken cancellationToken = default)
     {
-        var roles = await _repository.GetAllAsync(cancellationToken);
-        return roles.Select(MapToDto);
+        var roles = await _roleManager.Roles.ToListAsync(cancellationToken);
+        var result = new List<RoleDto>();
+        foreach (var role in roles)
+        {
+            var claims = await _roleManager.GetClaimsAsync(role);
+            result.Add(MapToDto(role, claims));
+        }
+        return result;
     }
 
-    public async Task<RoleDto?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
+    public async Task<RoleDto?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        var role = await _repository.GetByIdAsync(id, cancellationToken);
-        return role == null ? null : MapToDto(role);
+        var role = await _roleManager.FindByIdAsync(id.ToString());
+        if (role == null) return null;
+        var claims = await _roleManager.GetClaimsAsync(role);
+        return MapToDto(role, claims);
     }
 
     public async Task<RoleDto> CreateAsync(CreateRoleDto dto, CancellationToken cancellationToken = default)
     {
-        var role = new Role
+        var role = new ApplicationRole
         {
             Name = dto.Name,
             Description = dto.Description,
             DefaultRoute = dto.DefaultRoute,
-            IsActive = dto.IsActive,
-            CreatedAt = TimeUtils.GetVietnamTime()
+
         };
 
-        var created = await _repository.CreateAsync(role, cancellationToken);
+        var result = await _roleManager.CreateAsync(role);
+        if (!result.Succeeded)
+            throw new Exception(string.Join("; ", result.Errors.Select(e => e.Description)));
 
-        // Seed all permissions as inactive for the new role
-        var allPermissions = await _permissionRepository.GetAllAsync(cancellationToken);
-        var rolePermissions = allPermissions.Select(p => new RolePermission
-        {
-            RoleId = created.Id,
-            PermissionId = p.Id,
-            IsActive = false,
-            CreatedAt = TimeUtils.GetVietnamTime()
-        });
-        
-        await _repository.AddRolePermissionsAsync(rolePermissions, cancellationToken);
-
-        return MapToDto(created);
+        return MapToDto(role, new List<Claim>());
     }
 
-    public async Task<bool> UpdateAsync(int id, CreateRoleDto dto, CancellationToken cancellationToken = default)
+    private static readonly HashSet<string> ProtectedRoles = ["root", "customer"];
+
+    public async Task<bool> UpdateAsync(Guid id, CreateRoleDto dto, CancellationToken cancellationToken = default)
     {
-        var role = await _repository.GetByIdAsync(id, cancellationToken);
+        var role = await _roleManager.FindByIdAsync(id.ToString());
         if (role == null) return false;
+        if (ProtectedRoles.Contains(role.Name?.ToLowerInvariant() ?? ""))
+            throw new InvalidOperationException($"Không thể sửa vai trò hệ thống \"{role.Name}\".");
 
         role.Name = dto.Name;
         role.Description = dto.Description;
         role.DefaultRoute = dto.DefaultRoute;
-        role.IsActive = dto.IsActive;
 
-        return await _repository.UpdateAsync(role, cancellationToken);
+        var result = await _roleManager.UpdateAsync(role);
+        return result.Succeeded;
     }
 
-    public async Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default)
+    public async Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        return await _repository.DeleteAsync(id, cancellationToken);
-    }
-
-    public async Task<bool> AssignPermissionsAsync(int roleId, AssignPermissionsDto dto, CancellationToken cancellationToken = default)
-    {
-        var role = await _repository.GetByIdAsync(roleId, cancellationToken);
+        var role = await _roleManager.FindByIdAsync(id.ToString());
         if (role == null) return false;
+        if (ProtectedRoles.Contains(role.Name?.ToLowerInvariant() ?? ""))
+            throw new InvalidOperationException($"Không thể xóa vai trò hệ thống \"{role.Name}\".");
 
-        // Get all system permissions
-        var allPermissions = await _permissionRepository.GetAllAsync(cancellationToken);
-        
-        // Get existing role permissions
-        var existingRolePermissions = (await _repository.GetRolePermissionsAsync(roleId, cancellationToken)).ToList();
+        var result = await _roleManager.DeleteAsync(role);
+        return result.Succeeded;
+    }
 
-        var requestedPermissionIds = dto.PermissionIds.Distinct().ToHashSet();
+    public async Task<bool> AssignPermissionsAsync(Guid roleId, AssignPermissionsDto dto, CancellationToken cancellationToken = default)
+    {
+        var role = await _roleManager.FindByIdAsync(roleId.ToString());
+        if (role == null) return false;
+        if (ProtectedRoles.Contains(role.Name?.ToLowerInvariant() ?? ""))
+            throw new InvalidOperationException($"Không thể phân quyền cho vai trò hệ thống \"{role.Name}\".");
 
-        // 1. Update existing permissions
-        var permissionsToUpdate = new List<RolePermission>();
-        foreach (var rp in existingRolePermissions)
+        var existingClaims = await _roleManager.GetClaimsAsync(role);
+        var existingPermissions = existingClaims.Where(c => c.Type == "Permission").ToList();
+
+        // Remove permissions not in the new list
+        foreach (var claim in existingPermissions)
         {
-            if (rp.IsActive != requestedPermissionIds.Contains(rp.PermissionId))
+            if (!dto.PermissionCodes.Contains(claim.Value))
             {
-                rp.IsActive = requestedPermissionIds.Contains(rp.PermissionId);
-                permissionsToUpdate.Add(rp);
+                await _roleManager.RemoveClaimAsync(role, claim);
             }
         }
-        
-        if (permissionsToUpdate.Any())
-        {
-            await _repository.UpdateRolePermissionsAsync(permissionsToUpdate, cancellationToken);
-        }
 
-        // 2. Add missing permissions (if any new permissions were added to the system)
-        var existingPermissionIds = existingRolePermissions.Select(rp => rp.PermissionId).ToHashSet();
-        var missingPermissions = allPermissions.Where(p => !existingPermissionIds.Contains(p.Id));
-        var permissionsToAdd = new List<RolePermission>();
-
-        foreach (var p in missingPermissions)
+        // Add new permissions
+        foreach (var code in dto.PermissionCodes)
         {
-            permissionsToAdd.Add(new RolePermission
+            if (!existingPermissions.Any(c => c.Value == code))
             {
-                RoleId = roleId,
-                PermissionId = p.Id,
-                IsActive = requestedPermissionIds.Contains(p.Id),
-                CreatedAt = TimeUtils.GetVietnamTime()
-            });
-        }
-
-        if (permissionsToAdd.Any())
-        {
-            await _repository.AddRolePermissionsAsync(permissionsToAdd, cancellationToken);
+                await _roleManager.AddClaimAsync(role, new Claim("Permission", code));
+            }
         }
 
         return true;
     }
 
-    private static RoleDto MapToDto(Role role)
+    private static RoleDto MapToDto(ApplicationRole role, IList<Claim> claims)
     {
         return new RoleDto
         {
             Id = role.Id,
-            Name = role.Name,
+            Name = role.Name ?? "",
             Description = role.Description,
             DefaultRoute = role.DefaultRoute,
-            IsActive = role.IsActive ?? true,
-            CreatedAt = role.CreatedAt ?? TimeUtils.GetVietnamTime(),
-            Permissions = role.RolePermissions?
-                .Where(rp => rp.IsActive)
-                .Select(rp => new PermissionDto
-            {
-                Id = rp.Permission.Id,
-                Code = rp.Permission.Code,
-                Name = rp.Permission.Name,
-                Description = rp.Permission.Description,
-                Module = rp.Permission.Module ?? ""
-            }).ToList() ?? new List<PermissionDto>()
+            IsActive = true,
+            CreatedAt = role.CreatedAt,
+            UpdatedAt = role.UpdatedAt,
+            CreatedBy = role.CreatedBy,
+            UpdatedBy = role.UpdatedBy,
+            PermissionCodes = claims
+                .Where(c => c.Type == "Permission")
+                .Select(c => c.Value)
+                .ToList()
         };
     }
 }
-
-
-
-

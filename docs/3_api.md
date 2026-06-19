@@ -7,15 +7,14 @@
 | Environment | Base URL |
 |---|---|
 | **Docker (Traefik)** | `http://api.localhost/v2` |
+| **Local dev** | `http://localhost:5142/v2` |
 
 ## Response Envelope
-
-Mọi response đều theo format:
 
 ```json
 // ✅ Success — single resource (HTTP 200)
 {
-  "data": { "id": 1, "name": "Alice", "createdAt": "2026-01-15T10:30:00Z" },
+  "data": { "id": "a1b2c3d4-...", "name": "Alice", "createdAt": "2026-01-15T10:30:00Z" },
   "error": null,
   "meta": { "requestId": "...", "timestamp": "2026-01-15T10:30:00Z" }
 }
@@ -24,12 +23,7 @@ Mọi response đều theo format:
 {
   "data": [ ... ],
   "error": null,
-  "meta": {
-    "page": 1,
-    "pageSize": 20,
-    "totalCount": 87,
-    "totalPages": 5
-  }
+  "meta": { "page": 1, "pageSize": 20, "totalCount": 87, "totalPages": 5 }
 }
 
 // ✅ Error (HTTP 4xx/5xx)
@@ -38,16 +32,13 @@ Mọi response đều theo format:
   "error": {
     "code": "VALIDATION_ERROR",
     "message": "Username and password are required",
-    "details": [
-      { "field": "email", "message": "must not be empty" }
-    ]
+    "details": [{ "field": "username", "message": "must not be empty" }]
   },
   "meta": { "requestId": "...", "timestamp": "..." }
 }
 ```
 
 ### HTTP Status Codes
-
 | Code | Meaning |
 |---|---|
 | 200 | Success |
@@ -61,7 +52,6 @@ Mọi response đều theo format:
 | 500 | Internal Server Error |
 
 ### Error Codes
-
 | Code | Description |
 |---|---|
 | `VALIDATION_ERROR` | Input validation failed |
@@ -75,97 +65,36 @@ Mọi response đều theo format:
 ## Authentication
 
 ### Employee Login
-
 ```
 POST /v2/api/auth/login
 Content-Type: application/json
 
-{
-  "username": "admin",
-  "password": "password123"
-}
-
-Response 200:
-{
-  "data": {
-    "token": "eyJhbGciOiJI...",
-    "refreshToken": "dGhpcyBpcyBh...",
-    "user": {
-      "id": 1,
-      "username": "admin",
-      "fullName": "Admin",
-      "roleId": 1,
-      "roleName": "Admin",
-      "avatarUrl": null,
-      "permissions": ["order.view", "menu.edit", ...]
-    }
-  },
-  "error": null,
-  "meta": { "timestamp": "..." }
-}
-```
-
-### Refresh Token
-
-```
-POST /v2/api/auth/refresh
-Content-Type: application/json
-
-{
-  "refreshToken": "dGhpcyBpcyBh..."
-}
-```
-
-### Logout
-
-```
-POST /v2/api/auth/logout
-Authorization: Bearer <token>
-```
-
-### Profile
-
-```
-GET /v2/api/auth/profile
-Authorization: Bearer <token>
-
-PUT /v2/api/auth/profile
-Authorization: Bearer <token>
-Content-Type: application/json
-
-{
-  "fullName": "New Name",
-  "email": "new@email.com"
-}
+{ "username": "root", "password": "abc123" }
 ```
 
 ### Customer Login
-
 ```
 POST /v2/api/customers/login
 Content-Type: application/json
 
-{
-  "phone": "0901234567",
-  "password": "customerpass"
-}
+{ "username": "nguyenvana", "password": "customerpass" }
 ```
 
 ### Customer Registration
-
 ```
 POST /v2/api/customers/register
 Content-Type: application/json
 
 {
+  "username": "nguyenvana",
+  "name": "Nguyen Van A",
+  "email": "customer@example.com",
   "phone": "0901234567",
-  "fullName": "Nguyen Van A",
   "password": "customerpass"
 }
 ```
 
 ### Authentication Header
-
 ```
 Authorization: Bearer <jwt_token>
 ```
@@ -173,7 +102,6 @@ Authorization: Bearer <jwt_token>
 ---
 
 ## Health
-
 | Method | Route | Description |
 |---|---|---|
 | `GET` | `/v2/api/health` | Server health check |
@@ -181,7 +109,6 @@ Authorization: Bearer <jwt_token>
 ---
 
 ## POS Endpoints
-
 | Method | Route | Description | Auth |
 |---|---|---|---|
 | `GET` | `/v2/api/pos/menu` | Full menu (categories + items + addons + combos + discounts) | Employee |
@@ -191,32 +118,9 @@ Authorization: Bearer <jwt_token>
 | `PUT` | `/v2/api/pos/orders/{id}/status` | Update order status | Employee |
 | `POST` | `/v2/api/pos/orders/{id}/payment` | Process payment | Employee |
 
-### POS Menu Response
-
-```json
-{
-  "data": {
-    "categories": [
-      {
-        "id": 1,
-        "name": "Coffee",
-        "imageUrl": "http://localhost/uploads/food-media/categories/coffee.jpg",
-        "items": [...]
-      }
-    ],
-    "combos": [...],
-    "addons": [...],
-    "discounts": [...]
-  },
-  "error": null,
-  "meta": { "timestamp": "..." }
-}
-```
-
 ---
 
 ## Kitchen Endpoints
-
 | Method | Route | Description | Auth |
 |---|---|---|---|
 | `GET` | `/v2/api/kitchen/orders` | Get kitchen order queue | Employee |
@@ -227,18 +131,7 @@ Authorization: Bearer <jwt_token>
 
 ## Admin Endpoints
 
-### CRUD Pattern
-
-| Method | Route | Description |
-|---|---|---|
-| `GET` | `/v2/api/admin/{resource}` | List all |
-| `GET` | `/v2/api/admin/{resource}/{id}` | Get by ID |
-| `POST` | `/v2/api/admin/{resource}` | Create |
-| `PUT` | `/v2/api/admin/{resource}/{id}` | Update |
-| `DELETE` | `/v2/api/admin/{resource}/{id}` | Delete |
-
-### Resources
-
+### Resources (CRUD)
 | Resource | Route Prefix | Permission |
 |---|---|---|
 | Categories | `/v2/api/admin/categories` | `category.*` |
@@ -253,9 +146,9 @@ Authorization: Bearer <jwt_token>
 | Role Permissions | `/v2/api/admin/roles/{roleId}/permissions` | `role.*` |
 | Permissions | `/v2/api/admin/permissions` | `role.*` |
 | Payment Settings | `/v2/api/admin/payment-settings` | `payment.*` |
+| Customers | `/v2/api/admin/customers` | `customer.*` |
 
 ### Special Admin Endpoints
-
 | Method | Route | Description |
 |---|---|---|
 | `GET` | `/v2/api/admin/dashboard/stats` | KPIs (revenue, orders, customers) |
@@ -267,29 +160,79 @@ Authorization: Bearer <jwt_token>
 | `PUT` | `/v2/api/admin/orders/{id}/set-unpaid` | Revert payment |
 | `GET` | `/v2/api/admin/orders/date-range?fromDate=...&toDate=...` | Orders by date range |
 
-### Paginated Response Example
+---
 
-```json
-GET /v2/api/admin/orders/paged?page=1&pageSize=10
+## CMS — Blog Posts
+| Method | Route | Description | Auth |
+|---|---|---|---|
+| `GET` | `/v2/api/blog` | List all posts (filter by status, categorySlug, tagSlug) | Employee |
+| `GET` | `/v2/api/blog/{id:guid}` | Get post by ID | Employee |
+| `GET` | `/v2/api/blog/slug/{slug}` | Get post by slug | None |
+| `POST` | `/v2/api/blog` | Create post | `blog.create` |
+| `PUT` | `/v2/api/blog/{id:guid}` | Update post | `blog.update` |
+| `DELETE` | `/v2/api/blog/{id:guid}` | Delete post | `blog.delete` |
+| `PATCH` | `/v2/api/blog/{id:guid}/status` | Change post status | `blog.update` |
+| `PATCH` | `/v2/api/blog/{id:guid}/schedule` | Schedule post | `blog.update` |
+| `POST` | `/v2/api/blog/{slug}/view` | Increment view count | None |
+| `GET` | `/v2/api/blog/dashboard/stats` | CMS dashboard stats | `dashboard.view` |
+| `GET` | `/v2/api/blog/featured?limit=5` | Featured posts | None |
+| `GET` | `/v2/api/blog/published?page=1&limit=10` | Paginated published posts | None |
 
-{
-  "data": [
-    { "id": 42, "finalAmount": 78300, "status": "paid", ... }
-  ],
-  "error": null,
-  "meta": {
-    "page": 1,
-    "pageSize": 10,
-    "totalCount": 87,
-    "totalPages": 9
-  }
-}
-```
+### Blog Revisions
+| Method | Route | Description | Auth |
+|---|---|---|---|
+| `GET` | `/v2/api/blog/{id:guid}/revisions` | List revisions | None |
+| `POST` | `/v2/api/blog/{id:guid}/revisions` | Create revision snapshot | `blog.update` |
+| `POST` | `/v2/api/blog/revisions/{revisionId:guid}/restore` | Restore revision | `blog.update` |
+
+### Blog Categories
+| Method | Route | Description | Auth |
+|---|---|---|---|
+| `GET` | `/v2/api/admin/blog-categories` | List all | `blog.view` |
+| `POST` | `/v2/api/admin/blog-categories` | Create | `blog.create` |
+| `PUT` | `/v2/api/admin/blog-categories/{id:guid}` | Update | `blog.update` |
+| `DELETE` | `/v2/api/admin/blog-categories/{id:guid}` | Delete | `blog.delete` |
+
+### Blog Tags
+| Method | Route | Description | Auth |
+|---|---|---|---|
+| `GET` | `/v2/api/tags` | List all | None |
+| `GET` | `/v2/api/tags/{id}` | Get by ID | None |
+| `GET` | `/v2/api/tags/slug/{slug}` | Get by slug | None |
+| `POST` | `/v2/api/tags` | Create | Employee |
+| `PUT` | `/v2/api/tags/{id}` | Update | Employee |
+| `DELETE` | `/v2/api/tags/{id}` | Delete | Employee |
+
+### Blog Settings (key-value)
+| Method | Route | Description | Auth |
+|---|---|---|---|
+| `GET` | `/v2/api/admin/blog-settings` | List all settings | `settings.view` |
+| `GET` | `/v2/api/admin/blog-settings/{key}` | Get by key | `settings.view` |
+| `PUT` | `/v2/api/admin/blog-settings/{key}` | Upsert setting | `settings.manage` |
+| `DELETE` | `/v2/api/admin/blog-settings/{key}` | Delete setting | `settings.manage` |
+
+### Blog Blocks (content blocks)
+| Method | Route | Description | Auth |
+|---|---|---|---|
+| `GET` | `/v2/api/admin/blog-blocks/post/{postId:guid}` | List blocks for post | `blog.view` |
+| `POST` | `/v2/api/admin/blog-blocks` | Create block | `blog.create` |
+| `PUT` | `/v2/api/admin/blog-blocks/{blockId:guid}` | Update block | `blog.update` |
+| `DELETE` | `/v2/api/admin/blog-blocks/{blockId:guid}` | Delete block | `blog.delete` |
+| `PUT` | `/v2/api/admin/blog-blocks/reorder` | Reorder blocks | `blog.update` |
+
+### CMS Public API (for Astro landing page)
+| Method | Route | Description |
+|---|---|---|
+| `GET` | `/v2/api/public/articles` | List published articles (paginated) |
+| `GET` | `/v2/api/public/articles/{slug}` | Get article by slug |
+| `GET` | `/v2/api/public/featured` | Get featured articles |
+| `GET` | `/v2/api/public/categories` | List categories |
+| `GET` | `/v2/api/public/tags` | List tags |
+| `POST` | `/v2/api/public/articles/{slug}/view` | Increment view count |
 
 ---
 
-## Customer Endpoints
-
+## CRM — Customers
 | Method | Route | Description | Auth |
 |---|---|---|---|
 | `POST` | `/v2/api/customers/register` | Register | None |
@@ -302,29 +245,11 @@ GET /v2/api/admin/orders/paged?page=1&pageSize=10
 | `POST` | `/v2/api/customers` | Create (admin) | Employee |
 | `PUT` | `/v2/api/customers/{id}` | Update | Employee |
 | `DELETE` | `/v2/api/customers/{id}` | Delete | Employee |
-
----
-
-## Blog & Tags
-
-| Method | Route | Description | Auth |
-|---|---|---|---|
-| `GET` | `/v2/api/blog` | Public blog list | None |
-| `GET` | `/v2/api/blog/{slug}` | Public blog detail | None |
-| `POST` | `/v2/api/blog` | Create post | Employee |
-| `PUT` | `/v2/api/blog/{id}` | Update post | Employee |
-| `DELETE` | `/v2/api/blog/{id}` | Delete post | Employee |
-| `GET` | `/v2/api/tags` | List tags | None |
-| `GET` | `/v2/api/tags/{id}` | Get tag | None |
-| `GET` | `/v2/api/tags/slug/{slug}` | Get tag by slug | None |
-| `POST` | `/v2/api/tags` | Create tag | Employee |
-| `PUT` | `/v2/api/tags/{id}` | Update tag | Employee |
-| `DELETE` | `/v2/api/tags/{id}` | Delete tag | Employee |
+| `GET` | `/v2/api/admin/customers/leaderboard` | Points leaderboard | Employee |
 
 ---
 
 ## Reports
-
 | Method | Route | Description | Auth |
 |---|---|---|---|
 | `GET` | `/v2/api/reports/dashboard-stats` | Dashboard stats | Employee |
@@ -332,7 +257,6 @@ GET /v2/api/admin/orders/paged?page=1&pageSize=10
 ---
 
 ## Media
-
 | Method | Route | Description | Auth |
 |---|---|---|---|
 | `POST` | `/v2/api/media/upload` | Upload file (multipart) | Employee |
@@ -343,7 +267,6 @@ GET /v2/api/admin/orders/paged?page=1&pageSize=10
 | `DELETE` | `/v2/api/media/cleanup` | Bulk delete unused | Employee |
 
 ### Media Upload
-
 ```
 POST /v2/api/media/upload
 Content-Type: multipart/form-data
@@ -351,20 +274,6 @@ Authorization: Bearer <token>
 
 file: <binary>
 folder: "menu-items" | "categories" | "combos" | "blog" | "avatars" | "misc"
-
-Response 201:
-{
-  "data": {
-    "id": 1,
-    "url": "http://localhost/uploads/food-media/menu-items/espresso.jpg",
-    "fileName": "espresso.jpg",
-    "folder": "menu-items",
-    "contentType": "image/jpeg",
-    "size": 24576
-  },
-  "error": null,
-  "meta": { "timestamp": "..." }
-}
 ```
 
 ---
@@ -374,15 +283,7 @@ Response 201:
 **Endpoint**: `/hubs/app`
 **Protocol**: MessagePack (binary) with JSON fallback
 
-### Client → Server
-
-| Method | Description |
-|---|---|
-| `JoinGroup(groupName)` | Join notification group |
-| `LeaveGroup(groupName)` | Leave notification group |
-
-### Server → Client
-
+### Server → Client Events
 | Event | Payload | Description |
 |---|---|---|
 | `ReceiveOrderUpdate` | `{ id, status, ... }` | Order changed |
@@ -393,7 +294,6 @@ Response 201:
 ---
 
 ## Order Status Values
-
 | Status | Description |
 |---|---|
 | `pending` | Created, awaiting payment |
@@ -405,7 +305,6 @@ Response 201:
 | `cancelled` | Order cancelled |
 
 ## Payment Methods
-
 | Value | Description |
 |---|---|
 | `cash` | Cash payment |

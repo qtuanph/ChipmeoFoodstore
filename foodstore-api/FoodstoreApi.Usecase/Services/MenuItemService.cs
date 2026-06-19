@@ -3,7 +3,6 @@ using FoodstoreApi.Usecase.DTOs.MenuItem;
 using FoodstoreApi.Usecase.Utils;
 using FoodstoreApi.Core.Constants;
 using FoodstoreApi.Core.Entities;
-using FoodstoreApi.Core.Utils;
 using Microsoft.Extensions.Caching.Distributed;
 
 namespace FoodstoreApi.Usecase.Services;
@@ -35,13 +34,16 @@ public class MenuItemService : IMenuItemService
                 i.ImageUrl,
                 i.IsActive,
                 i.CreatedAt,
+                i.UpdatedAt,
+                i.CreatedBy,
+                i.UpdatedBy,
                 i.Category?.Name,
-                i.MenuItemAddons?.Select(ma => new Usecase.DTOs.Addon.AddonDto { Id = ma.Addon.Id, Name = ma.Addon.Name, Price = ma.Addon.Price, IsActive = ma.Addon.IsActive ?? false }).ToList()
+                i.MenuItemAddons?.Select(ma => new Usecase.DTOs.Addon.AddonDto { Id = ma.Addon.Id, Name = ma.Addon.Name, Price = ma.Addon.Price, IsActive = ma.Addon.IsActive ?? false, CreatedAt = ma.Addon.CreatedAt, UpdatedAt = ma.Addon.UpdatedAt, CreatedBy = ma.Addon.CreatedBy, UpdatedBy = ma.Addon.UpdatedBy }).ToList()
             )).ToList();
         }, TimeSpan.FromMinutes(10), cancellationToken);
     }
 
-    public async Task<MenuItemDto?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
+    public async Task<MenuItemDto?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var i = await _repo.GetByIdAsync(id, cancellationToken);
         if (i == null) return null;
@@ -54,8 +56,11 @@ public class MenuItemService : IMenuItemService
             i.ImageUrl,
             i.IsActive, 
             i.CreatedAt, 
+            i.UpdatedAt,
+            i.CreatedBy,
+            i.UpdatedBy,
             i.Category?.Name,
-            i.MenuItemAddons?.Select(ma => new Usecase.DTOs.Addon.AddonDto { Id = ma.Addon.Id, Name = ma.Addon.Name, Price = ma.Addon.Price, IsActive = ma.Addon.IsActive ?? false }).ToList()
+            i.MenuItemAddons?.Select(ma => new Usecase.DTOs.Addon.AddonDto { Id = ma.Addon.Id, Name = ma.Addon.Name, Price = ma.Addon.Price, IsActive = ma.Addon.IsActive ?? false, CreatedAt = ma.Addon.CreatedAt, UpdatedAt = ma.Addon.UpdatedAt, CreatedBy = ma.Addon.CreatedBy, UpdatedBy = ma.Addon.UpdatedBy }).ToList()
         );
     }
 
@@ -68,7 +73,7 @@ public class MenuItemService : IMenuItemService
             Price = dto.Price,
             ImageUrl = dto.ImageUrl,
             IsActive = dto.IsActive,
-            MenuItemAddons = dto.AddonIds?.Select(aid => new MenuItemAddon { AddonId = aid, IsActive = true, CreatedAt = TimeUtils.GetVietnamTime() }).ToList() ?? new List<MenuItemAddon>()
+            MenuItemAddons = dto.AddonIds?.Select(aid => new MenuItemAddon { AddonId = aid, IsActive = true }).ToList() ?? new List<MenuItemAddon>()
         };
         var created = await _repo.AddAsync(entity, cancellationToken);
         
@@ -87,12 +92,15 @@ public class MenuItemService : IMenuItemService
             created.ImageUrl,
             created.IsActive, 
             created.CreatedAt, 
+            created.UpdatedAt,
+            created.CreatedBy,
+            created.UpdatedBy,
             created.Category?.Name,
             new List<Usecase.DTOs.Addon.AddonDto>() 
         );
     }
 
-    public async Task<bool> UpdateAsync(int id, CreateMenuItemDto dto, CancellationToken cancellationToken = default)
+    public async Task<bool> UpdateAsync(Guid id, CreateMenuItemDto dto, CancellationToken cancellationToken = default)
     {
         var existing = await _repo.GetByIdAsync(id, cancellationToken);
         if (existing == null) return false;
@@ -111,7 +119,7 @@ public class MenuItemService : IMenuItemService
             existing.MenuItemAddons.Clear();
             foreach (var aid in dto.AddonIds)
             {
-                existing.MenuItemAddons.Add(new MenuItemAddon { AddonId = aid, IsActive = true, CreatedAt = TimeUtils.GetVietnamTime() });
+                existing.MenuItemAddons.Add(new MenuItemAddon { AddonId = aid, IsActive = true });
             }
         }
 
@@ -126,7 +134,7 @@ public class MenuItemService : IMenuItemService
         return true;
     }
 
-    public async Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default)
+    public async Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var existing = await _repo.GetByIdAsync(id, cancellationToken);
         if (existing == null) return false;

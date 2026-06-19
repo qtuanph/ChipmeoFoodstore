@@ -10,7 +10,7 @@ using FoodstoreApi.Web.ApiResponse;
 namespace FoodstoreApi.Web.Controllers;
 
 [ApiController]
-[Route("api/admin/menuitems")]
+[Route("api/admin/menu-items")]
 public class MenuItemsController : ControllerBase
 {
     private readonly IMenuItemService _service;
@@ -30,9 +30,9 @@ public class MenuItemsController : ControllerBase
         return ApiResult.Success(items);
     }
 
-    [HttpGet("{id:int}")]
+    [HttpGet("{id:guid}")]
     [RequirePermission("menu.view")]
-    public async Task<IActionResult> GetById(int id, CancellationToken cancellationToken)
+    public async Task<IActionResult> GetById(Guid id, CancellationToken cancellationToken)
     {
         var item = await _service.GetByIdAsync(id, cancellationToken);
         if (item == null) return ApiResult.NotFound();
@@ -48,9 +48,9 @@ public class MenuItemsController : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
     }
 
-    [HttpPut("{id:int}")]
+    [HttpPut("{id:guid}")]
     [RequirePermission("menu.update")]
-    public async Task<IActionResult> Update(int id, CreateMenuItemDto dto, CancellationToken cancellationToken)
+    public async Task<IActionResult> Update(Guid id, CreateMenuItemDto dto, CancellationToken cancellationToken)
     {
         var ok = await _service.UpdateAsync(id, dto, cancellationToken);
         if (!ok) return ApiResult.NotFound();
@@ -58,9 +58,9 @@ public class MenuItemsController : ControllerBase
         return NoContent();
     }
 
-    [HttpDelete("{id:int}")]
+    [HttpDelete("{id:guid}")]
     [RequirePermission("menu.delete")]
-    public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
+    public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
         try
         {
@@ -76,22 +76,18 @@ public class MenuItemsController : ControllerBase
     }
 
     // POS endpoints for read-only menu (public)
-    [HttpGet("/api/pos/menuitems")]
+    [HttpGet("/api/pos/menu-items")]
     public async Task<IActionResult> PosGetAll(CancellationToken cancellationToken)
     {
         var items = await _service.GetAllAsync(cancellationToken);
         return ApiResult.Success(items);
     }
 
-    [HttpGet("/api/pos/menuitems/{id:int}")]
-    public async Task<IActionResult> PosGetById(int id, CancellationToken cancellationToken)
+    [HttpGet("/api/pos/menu-items/{id:guid}")]
+    public async Task<IActionResult> PosGetById(Guid id, CancellationToken cancellationToken)
     {
         var item = await _service.GetByIdAsync(id, cancellationToken);
         if (item == null) return ApiResult.NotFound();
         return ApiResult.Success(item);
     }
 }
-
-
-
-

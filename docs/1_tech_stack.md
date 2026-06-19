@@ -102,20 +102,50 @@ FoodstoreApi.Infrastructure
 
 - **Engine**: PostgreSQL 18 with ICU Vietnamese collation
 - **Provider**: Entity Framework Core 10 + Npgsql
-- **Database name**: `pos_shop`
+- **Database name**: `foodstore_shop`
 - **Collation**: `vi_VN_ci_ai` (accent-insensitive, case-insensitive Vietnamese)
-- **Tables**: 23 (categories, menu_items, addons, combos, orders, order_items, customers, employees, roles, permissions, blog_posts, media, discounts, sources, payments, payment_settings, tags, etc.)
+- **Tables**: 30+ (users, sessions, accounts, verifications, employees, customers, roles, permissions, role_permissions, categories, menu_items, addons, menu_item_addons, combos, combo_items, discounts, sources, orders, order_items, order_item_addons, order_status_history, payments, payment_settings, blog_posts, blog_categories, blog_post_categories, blog_post_tags, blog_post_revisions, blog_post_blocks, blog_settings, tags, media, refresh_tokens, sources)
+
+### Database Layers
+
+```
+Better Auth (4 tables)     ───  Core Auth: users, sessions, accounts, verifications
+  └── users (UUID PK)          Email/password + OAuth, banned support, UUID primary key
+  └── sessions                 Server-side session tokens (optional, JWT-first otherwise)
+  └── accounts                 OAuth providers (Google, Facebook...), 1 user → many providers
+  └── verifications            OTP, magic links, reset-password tokens
+
+Identity (2 tables)        ───  Employee & Customer profiles referencing users
+  ├── employees                user_id → users, role_id → roles, employee_code, phone, avatar
+  └── customers                user_id → users, customer_code, loyalty_points, membership_level
+
+RBAC (3 tables)            ───  Role-based access control
+  ├── roles                   name UNIQUE, is_system (true = not deletable: root, customer)
+  ├── permissions             54 default permissions (12 modules: category/menu/order/...)
+  └── role_permissions        roles M:N permissions
+
+Business + CMS (22+ tables) ───  Menu, orders, payments, blog, media
+  └── categories / menu_items / addons / menu_item_addons
+  └── combos / combo_items
+  └── discounts / sources
+  └── orders / order_items / order_item_addons / order_status_history
+  └── payments / payment_settings
+  └── blog_posts / blog_categories / blog_post_categories / blog_post_tags
+  └── blog_post_revisions / blog_post_blocks / blog_settings
+  └── tags / media / refresh_tokens
+```
 
 ### Key Database Patterns
 
-- `created_at` / `updated_at` timestamp columns on most entities
-- `is_deleted` soft-delete flag
+- `created_at` / `updated_at` timestamp columns on most entities (via `IAuditableEntity` interface + AuditSaveChangesInterceptor)
+- `is_deleted` soft-delete flag (planned, not yet implemented)
 - `status` enum-style string columns (order status flow: `pending → confirmed → preparing → ready → served → paid → cancelled`)
-- Many-to-many via junction tables: `menu_item_addons`, `role_permissions`, `blog_post_tags`
+- UUID primary keys on all tables (`gen_random_uuid()`)
+- Many-to-many via junction tables: `menu_item_addons`, `role_permissions`, `blog_post_categories`, `blog_post_tags`
 - Entity image URLs stored as strings (images hosted on RustFS S3)
 - SEO metadata stored directly on `blog_posts` table
 - Order-payment relationship: 1 order has many payments (supports split payments)
-- RBAC: roles → role_permissions → permissions (flat list of `"module.action"` strings)
+- RBAC: roles → role_permissions → permissions (flat list of `"module.action"` strings), `is_system` flag prevents deletion of built-in roles
 
 ## Infrastructure & Integrations
 
@@ -124,13 +154,45 @@ FoodstoreApi.Infrastructure
 | Real-Time | SignalR + MessagePack binary protocol |
 | Caching | Redis 8 (distributed, via StackExchangeRedis) |
 | Rate Limiting | System.Threading.RateLimiting (fixed window) |
-| Authentication | JWT (HS256, access + refresh tokens) |
+| Authentication (API) | JWT (HS256, access + refresh tokens) |
+| Authentication (Admin) | Better Auth (Next.js BFF) with Drizzle ORM — session cookies, HttpOnly, no client token exposure |
 | Authorization | Custom permission-based RBAC with claims |
 | Media Storage | RustFS (S3-compatible object storage) via AWS SDK |
 | ML | ML.NET SSA forecasting + co-occurrence recommendations |
 | File Validation | Server-side MIME type + extension check |
-| Deployment | Docker Compose (5 services) |
+| Deployment | Docker Compose (8 services) |
 | Proxy | Vite dev proxy (localhost:5173 → localhost:5142) |
+
+## Admin Frontend — foodstore-admin (Better Auth BFF)
+
+| Category | Technology | Version | Purpose |
+|---|---|---|---|
+| Language | TypeScript | 5.x | Type-safe development |
+| UI Framework | React | 19.2.4 | Component library |
+| Meta-Framework | Next.js | 16.2.9 | App Router, server components, BFF |
+| CSS | Tailwind CSS | 4.x | Utility-first styling |
+| Component Lib | shadcn/ui + Base UI | latest | Accessible headless components |
+| Auth | Better Auth | 1.6.19 | Authentication, session management, DB-backed |
+| ORM | Drizzle | (bundled with Better Auth) | Database access via Better Auth |
+| Charts | Recharts | 3.8.0 | Analytics dashboards |
+| Icons | lucide-react | latest | Icon library |
+| Styling Util | tailwind-merge + clsx | latest | Conditional classes merging |
+| Toast/Sonner | sonner | 2.0.7 | Toast notifications |
+| Date Picker | react-day-picker | 10.x | Date range selection |
+| Build Tool | Next.js (Turbopack) | — | Dev server & production build |
+
+### Auth Architecture (BFF)
+
+```
+[Browser] ← HttpOnly session cookie → [Next.js Server]
+                                          ├── Better Auth (session verify)
+                                          ├── Drizzle ORM → PostgreSQL
+                                          └── Proxy ↓ .NET API (internal header)
+```
+
+- Browser NEVER sees access/refresh tokens — only HttpOnly session cookie
+- Better Auth tự ghi `users`, `sessions`, `accounts`, `verifications` vào DB qua Drizzle
+- .NET API không can thiệp auth flow — chỉ nhận identity từ Next.js proxy
 
 ## DevOps & Tools
 

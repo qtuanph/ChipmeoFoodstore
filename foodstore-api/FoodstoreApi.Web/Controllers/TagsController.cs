@@ -26,8 +26,8 @@ public class TagsController : ControllerBase
         return ApiResult.Success(tags);
     }
 
-    [HttpGet("{id:int}")]
-    public async Task<IActionResult> GetById(int id, CancellationToken cancellationToken)
+    [HttpGet("{id:guid}")]
+    public async Task<IActionResult> GetById(Guid id, CancellationToken cancellationToken)
     {
         var tag = await _tagService.GetByIdAsync(id, cancellationToken);
         if (tag == null) return ApiResult.NotFound();
@@ -50,40 +50,36 @@ public class TagsController : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id = tag.Id }, tag);
     }
 
-    [HttpPut("{id:int}")]
+    [HttpPut("{id:guid}")]
     [RequirePermission("blog.update")]
-    public async Task<IActionResult> Update(int id, [FromBody] UpdateTagDto dto, CancellationToken cancellationToken)
+    public async Task<IActionResult> Update(Guid id, [FromBody] UpdateTagDto dto, CancellationToken cancellationToken)
     {
         var tag = await _tagService.UpdateAsync(id, dto, cancellationToken);
         if (tag == null) return ApiResult.NotFound();
         return ApiResult.Success(tag);
     }
 
-    [HttpDelete("{id:int}")]
+    [HttpDelete("{id:guid}")]
     [RequirePermission("blog.delete")]
-    public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
+    public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
         var deleted = await _tagService.DeleteAsync(id, cancellationToken);
         if (!deleted) return ApiResult.NotFound();
         return NoContent();
     }
 
-    [HttpGet("post/{postId:int}")]
-    public async Task<IActionResult> GetByPost(int postId, CancellationToken cancellationToken)
+    [HttpGet("post/{postId:guid}")]
+    public async Task<IActionResult> GetByPost(Guid postId, CancellationToken cancellationToken)
     {
         var tags = await _tagService.GetByPostIdAsync(postId, cancellationToken);
         return ApiResult.Success(tags);
     }
 
-    [HttpPut("post/{postId:int}")]
+    [HttpPut("post/{postId:guid}")]
     [RequirePermission("blog.update")]
-    public async Task<IActionResult> SetPostTags(int postId, [FromBody] int[] tagIds, CancellationToken cancellationToken)
+    public async Task<IActionResult> SetPostTags(Guid postId, [FromBody] Guid[] tagIds, CancellationToken cancellationToken)
     {
         await _tagService.SetPostTagsAsync(postId, tagIds, cancellationToken);
         return NoContent();
     }
 }
-
-
-
-

@@ -2,7 +2,6 @@
 using FoodstoreApi.Usecase.DTOs.Order;
 using FoodstoreApi.Usecase.Interfaces;
 using FoodstoreApi.Core.Entities;
-using FoodstoreApi.Core.Utils;
 
 namespace FoodstoreApi.Usecase.Services;
 
@@ -33,15 +32,15 @@ public class OrderService(
         return orders.Select(MapToDto);
     }
 
-    public async Task<OrderDto?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
+    public async Task<OrderDto?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var order = await _orderRepo.GetByIdAsync(id, cancellationToken);
         return order == null ? null : MapToDto(order);
     }
 
-    public async Task<OrderDto> CreateAsync(CreateOrderDto dto, int employeeId, CancellationToken cancellationToken = default)
+    public async Task<OrderDto> CreateAsync(CreateOrderDto dto, Guid employeeId, CancellationToken cancellationToken = default)
     {
-        var now = TimeUtils.GetVietnamTime();
+        var now = DateTime.UtcNow;
         
         var details = await CalculateOrderDetailsAsync(dto, cancellationToken);
         
@@ -69,8 +68,7 @@ public class OrderService(
             QrPaymentUrl = qrPaymentUrl,
             Status = OrderStatus.Pending,
             Note = dto.Note,
-            CreatedAt = now,
-            UpdatedAt = now,
+
             OrderItems = details.OrderItems,
             OrderStatusHistories = new List<OrderStatusHistory>
             {
@@ -90,13 +88,13 @@ public class OrderService(
         return MapToDto(result!);
     }
 
-    public async Task<OrderDto> UpdateAsync(int id, CreateOrderDto dto, int employeeId, CancellationToken cancellationToken = default)
+    public async Task<OrderDto> UpdateAsync(Guid id, CreateOrderDto dto, Guid employeeId, CancellationToken cancellationToken = default)
     {
         var order = await _orderRepo.GetByIdAsync(id, cancellationToken);
         if (order == null) throw new Exception("Order not found");
         if (order.Status != OrderStatus.Pending) throw new Exception($"Cannot update order in status {order.Status}");
 
-        var now = TimeUtils.GetVietnamTime();
+        var now = DateTime.UtcNow;
         var details = await CalculateOrderDetailsAsync(dto, cancellationToken);
         
         // Handle Discount Usage Update
@@ -130,7 +128,6 @@ public class OrderService(
         order.VatAmount = details.VatAmount;
         order.TotalAmount = details.TotalAmount;
         order.QrPaymentUrl = qrPaymentUrl;
-        order.UpdatedAt = now;
 
         order.OrderItems?.Clear();
         if (order.OrderItems == null) order.OrderItems = new List<OrderItem>();
@@ -160,7 +157,7 @@ public class OrderService(
     {
         Discount? discount = null;
         decimal discountAmount = 0;
-        var now = TimeUtils.GetVietnamTime();
+        var now = DateTime.UtcNow;
         
         if (!string.IsNullOrWhiteSpace(dto.DiscountCode))
         {
@@ -188,8 +185,8 @@ public class OrderService(
         {
             decimal unitPrice = 0;
             string itemName = "";
-            int? menuItemId = itemDto.MenuItemId;
-            int? comboId = itemDto.ComboId;
+            Guid? menuItemId = itemDto.MenuItemId;
+            Guid? comboId = itemDto.ComboId;
 
             if (menuItemId.HasValue)
             {
@@ -234,8 +231,8 @@ public class OrderService(
                         AddonName = addon.Name,
                         Quantity = addonDto.Quantity,
                         UnitPrice = addonPrice,
-                        TotalPrice = addonSubtotal, // This is price for ONE item's addons
-                        CreatedAt = now
+                        TotalPrice = addonSubtotal,
+
                     });
                 }
             }
@@ -249,7 +246,7 @@ public class OrderService(
                 UnitPrice = unitPrice,
                 TotalPrice = itemSubtotal + addonTotal,
                 Note = itemDto.Note,
-                CreatedAt = now,
+
                 OrderItemAddons = orderItemAddons
             };
 
@@ -272,8 +269,6 @@ public class OrderService(
             {
                 discountAmount = discount.Value;
             }
-            
-            // Note: discount usage count is incremented by the caller (CreateAsync/UpdateAsync)
         }
 
         var vatAmount = subtotal * 0.10m;
@@ -282,16 +277,15 @@ public class OrderService(
         return (orderItems, subtotal, discountAmount, vatAmount, totalAmount, discount);
     }
 
-    public async Task<bool> UpdateStatusAsync(int id, string status, int? employeeId = null, string? paymentMethod = null, decimal? paymentAmount = null, CancellationToken cancellationToken = default)
+    public async Task<bool> UpdateStatusAsync(Guid id, string status, Guid? employeeId = null, string? paymentMethod = null, decimal? paymentAmount = null, CancellationToken cancellationToken = default)
     {
         var order = await _orderRepo.GetByIdAsync(id, cancellationToken);
         if (order == null) return false;
 
         var oldStatus = order.Status;
-        var now = TimeUtils.GetVietnamTime();
+        var now = DateTime.UtcNow;
 
         order.Status = status;
-        order.UpdatedAt = now;
 
         if (status == OrderStatus.Paid)
         {
@@ -306,7 +300,7 @@ public class OrderService(
                     Method = paymentMethod,
                     Status = "success",
                     PaidAt = now,
-                    CreatedAt = now
+
                 };
                 await _paymentRepo.AddAsync(payment, cancellationToken);
             }
@@ -336,7 +330,7 @@ public class OrderService(
         return await _orderRepo.UpdateAsync(order, cancellationToken);
     }
 
-    public async Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default)
+    public async Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return await _orderRepo.DeleteAsync(id, cancellationToken);
     }
@@ -355,7 +349,7 @@ public class OrderService(
 
     private async Task<string> GenerateOrderCodeAsync(CancellationToken cancellationToken)
     {
-        var today = TimeUtils.GetVietnamTime().ToString("yyyyMMdd");
+        var today = DateTime.UtcNow.ToString("yyyyMMdd");
         var prefix = $"ORD-{today}";
         var lastOrder = await _orderRepo.GetLastOrderByCodePrefixAsync(prefix, cancellationToken);
 
@@ -382,18 +376,17 @@ public class OrderService(
         return $"https://api.vietqr.io/image/{bankId}-{accountNo}-{template}.jpg?amount={amount:F0}&addInfo={orderCode}&accountName={accountName}";
     }
 
-    public async Task<OrderDto> ProcessPaymentAsync(int orderId, ProcessPaymentDto dto, int? employeeId = null, CancellationToken cancellationToken = default)
+    public async Task<OrderDto> ProcessPaymentAsync(Guid orderId, ProcessPaymentDto dto, Guid? employeeId = null, CancellationToken cancellationToken = default)
     {
         var order = await _orderRepo.GetByIdAsync(orderId, cancellationToken);
         if (order == null) throw new Exception("Order not found");
         if (order.Status != OrderStatus.Pending) throw new Exception($"Cannot process payment. Order status is {order.Status}");
 
-        var now = TimeUtils.GetVietnamTime();
+        var now = DateTime.UtcNow;
         var totalAmount = order.TotalAmount ?? 0;
 
         order.Status = OrderStatus.Paid;
         order.PaidAt = now;
-        order.UpdatedAt = now;
 
         var payment = new Payment
         {
@@ -402,7 +395,7 @@ public class OrderService(
             Method = dto.PaymentMethod,
             Status = "success",
             PaidAt = now,
-            CreatedAt = now
+
         };
         await _paymentRepo.AddAsync(payment, cancellationToken);
 
@@ -438,7 +431,7 @@ public class OrderService(
         return orders.Select(MapToDto);
     }
 
-    public async Task<bool> UpdateKitchenStatusAsync(int orderId, string status, CancellationToken cancellationToken = default)
+    public async Task<bool> UpdateKitchenStatusAsync(Guid orderId, string status, CancellationToken cancellationToken = default)
     {
         var order = await _orderRepo.GetByIdAsync(orderId, cancellationToken);
         if (order == null) return false;
@@ -452,10 +445,9 @@ public class OrderService(
             throw new Exception($"Invalid status transition from {currentStatus} to {status}");
         }
 
-        var now = TimeUtils.GetVietnamTime();
+        var now = DateTime.UtcNow;
         var oldStatus = order.Status;
         order.Status = status;
-        order.UpdatedAt = now;
 
         var history = new OrderStatusHistory
         {
@@ -479,10 +471,10 @@ public class OrderService(
             SourceId = order.SourceId,
             SourceName = order.Source?.Name,
             EmployeeId = order.EmployeeId,
-            EmployeeName = order.Employee?.FullName ?? order.Employee?.Username ?? "",
+            EmployeeName = order.Employee?.User?.Name ?? order.Employee?.User?.UserName ?? "",
             DiscountId = order.DiscountId,
             DiscountCode = order.Discount?.Code,
-            CustomerName = order.Customer?.FullName,
+            CustomerName = order.Customer?.User?.Name,
             CustomerPhone = order.Customer?.Phone,
             SubtotalAmount = order.SubtotalAmount ?? 0m,
             DiscountAmount = order.DiscountAmount ?? 0m,
@@ -493,8 +485,10 @@ public class OrderService(
             Status = order.Status ?? OrderStatus.Pending,
             Note = order.Note,
             PrintedAt = order.PrintedAt,
-            CreatedAt = order.CreatedAt ?? TimeUtils.GetVietnamTime(),
+            CreatedAt = order.CreatedAt,
             UpdatedAt = order.UpdatedAt,
+            CreatedBy = order.CreatedBy,
+            UpdatedBy = order.UpdatedBy,
             Items = order.OrderItems?.Select(i => new OrderItemDto
             {
                 Id = i.Id,
@@ -505,6 +499,8 @@ public class OrderService(
                 UnitPrice = i.UnitPrice,
                 TotalPrice = i.TotalPrice,
                 Note = i.Note,
+                CreatedAt = i.CreatedAt,
+                UpdatedAt = i.UpdatedAt,
                 Addons = i.OrderItemAddons?.Select(a => new OrderItemAddonDto
                 {
                     Id = a.Id,
@@ -512,7 +508,9 @@ public class OrderService(
                     AddonName = a.AddonName ?? "",
                     Quantity = a.Quantity ?? 0,
                     UnitPrice = a.UnitPrice,
-                    TotalPrice = a.TotalPrice
+                    TotalPrice = a.TotalPrice,
+                    CreatedAt = a.CreatedAt,
+                    UpdatedAt = a.UpdatedAt
                 }).ToList() ?? new List<OrderItemAddonDto>()
             }).ToList() ?? new List<OrderItemDto>(),
             History = order.OrderStatusHistories?.Select(h => new OrderStatusHistoryDto
@@ -521,7 +519,7 @@ public class OrderService(
                 FromStatus = h.FromStatus,
                 ToStatus = h.ToStatus,
                 ChangedBy = h.ChangedBy,
-                ChangedByName = h.ChangedByNavigation?.FullName ?? h.ChangedByNavigation?.Username,
+                ChangedByName = h.ChangedByNavigation?.User?.Name ?? h.ChangedByNavigation?.User?.UserName,
                 ChangedAt = h.ChangedAt,
                 Note = h.Note
             }).OrderByDescending(h => h.ChangedAt).ToList() ?? new List<OrderStatusHistoryDto>()
@@ -534,7 +532,3 @@ public class OrderService(
         return (items.Select(MapToDto), totalCount);
     }
 }
-
-
-
-

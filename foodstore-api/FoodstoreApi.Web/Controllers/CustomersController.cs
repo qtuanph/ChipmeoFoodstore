@@ -1,5 +1,4 @@
 ﻿using FoodstoreApi.Usecase.Interfaces;
-using FoodstoreApi.Usecase.DTOs;
 using FoodstoreApi.Usecase.DTOs.Customer;
 using FoodstoreApi.Web.Authorization;
 using FoodstoreApi.Web.Extensions;
@@ -9,7 +8,7 @@ using FoodstoreApi.Web.ApiResponse;
 
 namespace FoodstoreApi.Web.Controllers;
 
-[Route("api/[controller]")]
+[Route("api/admin/customers")]
 [ApiController]
 public class CustomersController : ControllerBase
 {
@@ -20,10 +19,8 @@ public class CustomersController : ControllerBase
         _customerService = customerService;
     }
 
-    /// <summary>
-    /// Đăng ký tài khoản khách hàng
-    /// </summary>
-    [HttpPost("register")]
+    [HttpPost("~/api/customers/register")]
+    [AllowAnonymous]
     public async Task<IActionResult> Register([FromBody] CustomerRegisterDto dto)
     {
         try
@@ -37,15 +34,22 @@ public class CustomersController : ControllerBase
         }
     }
 
-    /// <summary>
-    /// Đăng nhập khách hàng
-    /// </summary>
-    [HttpPost("login")]
+    [HttpPost("~/api/customers/login")]
+    [AllowAnonymous]
     public async Task<IActionResult> Login([FromBody] CustomerLoginDto dto)
     {
         try
         {
             var result = await _customerService.LoginAsync(dto);
+
+            Response.Cookies.Append("auth_token", result.Token, new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = false,
+                SameSite = SameSiteMode.Lax,
+                Expires = DateTimeOffset.UtcNow.AddDays(7)
+            });
+
             return ApiResult.Success(result);
         }
         catch (Exception ex)
@@ -54,10 +58,7 @@ public class CustomersController : ControllerBase
         }
     }
 
-    /// <summary>
-    /// Lấy thông tin khách hàng đang đăng nhập
-    /// </summary>
-    [HttpGet("me")]
+    [HttpGet("~/api/customers/me")]
     [Authorize(Roles = "Customer")]
     public async Task<IActionResult> GetMe()
     {
@@ -67,7 +68,7 @@ public class CustomersController : ControllerBase
         return ApiResult.Success(customer);
     }
 
-    [HttpPut("me")]
+    [HttpPut("~/api/customers/me")]
     [Authorize(Roles = "Customer")]
     public async Task<IActionResult> UpdateProfile([FromBody] CustomerUpdateDto dto)
     {
@@ -77,11 +78,8 @@ public class CustomersController : ControllerBase
         return ApiResult.Success(customer);
     }
 
-    /// <summary>
-    /// Lookup customer by phone number (POS)
-    /// </summary>
     [HttpGet("lookup/{phone}")]
-    [RequirePermission("customer.view")] // Or allow anonymous/pos? User logic implies cashier does it.
+    [RequirePermission("customer.view")]
     public async Task<IActionResult> LookupByPhone(string phone)
     {
         var customer = await _customerService.GetByPhoneAsync(phone);
@@ -97,9 +95,9 @@ public class CustomersController : ControllerBase
         return ApiResult.Success(customers);
     }
 
-    [HttpGet("{id:int}")]
+    [HttpGet("{id:guid}")]
     [RequirePermission("customer.view")]
-    public async Task<IActionResult> GetById(int id, CancellationToken cancellationToken)
+    public async Task<IActionResult> GetById(Guid id, CancellationToken cancellationToken)
     {
         var customer = await _customerService.GetByIdAsync(id, cancellationToken);
         if (customer == null) return ApiResult.NotFound();
@@ -114,25 +112,21 @@ public class CustomersController : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
     }
 
-    [HttpPut("{id:int}")]
+    [HttpPut("{id:guid}")]
     [RequirePermission("customer.update")]
-    public async Task<IActionResult> Update(int id, UpdateCustomerAdminDto dto, CancellationToken cancellationToken)
+    public async Task<IActionResult> Update(Guid id, UpdateCustomerAdminDto dto, CancellationToken cancellationToken)
     {
         var ok = await _customerService.UpdateAsync(id, dto, cancellationToken);
         if (!ok) return ApiResult.NotFound();
         return NoContent();
     }
 
-    [HttpDelete("{id:int}")]
+    [HttpDelete("{id:guid}")]
     [RequirePermission("customer.delete")]
-    public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
+    public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
         var ok = await _customerService.DeleteAsync(id, cancellationToken);
         if (!ok) return ApiResult.NotFound();
         return NoContent();
     }
 }
-
-
-
-

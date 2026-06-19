@@ -1,4 +1,5 @@
-﻿using FoodstoreApi.Usecase.Interfaces;
+﻿using System;
+using FoodstoreApi.Usecase.Interfaces;
 using FoodstoreApi.Web.Authorization;
 using FoodstoreApi.Usecase.DTOs.Employee;
 using Microsoft.AspNetCore.Authorization;
@@ -27,9 +28,9 @@ public class EmployeesController : ControllerBase
         return ApiResult.Success(employees);
     }
 
-    [HttpGet("{id:int}")]
+    [HttpGet("{id:guid}")]
     [RequirePermission("employee.view")]
-    public async Task<IActionResult> GetById(int id, CancellationToken cancellationToken)
+    public async Task<IActionResult> GetById(Guid id, CancellationToken cancellationToken)
     {
         var employee = await _service.GetByIdAsync(id, cancellationToken);
         if (employee == null) return ApiResult.NotFound();
@@ -51,18 +52,18 @@ public class EmployeesController : ControllerBase
         }
     }
 
-    [HttpPut("{id:int}")]
+    [HttpPut("{id:guid}")]
     [RequirePermission("employee.update")]
-    public async Task<IActionResult> Update(int id, [FromBody] UpdateEmployeeDto dto, CancellationToken cancellationToken)
+    public async Task<IActionResult> Update(Guid id, [FromBody] UpdateEmployeeDto dto, CancellationToken cancellationToken)
     {
         var ok = await _service.UpdateAsync(id, dto, cancellationToken);
         if (!ok) return ApiResult.NotFound();
         return NoContent();
     }
 
-    [HttpDelete("{id:int}")]
+    [HttpDelete("{id:guid}")]
     [RequirePermission("employee.delete")]
-    public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
+    public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
         try
         {

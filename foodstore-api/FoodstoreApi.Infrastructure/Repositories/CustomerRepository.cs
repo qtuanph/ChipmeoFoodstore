@@ -1,6 +1,6 @@
-﻿using FoodstoreApi.Usecase.Interfaces;
-using FoodstoreApi.Core.Entities;
+﻿using FoodstoreApi.Core.Entities;
 using FoodstoreApi.Infrastructure.Data;
+using FoodstoreApi.Usecase.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
 namespace FoodstoreApi.Infrastructure.Repositories;
@@ -14,14 +14,21 @@ public class CustomerRepository : ICustomerRepository
         _context = context;
     }
 
-    public async Task<Customer?> GetByIdAsync(int id)
+    public async Task<Customer?> GetByIdAsync(Guid id)
     {
         return await _context.Customers.FindAsync(id);
     }
 
+    public async Task<Customer?> GetByUserIdAsync(Guid userId)
+    {
+        return await _context.Customers.FirstOrDefaultAsync(c => c.UserId == userId);
+    }
+
     public async Task<Customer?> GetByEmailAsync(string email)
     {
-        return await _context.Customers.FirstOrDefaultAsync(c => c.Email == email);
+        return await _context.Customers
+            .Include(c => c.User)
+            .FirstOrDefaultAsync(c => c.User.Email == email);
     }
 
     public async Task<Customer?> GetByPhoneAsync(string phone)
@@ -31,7 +38,9 @@ public class CustomerRepository : ICustomerRepository
 
     public async Task<IEnumerable<Customer>> GetAllAsync()
     {
-        return await _context.Customers.ToListAsync();
+        return await _context.Customers
+            .Include(c => c.User)
+            .ToListAsync();
     }
 
     public async Task<Customer> AddAsync(Customer customer)
@@ -53,7 +62,3 @@ public class CustomerRepository : ICustomerRepository
         await _context.SaveChangesAsync();
     }
 }
-
-
-
-

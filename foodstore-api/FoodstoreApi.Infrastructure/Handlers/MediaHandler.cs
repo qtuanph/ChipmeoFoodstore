@@ -53,7 +53,7 @@ public class MediaHandler : IMediaService
         });
     }
 
-    public async Task<MediaDto> UploadFileAsync(Stream fileStream, string fileName, string contentType, long fileSize, int? uploadedBy, string folder = "misc")
+    public async Task<MediaDto> UploadFileAsync(Stream fileStream, string fileName, string contentType, long fileSize, Guid? uploadedBy, string folder = "misc")
     {
         if (fileStream == null || fileStream.Length == 0)
             throw new ArgumentException("File is empty");
@@ -97,11 +97,65 @@ public class MediaHandler : IMediaService
             FileUrl = created.FileUrl,
             FileType = created.FileType,
             FileSize = created.FileSize,
-            CreatedAt = created.CreatedAt
+            CreatedAt = created.CreatedAt,
+            UpdatedAt = created.UpdatedAt,
+            CreatedBy = created.CreatedBy,
+            UpdatedBy = created.UpdatedBy
         };
     }
 
-    public async Task<bool> DeleteMediaAsync(int id)
+    public async Task<MediaDto> UploadFileForCustomerAsync(Stream fileStream, string fileName, string contentType, long fileSize, Guid? uploadedByCustomer, string folder = "misc")
+    {
+        if (fileStream == null || fileStream.Length == 0)
+            throw new ArgumentException("File is empty");
+
+        await EnsureBucketExistsAsync();
+
+        var ext = Path.GetExtension(fileName);
+        var objectName = $"{folder}/{Guid.NewGuid()}{ext}";
+
+        var putRequest = new PutObjectRequest
+        {
+            BucketName = _bucket,
+            Key = objectName,
+            InputStream = fileStream,
+            ContentType = contentType
+        };
+        putRequest.Headers.ContentLength = fileStream.Length;
+
+        await _s3Client.PutObjectAsync(putRequest);
+
+        var fileUrl = $"{_publicUrl}/{objectName}";
+
+        var media = new Media
+        {
+            FileName = fileName,
+            Folder = folder,
+            FileUrl = fileUrl,
+            FileType = contentType,
+            FileSize = fileSize,
+            UploadedByCustomer = uploadedByCustomer,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        var created = await _repo.AddAsync(media);
+
+        return new MediaDto
+        {
+            Id = created.Id,
+            FileName = created.FileName,
+            Folder = created.Folder,
+            FileUrl = created.FileUrl,
+            FileType = created.FileType,
+            FileSize = created.FileSize,
+            CreatedAt = created.CreatedAt,
+            UpdatedAt = created.UpdatedAt,
+            CreatedBy = created.CreatedBy,
+            UpdatedBy = created.UpdatedBy
+        };
+    }
+
+    public async Task<bool> DeleteMediaAsync(Guid id)
     {
         var media = await _repo.GetByIdAsync(id);
         if (media == null) return false;
@@ -121,7 +175,7 @@ public class MediaHandler : IMediaService
             };
             await _s3Client.DeleteObjectAsync(deleteRequest);
         }
-        catch { /* Ignore S3 deletion errors */ }
+        catch { }
 
         await _repo.DeleteAsync(media);
         return true;
@@ -140,11 +194,14 @@ public class MediaHandler : IMediaService
             FileSize = m.FileSize,
             EntityType = m.EntityType,
             EntityId = m.EntityId,
-            CreatedAt = m.CreatedAt
+            CreatedAt = m.CreatedAt,
+            UpdatedAt = m.UpdatedAt,
+            CreatedBy = m.CreatedBy,
+            UpdatedBy = m.UpdatedBy
         }).ToList();
     }
 
-    public async Task LinkMediaToEntityAsync(string fileUrl, string entityType, int entityId)
+    public async Task LinkMediaToEntityAsync(string fileUrl, string entityType, Guid entityId)
     {
         if (string.IsNullOrEmpty(fileUrl)) return;
 
@@ -157,7 +214,7 @@ public class MediaHandler : IMediaService
         }
     }
 
-    public async Task DeleteMediaByEntityAsync(string entityType, int entityId)
+    public async Task DeleteMediaByEntityAsync(string entityType, Guid entityId)
     {
         var mediaList = await _repo.GetByEntityAsync(entityType, entityId);
         foreach (var media in mediaList)
@@ -166,12 +223,12 @@ public class MediaHandler : IMediaService
         }
     }
 
-    public async Task LinkMediaFromContentAsync(string? content, string entityType, int entityId)
+    public async Task LinkMediaFromContentAsync(string? content, string entityType, Guid entityId)
     {
         if (string.IsNullOrWhiteSpace(content)) return;
 
-        var matches = System.Text.RegularExpressions.Regex.Matches(content, @"src\s*=\s*[""']([^""']+)[""']", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-        foreach (System.Text.RegularExpressions.Match match in matches)
+        var matches = Regex.Matches(content, @"src\s*=\s*[""']([^""']+)[""']", RegexOptions.IgnoreCase);
+        foreach (Match match in matches)
         {
             if (match.Groups.Count > 1)
             {

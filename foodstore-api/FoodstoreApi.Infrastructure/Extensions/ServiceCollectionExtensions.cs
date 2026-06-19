@@ -1,6 +1,6 @@
-﻿using FoodstoreApi.Usecase.Interfaces;
+﻿using FoodstoreApi.Infrastructure.Handlers;
 using FoodstoreApi.Infrastructure.Repositories;
-using FoodstoreApi.Infrastructure.Handlers;
+using FoodstoreApi.Usecase.Interfaces;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -18,8 +18,6 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IDiscountRepository, DiscountRepository>();
         services.AddScoped<IComboRepository, ComboRepository>();
         services.AddScoped<IEmployeeRepository, EmployeeRepository>();
-        services.AddScoped<IRoleRepository, RoleRepository>();
-        services.AddScoped<IPermissionRepository, PermissionRepository>();
         services.AddScoped<ICustomerRepository, CustomerRepository>();
         services.AddScoped<IBlogRepository, BlogRepository>();
         services.AddScoped<IMediaRepository, MediaRepository>();
@@ -27,6 +25,10 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IReportRepository, ReportRepository>();
         services.AddScoped<IPaymentRepository, PaymentRepository>();
         services.AddScoped<ITagRepository, TagRepository>();
+        services.AddScoped<IBlogCategoryRepository, BlogCategoryRepository>();
+        services.AddScoped<IBlogRevisionRepository, BlogRevisionRepository>();
+        services.AddScoped<IBlogBlockRepository, BlogBlockRepository>();
+        services.AddScoped<IBlogSettingRepository, BlogSettingRepository>();
 
         services.AddScoped<IMediaService, MediaHandler>();
 

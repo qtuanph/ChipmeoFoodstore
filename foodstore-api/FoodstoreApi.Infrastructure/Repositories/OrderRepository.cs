@@ -3,7 +3,6 @@ using FoodstoreApi.Usecase.Interfaces;
 using FoodstoreApi.Core.Entities;
 using FoodstoreApi.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
-using FoodstoreApi.Core.Utils;
 
 namespace FoodstoreApi.Infrastructure.Repositories;
 
@@ -24,7 +23,7 @@ public class OrderRepository(StoreDbContext context) : IOrderRepository
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<Order?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
+    public async Task<Order?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return await _context.Orders
             .Include(o => o.Source)
@@ -52,7 +51,7 @@ public class OrderRepository(StoreDbContext context) : IOrderRepository
         return result > 0;
     }
 
-    public async Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default)
+    public async Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var order = await _context.Orders.FindAsync(new object[] { id }, cancellationToken);
         if (order == null) return false;
@@ -74,7 +73,7 @@ public class OrderRepository(StoreDbContext context) : IOrderRepository
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<IEnumerable<Order>> GetBySourceIdAsync(int sourceId, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<Order>> GetBySourceIdAsync(Guid sourceId, CancellationToken cancellationToken = default)
     {
         return await _context.Orders.AsNoTracking()
             .Include(o => o.OrderItems)
@@ -134,7 +133,7 @@ public class OrderRepository(StoreDbContext context) : IOrderRepository
         await _context.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task<int> CountActiveOrdersBySourceIdAsync(int sourceId, int? excludeOrderId = null, CancellationToken cancellationToken = default)
+    public async Task<int> CountActiveOrdersBySourceIdAsync(Guid sourceId, Guid? excludeOrderId = null, CancellationToken cancellationToken = default)
     {
         var query = _context.Orders
             .Where(o => o.SourceId == sourceId && 
@@ -158,12 +157,8 @@ public class OrderRepository(StoreDbContext context) : IOrderRepository
             .Include(o => o.Employee)
             .Include(o => o.OrderItems)
                 .ThenInclude(oi => oi.OrderItemAddons)
-            .Where(o => o.Status == OrderStatus.Paid || o.Status == OrderStatus.Preparing || (o.Status == OrderStatus.Served && o.UpdatedAt >= TimeUtils.GetVietnamTime().Date))
+            .Where(o => o.Status == OrderStatus.Paid || o.Status == OrderStatus.Preparing || (o.Status == OrderStatus.Served && o.UpdatedAt >= DateTime.UtcNow.Date))
             .OrderBy(o => o.CreatedAt)
             .ToListAsync(cancellationToken);
     }
 }
-
-
-
-

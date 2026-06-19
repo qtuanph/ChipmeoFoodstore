@@ -22,7 +22,7 @@ public class TagRepository : ITagRepository
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<Tag?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
+    public async Task<Tag?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return await _context.Tags
             .Include(t => t.BlogPostTags)
@@ -49,7 +49,7 @@ public class TagRepository : ITagRepository
         return await _context.SaveChangesAsync(cancellationToken) > 0;
     }
 
-    public async Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default)
+    public async Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var tag = await _context.Tags.FindAsync(new object[] { id }, cancellationToken);
         if (tag == null) return false;
@@ -58,7 +58,7 @@ public class TagRepository : ITagRepository
         return await _context.SaveChangesAsync(cancellationToken) > 0;
     }
 
-    public async Task<IEnumerable<Tag>> GetByPostIdAsync(int postId, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<Tag>> GetByPostIdAsync(Guid postId, CancellationToken cancellationToken = default)
     {
         return await _context.BlogPostTags
             .Where(bpt => bpt.PostId == postId)
@@ -66,7 +66,7 @@ public class TagRepository : ITagRepository
             .ToListAsync(cancellationToken);
     }
 
-    public async Task AddTagToPostAsync(int postId, int tagId, CancellationToken cancellationToken = default)
+    public async Task AddTagToPostAsync(Guid postId, Guid tagId, CancellationToken cancellationToken = default)
     {
         var exists = await _context.BlogPostTags
             .AnyAsync(bpt => bpt.PostId == postId && bpt.TagId == tagId, cancellationToken);
@@ -78,7 +78,7 @@ public class TagRepository : ITagRepository
         }
     }
 
-    public async Task RemoveTagFromPostAsync(int postId, int tagId, CancellationToken cancellationToken = default)
+    public async Task RemoveTagFromPostAsync(Guid postId, Guid tagId, CancellationToken cancellationToken = default)
     {
         var blogPostTag = await _context.BlogPostTags
             .FirstOrDefaultAsync(bpt => bpt.PostId == postId && bpt.TagId == tagId, cancellationToken);
@@ -90,23 +90,17 @@ public class TagRepository : ITagRepository
         }
     }
 
-    public async Task SetPostTagsAsync(int postId, IEnumerable<int> tagIds, CancellationToken cancellationToken = default)
+    public async Task SetPostTagsAsync(Guid postId, IEnumerable<Guid> tagIds, CancellationToken cancellationToken = default)
     {
-        // Remove existing tags
         var existingTags = await _context.BlogPostTags
             .Where(bpt => bpt.PostId == postId)
             .ToListAsync(cancellationToken);
 
         _context.BlogPostTags.RemoveRange(existingTags);
 
-        // Add new tags
         var newTags = tagIds.Select(tagId => new BlogPostTag { PostId = postId, TagId = tagId });
         _context.BlogPostTags.AddRange(newTags);
 
         await _context.SaveChangesAsync(cancellationToken);
     }
 }
-
-
-
-

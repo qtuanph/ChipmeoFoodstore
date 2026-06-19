@@ -1,4 +1,5 @@
-﻿using FoodstoreApi.Usecase.Interfaces;
+﻿using System;
+using FoodstoreApi.Usecase.Interfaces;
 using FoodstoreApi.Web.Authorization;
 using FoodstoreApi.Usecase.DTOs.Role;
 using Microsoft.AspNetCore.Authorization;
@@ -27,9 +28,9 @@ public class RolesController : ControllerBase
         return ApiResult.Success(roles);
     }
 
-    [HttpGet("{id:int}")]
+    [HttpGet("{id:guid}")]
     [RequirePermission("role.view")]
-    public async Task<IActionResult> GetById(int id, CancellationToken cancellationToken)
+    public async Task<IActionResult> GetById(Guid id, CancellationToken cancellationToken)
     {
         var role = await _service.GetByIdAsync(id, cancellationToken);
         if (role == null) return ApiResult.NotFound();
@@ -44,18 +45,18 @@ public class RolesController : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
     }
 
-    [HttpPut("{id:int}")]
+    [HttpPut("{id:guid}")]
     [RequirePermission("role.update")]
-    public async Task<IActionResult> Update(int id, [FromBody] CreateRoleDto dto, CancellationToken cancellationToken)
+    public async Task<IActionResult> Update(Guid id, [FromBody] CreateRoleDto dto, CancellationToken cancellationToken)
     {
         var ok = await _service.UpdateAsync(id, dto, cancellationToken);
         if (!ok) return ApiResult.NotFound();
         return NoContent();
     }
 
-    [HttpDelete("{id:int}")]
+    [HttpDelete("{id:guid}")]
     [RequirePermission("role.delete")]
-    public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
+    public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
         try
         {
@@ -63,15 +64,16 @@ public class RolesController : ControllerBase
             if (!ok) return ApiResult.NotFound();
             return NoContent();
         }
+        catch (InvalidOperationException) { throw; }
         catch (Exception)
         {
             return ApiResult.BadRequest("Không thể xóa vai trò này vì đang có nhân viên nắm giữ.");
         }
     }
 
-    [HttpPost("{id:int}/permissions")]
+    [HttpPost("{id:guid}/permissions")]
     [RequirePermission("role.update")]
-    public async Task<IActionResult> AssignPermissions(int id, [FromBody] AssignPermissionsDto dto, CancellationToken cancellationToken)
+    public async Task<IActionResult> AssignPermissions(Guid id, [FromBody] AssignPermissionsDto dto, CancellationToken cancellationToken)
     {
         var ok = await _service.AssignPermissionsAsync(id, dto, cancellationToken);
         if (!ok) return ApiResult.NotFound();

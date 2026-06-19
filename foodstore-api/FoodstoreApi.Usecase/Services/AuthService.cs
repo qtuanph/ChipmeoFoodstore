@@ -2,61 +2,78 @@
 using System.Security.Claims;
 using System.Text;
 using FoodstoreApi.Core.Configuration;
-using FoodstoreApi.Core.Utils;
+using FoodstoreApi.Core.Entities;
+using FoodstoreApi.Core.Entities.Identity;
 using FoodstoreApi.Usecase.DTOs.Auth;
 using FoodstoreApi.Usecase.Interfaces;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
 namespace FoodstoreApi.Usecase.Services;
 
-public class AuthService(IEmployeeRepository employeeRepository, IOptions<JwtSettings> jwtOptions, IMediaService mediaService) : IAuthService
+public class AuthService(
+    UserManager<ApplicationUser> userManager,
+    RoleManager<ApplicationRole> roleManager,
+    SignInManager<ApplicationUser> signInManager,
+    IEmployeeRepository employeeRepository,
+    IOptions<JwtSettings> jwtOptions) : IAuthService
 {
+    private readonly UserManager<ApplicationUser> _userManager = userManager;
+    private readonly RoleManager<ApplicationRole> _roleManager = roleManager;
+    private readonly SignInManager<ApplicationUser> _signInManager = signInManager;
     private readonly IEmployeeRepository _employeeRepository = employeeRepository;
     private readonly JwtSettings _jwtSettings = jwtOptions.Value;
-    private readonly IMediaService _mediaService = mediaService;
 
     public async Task<LoginResponse?> LoginAsync(LoginRequest request, CancellationToken cancellationToken = default)
     {
-        // Find user by username
-        var employee = await _employeeRepository.GetByUsernameAsync(request.Username, cancellationToken);
-
-        if (employee == null || employee.IsActive != true)
+        var user = await _userManager.FindByNameAsync(request.Username);
+        if (user == null || user.Banned)
             return null;
 
-        // Verify password (BCrypt)
-        if (!BCrypt.Net.BCrypt.Verify(request.Password, employee.PasswordHash))
+        var result = await _signInManager.CheckPasswordSignInAsync(user, request.Password, lockoutOnFailure: false);
+        if (!result.Succeeded)
             return null;
 
-        // Update last login
-        employee.LastLogin = TimeUtils.GetVietnamTime();
+        var employee = await _employeeRepository.GetByUserIdAsync(user.Id, cancellationToken);
+        if (employee == null || employee.Status != 1)
+            return null;
+
+        employee.LastLogin = DateTime.UtcNow;
+
         await _employeeRepository.UpdateAsync(employee, cancellationToken);
 
-        // Get permissions
-        var permissions = employee.Role?.RolePermissions
-            .Where(rp => rp.IsActive)
-            .Select(rp => rp.Permission.Code)
-            .ToList() ?? new List<string>();
-            
-        // Generate JWT token
-        var token = GenerateJwtToken(employee, permissions);
+        var role = await _roleManager.FindByIdAsync(employee.RoleId.ToString());
+        var permissionClaims = role != null
+            ? await _roleManager.GetClaimsAsync(role)
+            : new List<Claim>();
+
+        var permissions = permissionClaims
+            .Where(c => c.Type == "Permission")
+            .Select(c => c.Value)
+            .ToList();
+
+        var token = GenerateJwtToken(user, employee, permissions);
         var expiresIn = _jwtSettings.ExpiryInHours * 3600;
 
         return new LoginResponse
         {
             Token = token,
-            RefreshToken = null, // Implement refresh token if needed
+            RefreshToken = null,
             ExpiresIn = expiresIn,
             User = new UserInfo
             {
-                Id = employee.Id,
-                FullName = employee.FullName ?? employee.Username,
-                Username = employee.Username,
-                Email = employee.Email,
+                Id = user.Id,
+                EmployeeId = employee.Id,
+                Name = user.Name,
+                Username = user.UserName ?? "",
+                Email = user.Email ?? "",
+                EmployeeCode = employee.EmployeeCode,
                 AvatarUrl = employee.AvatarUrl,
                 RoleId = employee.RoleId,
-                RoleName = employee.Role?.Name ?? "Unknown",
-                DefaultRoute = employee.Role?.DefaultRoute,
+                RoleName = role?.Name ?? "Unknown",
+                DefaultRoute = role?.DefaultRoute,
                 Permissions = permissions
             }
         };
@@ -94,103 +111,118 @@ public class AuthService(IEmployeeRepository employeeRepository, IOptions<JwtSet
         }
     }
 
-    public async Task<UserDto?> GetProfileAsync(int userId, CancellationToken cancellationToken = default)
+    public async Task<UserDto?> GetProfileAsync(Guid userId, CancellationToken cancellationToken = default)
     {
-        var employee = await _employeeRepository.GetByIdAsync(userId, cancellationToken);
+        var user = await _userManager.FindByIdAsync(userId.ToString());
+        if (user == null) return null;
 
-        if (employee == null) return null;
+        var employee = await _employeeRepository.GetByUserIdAsync(userId, cancellationToken);
+
+        var role = employee != null
+            ? await _roleManager.FindByIdAsync(employee.RoleId.ToString())
+            : null;
+
+        var permissionClaims = role != null
+            ? await _roleManager.GetClaimsAsync(role)
+            : new List<Claim>();
+
+        var permissions = permissionClaims
+            .Where(c => c.Type == "Permission")
+            .Select(c => c.Value)
+            .ToList();
 
         return new UserDto
         {
-            Id = employee.Id,
-            Username = employee.Username,
-            FullName = employee.FullName ?? employee.Username,
-            Email = employee.Email,
-            Phone = employee.Phone,
-            AvatarUrl = employee.AvatarUrl,
-            RoleName = employee.Role?.Name ?? "Unknown"
+            Id = user.Id,
+            Name = user.Name,
+            Username = user.UserName ?? "",
+            Email = user.Email ?? "",
+            Phone = employee?.Phone,
+            AvatarUrl = employee?.AvatarUrl,
+            RoleName = role?.Name ?? "Unknown",
+            CreatedAt = user.CreatedAt,
+            UpdatedAt = user.UpdatedAt,
+            CreatedBy = user.CreatedBy,
+            UpdatedBy = user.UpdatedBy,
+            Permissions = permissions
         };
     }
 
-    public async Task<UserDto?> UpdateProfileAsync(int userId, UpdateProfileDto dto, CancellationToken cancellationToken = default)
+    public async Task<UserDto?> UpdateProfileAsync(Guid userId, UpdateProfileDto dto, CancellationToken cancellationToken = default)
     {
-        var employee = await _employeeRepository.GetByIdAsync(userId, cancellationToken);
+        var user = await _userManager.FindByIdAsync(userId.ToString());
+        if (user == null) return null;
 
+        var employee = await _employeeRepository.GetByUserIdAsync(userId, cancellationToken);
         if (employee == null) return null;
-        
-        // Update basic info
-        employee.FullName = dto.FullName;
-        employee.Phone = dto.Phone;
-        employee.Email = dto.Email;
-        employee.AvatarUrl = dto.AvatarUrl; // Update AvatarUrl
 
-        // Update password if provided
+        if (!string.IsNullOrEmpty(dto.Name)) user.Name = dto.Name;
+        if (!string.IsNullOrEmpty(dto.Email)) user.Email = dto.Email;
+        if (!string.IsNullOrEmpty(dto.Phone)) employee.Phone = dto.Phone;
+        if (!string.IsNullOrEmpty(dto.AvatarUrl)) employee.AvatarUrl = dto.AvatarUrl;
+
         if (!string.IsNullOrEmpty(dto.NewPassword))
         {
             if (string.IsNullOrEmpty(dto.CurrentPassword))
-            {
                 throw new ArgumentException("Current password is required to change password");
-            }
 
-            if (!BCrypt.Net.BCrypt.Verify(dto.CurrentPassword, employee.PasswordHash))
-            {
+            var passwordResult = await _signInManager.CheckPasswordSignInAsync(user, dto.CurrentPassword, false);
+            if (!passwordResult.Succeeded)
                 throw new ArgumentException("Current password is incorrect");
-            }
 
-            employee.PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.NewPassword);
+            var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+            var resetResult = await _userManager.ResetPasswordAsync(user, token, dto.NewPassword);
+            if (!resetResult.Succeeded)
+                throw new ArgumentException("Password change failed");
         }
 
+
+        await _userManager.UpdateAsync(user);
         await _employeeRepository.UpdateAsync(employee, cancellationToken);
 
-        if (!string.IsNullOrEmpty(dto.AvatarUrl) && dto.AvatarUrl != employee.AvatarUrl)
-             await _mediaService.LinkMediaToEntityAsync(dto.AvatarUrl, "employee", userId);
-             
         return new UserDto
         {
-            Id = employee.Id,
-            Username = employee.Username,
-            FullName = employee.FullName ?? employee.Username,
-            Email = employee.Email,
+            Id = user.Id,
+            Name = user.Name,
+            Username = user.UserName ?? "",
+            Email = user.Email ?? "",
             Phone = employee.Phone,
             AvatarUrl = employee.AvatarUrl,
-            RoleName = employee.Role?.Name ?? "Unknown"
+            RoleName = (await _roleManager.FindByIdAsync(employee.RoleId.ToString()))?.Name ?? "Unknown",
+            CreatedAt = user.CreatedAt,
+            UpdatedAt = user.UpdatedAt,
+            CreatedBy = user.CreatedBy,
+            UpdatedBy = user.UpdatedBy
         };
     }
 
-    private string GenerateJwtToken(Core.Entities.Employee employee, List<string> permissions)
+    private string GenerateJwtToken(ApplicationUser user, Employee employee, List<string> permissions)
     {
-        var securityKey = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes(_jwtSettings.SecretKey));
+        var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.SecretKey));
         var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
 
         var claims = new List<Claim>
         {
-            new(ClaimTypes.NameIdentifier, employee.Id.ToString()),
-            new(ClaimTypes.Name, employee.Username),
-            new(ClaimTypes.GivenName, employee.FullName ?? employee.Username),
+            new(ClaimTypes.NameIdentifier, user.Id.ToString()),
+            new(ClaimTypes.Email, user.Email ?? ""),
+            new("username", user.UserName ?? ""),
+            new(ClaimTypes.Name, user.Name),
             new(ClaimTypes.Role, employee.Role?.Name ?? "User"),
+            new("EmployeeId", employee.Id.ToString()),
             new("RoleId", employee.RoleId.ToString()),
         };
 
-        // Add permissions as claims
         foreach (var permission in permissions)
-        {
             claims.Add(new Claim("permission", permission));
-        }
 
         var token = new JwtSecurityToken(
             issuer: _jwtSettings.Issuer,
             audience: _jwtSettings.Audience,
             claims: claims,
-            expires: TimeUtils.GetVietnamTime().AddHours(_jwtSettings.ExpiryInHours),
+            expires: DateTime.UtcNow.AddHours(_jwtSettings.ExpiryInHours),
             signingCredentials: credentials
         );
 
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
 }
-
-
-
-
-

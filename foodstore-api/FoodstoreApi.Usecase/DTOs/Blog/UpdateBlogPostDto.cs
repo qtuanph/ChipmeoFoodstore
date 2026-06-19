@@ -7,7 +7,6 @@ public class UpdateBlogPostDto
     public string? Content { get; set; }
     public string? ThumbnailUrl { get; set; }
     public string? Status { get; set; }
-    // SEO Fields
     public string? MetaTitle { get; set; }
     public string? MetaDescription { get; set; }
     public string? FocusKeyword { get; set; }
@@ -15,10 +14,12 @@ public class UpdateBlogPostDto
     public string? CanonicalUrl { get; set; }
     public string? OgImageUrl { get; set; }
     public int? SeoScore { get; set; }
+    public DateTime? ScheduledAt { get; set; }
+    public bool? IsFeatured { get; set; }
+    public string? Template { get; set; }
+    public bool? AllowComments { get; set; }
 
-    public List<int>? TagIds { get; set; }
+    public List<Guid>? TagIds { get; set; }
+    public List<Guid>? CategoryIds { get; set; }
+    public List<CreateBlogBlockDto>? Blocks { get; set; }
 }
-
-
-
-

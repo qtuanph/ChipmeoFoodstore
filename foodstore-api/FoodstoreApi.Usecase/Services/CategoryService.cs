@@ -25,15 +25,15 @@ public class CategoryService : ICategoryService
         return await _cache.GetOrSetAsync(CacheKeys.Categories.All, async () =>
         {
             var categories = await _repo.GetAllAsync(cancellationToken);
-            return categories.Select(c => new CategoryDto(c.Id, c.Name, c.Description, c.ImageUrl, c.IsActive, c.CreatedAt)).ToList();
+            return categories.Select(c => new CategoryDto(c.Id, c.Name, c.Description, c.ImageUrl, c.IsActive, c.CreatedAt, c.UpdatedAt, c.CreatedBy, c.UpdatedBy)).ToList();
         }, TimeSpan.FromMinutes(30), cancellationToken);
     }
 
-    public async Task<CategoryDto?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
+    public async Task<CategoryDto?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var c = await _repo.GetByIdAsync(id, cancellationToken);
         if (c == null) return null;
-        return new CategoryDto(c.Id, c.Name, c.Description, c.ImageUrl, c.IsActive, c.CreatedAt);
+        return new CategoryDto(c.Id, c.Name, c.Description, c.ImageUrl, c.IsActive, c.CreatedAt, c.UpdatedAt, c.CreatedBy, c.UpdatedBy);
     }
 
     public async Task<CategoryDto> CreateAsync(CreateCategoryDto dto, CancellationToken cancellationToken = default)
@@ -48,10 +48,10 @@ public class CategoryService : ICategoryService
 
         await _cache.RemoveAsync(CacheKeys.Categories.All, cancellationToken);
         await _cache.RemoveAsync(CacheKeys.MenuItems.All, cancellationToken);
-        return new CategoryDto(created.Id, created.Name, created.Description, created.ImageUrl, created.IsActive, created.CreatedAt);
+        return new CategoryDto(created.Id, created.Name, created.Description, created.ImageUrl, created.IsActive, created.CreatedAt, created.UpdatedAt, created.CreatedBy, created.UpdatedBy);
     }
 
-    public async Task<bool> UpdateAsync(int id, CreateCategoryDto dto, CancellationToken cancellationToken = default)
+    public async Task<bool> UpdateAsync(Guid id, CreateCategoryDto dto, CancellationToken cancellationToken = default)
     {
         var existing = await _repo.GetByIdAsync(id, cancellationToken);
         if (existing == null) return false;
@@ -76,7 +76,7 @@ public class CategoryService : ICategoryService
         return true;
     }
 
-    public async Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default)
+    public async Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var existing = await _repo.GetByIdAsync(id, cancellationToken);
         if (existing == null) return false;

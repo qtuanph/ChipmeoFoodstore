@@ -26,7 +26,7 @@ public class PaymentSettingRepository(StoreDbContext context) : IPaymentSettingR
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<PaymentSetting?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
+    public async Task<PaymentSetting?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return await _context.PaymentSettings.FindAsync(new object[] { id }, cancellationToken);
     }
@@ -50,7 +50,7 @@ public class PaymentSettingRepository(StoreDbContext context) : IPaymentSettingR
         await _context.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task ClearOtherDefaultsAsync(int? excludeId, CancellationToken cancellationToken = default)
+    public async Task ClearOtherDefaultsAsync(Guid? excludeId, CancellationToken cancellationToken = default)
     {
         var defaultSettings = await _context.PaymentSettings
             .Where(ps => ps.IsDefault && (excludeId == null || ps.Id != excludeId))
@@ -68,7 +68,3 @@ public class PaymentSettingRepository(StoreDbContext context) : IPaymentSettingR
         }
     }
 }
-
-
-
-

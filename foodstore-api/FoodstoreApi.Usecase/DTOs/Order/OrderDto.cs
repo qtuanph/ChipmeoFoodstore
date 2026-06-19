@@ -2,13 +2,13 @@
 
 public class OrderDto
 {
-    public int Id { get; set; }
+    public Guid Id { get; set; }
     public string OrderCode { get; set; } = string.Empty;
-    public int? SourceId { get; set; }
+    public Guid? SourceId { get; set; }
     public string? SourceName { get; set; }
-    public int? EmployeeId { get; set; }
+    public Guid? EmployeeId { get; set; }
     public string EmployeeName { get; set; } = string.Empty;
-    public int? DiscountId { get; set; }
+    public Guid? DiscountId { get; set; }
     public string? DiscountCode { get; set; }
     public string? CustomerName { get; set; }
     public string? CustomerPhone { get; set; }
@@ -22,12 +22,10 @@ public class OrderDto
     public string? Note { get; set; }
     public DateTime? PrintedAt { get; set; }
     public DateTime CreatedAt { get; set; }
-    public DateTime? UpdatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
+    public Guid? CreatedBy { get; set; }
+    public Guid? UpdatedBy { get; set; }
     
     public List<OrderItemDto> Items { get; set; } = new();
     public List<OrderStatusHistoryDto> History { get; set; } = new();
 }
-
-
-
-

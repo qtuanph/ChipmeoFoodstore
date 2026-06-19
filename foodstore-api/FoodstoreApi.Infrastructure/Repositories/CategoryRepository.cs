@@ -1,7 +1,6 @@
 ﻿using FoodstoreApi.Usecase.Interfaces;
 using FoodstoreApi.Core.Entities;
 using FoodstoreApi.Infrastructure.Data;
-using FoodstoreApi.Core.Utils;
 using Microsoft.EntityFrameworkCore;
 
 namespace FoodstoreApi.Infrastructure.Repositories;
@@ -20,14 +19,13 @@ public class CategoryRepository : ICategoryRepository
         return await _db.Categories.AsNoTracking().OrderBy(c => c.Name).ToListAsync(cancellationToken);
     }
 
-    public async Task<Category?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
+    public async Task<Category?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return await _db.Categories.FindAsync(new object[] { id }, cancellationToken);
     }
 
     public async Task<Category> AddAsync(Category category, CancellationToken cancellationToken = default)
     {
-        category.CreatedAt = TimeUtils.GetVietnamTime();
         _db.Categories.Add(category);
         await _db.SaveChangesAsync(cancellationToken);
         return category;
@@ -45,7 +43,3 @@ public class CategoryRepository : ICategoryRepository
         await _db.SaveChangesAsync(cancellationToken);
     }
 }
-
-
-
-

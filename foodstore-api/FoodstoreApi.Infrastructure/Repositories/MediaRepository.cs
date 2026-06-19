@@ -1,6 +1,6 @@
-﻿using FoodstoreApi.Usecase.Interfaces;
-using FoodstoreApi.Core.Entities;
+﻿using FoodstoreApi.Core.Entities;
 using FoodstoreApi.Infrastructure.Data;
+using FoodstoreApi.Usecase.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
 namespace FoodstoreApi.Infrastructure.Repositories;
@@ -19,7 +19,7 @@ public class MediaRepository : IMediaRepository
         return await _context.Media.OrderByDescending(m => m.CreatedAt).ToListAsync();
     }
 
-    public async Task<Media?> GetByIdAsync(int id)
+    public async Task<Media?> GetByIdAsync(Guid id)
     {
         return await _context.Media.FindAsync(id);
     }
@@ -29,7 +29,7 @@ public class MediaRepository : IMediaRepository
         return await _context.Media.FirstOrDefaultAsync(m => m.FileUrl == url);
     }
 
-    public async Task<IEnumerable<Media>> GetByEntityAsync(string entityType, int entityId)
+    public async Task<IEnumerable<Media>> GetByEntityAsync(string entityType, Guid entityId)
     {
         return await _context.Media
             .Where(m => m.EntityType == entityType && m.EntityId == entityId)
@@ -55,7 +55,3 @@ public class MediaRepository : IMediaRepository
         await _context.SaveChangesAsync();
     }
 }
-
-
-
-

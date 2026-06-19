@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { onMount, onDestroy } from 'svelte';
+	import { onMount, onDestroy, tick } from 'svelte';
 	import { goto } from '$app/navigation';
-	import { initFlowbite } from 'flowbite';
+	import { Dropdown } from 'flowbite';
 	import { categories, combos, sources, discounts, auth } from '$lib/utils/index.js';
 	import { cart, cartTotals, cartActions } from '$lib/utils/index.js';
 	import { formatCurrency, formatTime } from '$lib/utils/index.js';
@@ -13,14 +13,28 @@
 	import type { Addon } from '$lib/types/index.js';
 	import Icon from '$lib/components/ui/Icon.svelte';
 
-	onMount(() => {
-		initFlowbite();
+	let userDropdown = $state<Dropdown | null>(null);
+
+	onMount(async () => {
+		await tick();
+		const triggerEl = document.getElementById('userDropdownButton');
+		const targetEl = document.getElementById('userDropdown');
+		if (triggerEl && targetEl) {
+			userDropdown = new Dropdown(targetEl, triggerEl, {
+				placement: 'bottom-start'
+			});
+		}
 		posStore.init();
 	});
 
 	onDestroy(() => {
+		userDropdown?.destroy();
 		posStore.cleanup();
 	});
+
+	function toggleUserDropdown() {
+		userDropdown?.toggle();
+	}
 
 	function handleLogout() {
 		posStore.handleLogout();
@@ -38,11 +52,11 @@
 		>
 			<!-- LEFT: User Avatar Dropdown -->
 			<div class="flex items-center gap-3">
-				<!-- Flowbite User Dropdown Trigger -->
+				<!-- User Dropdown Trigger -->
 				<button
+					id="userDropdownButton"
 					type="button"
-					data-dropdown-toggle="userDropdown"
-					data-dropdown-placement="bottom-start"
+					onclick={toggleUserDropdown}
 					class="relative h-10 w-10 overflow-hidden rounded-full cursor-pointer"
 				>
 					{#if $auth.user?.avatarUrl}

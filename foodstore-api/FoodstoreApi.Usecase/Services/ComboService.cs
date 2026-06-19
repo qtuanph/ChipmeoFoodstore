@@ -3,7 +3,6 @@ using FoodstoreApi.Usecase.DTOs.Combo;
 using FoodstoreApi.Usecase.Utils;
 using FoodstoreApi.Core.Constants;
 using FoodstoreApi.Core.Entities;
-using FoodstoreApi.Core.Utils;
 using Microsoft.Extensions.Caching.Distributed;
 
 namespace FoodstoreApi.Usecase.Services;
@@ -30,7 +29,7 @@ public class ComboService : IComboService
         }, TimeSpan.FromMinutes(30), cancellationToken);
     }
 
-    public async Task<ComboDto?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
+    public async Task<ComboDto?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var combo = await _repository.GetByIdAsync(id, cancellationToken);
         return combo == null ? null : MapToDto(combo);
@@ -45,12 +44,12 @@ public class ComboService : IComboService
             Description = dto.Description,
             ImageUrl = dto.ImageUrl,
             IsActive = dto.IsActive,
-            CreatedAt = TimeUtils.GetVietnamTime(),
+
             ComboItems = dto.Items.Select(i => new ComboItem
             {
                 MenuItemId = i.MenuItemId,
                 Quantity = i.Quantity,
-                CreatedAt = TimeUtils.GetVietnamTime()
+
             }).ToList()
         };
 
@@ -65,7 +64,7 @@ public class ComboService : IComboService
         return MapToDto(created);
     }
 
-    public async Task<bool> UpdateAsync(int id, CreateComboDto dto, CancellationToken cancellationToken = default)
+    public async Task<bool> UpdateAsync(Guid id, CreateComboDto dto, CancellationToken cancellationToken = default)
     {
         var combo = await _repository.GetByIdAsync(id, cancellationToken);
         if (combo == null) return false;
@@ -83,7 +82,7 @@ public class ComboService : IComboService
             ComboId = id,
             MenuItemId = i.MenuItemId,
             Quantity = i.Quantity,
-            CreatedAt = TimeUtils.GetVietnamTime()
+
         }).ToList();
 
         var result = await _repository.UpdateWithItemsAsync(combo, newItems, cancellationToken);
@@ -101,7 +100,7 @@ public class ComboService : IComboService
         return result;
     }
 
-    public async Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default)
+    public async Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var result = await _repository.DeleteAsync(id, cancellationToken);
         if (result)
@@ -122,13 +121,18 @@ public class ComboService : IComboService
             Description = combo.Description,
             ImageUrl = combo.ImageUrl,
             IsActive = combo.IsActive ?? true,
-            CreatedAt = combo.CreatedAt ?? TimeUtils.GetVietnamTime(),
+            CreatedAt = combo.CreatedAt,
+            UpdatedAt = combo.UpdatedAt,
+            CreatedBy = combo.CreatedBy,
+            UpdatedBy = combo.UpdatedBy,
             Items = combo.ComboItems?.Select(ci => new ComboItemDto
             {
                 Id = ci.Id,
                 MenuItemId = ci.MenuItemId,
                 MenuItemName = ci.MenuItem?.Name ?? "",
-                Quantity = ci.Quantity ?? 0
+                Quantity = ci.Quantity ?? 0,
+                CreatedAt = ci.CreatedAt,
+                UpdatedAt = ci.UpdatedAt
             }).ToList() ?? new List<ComboItemDto>()
         };
     }

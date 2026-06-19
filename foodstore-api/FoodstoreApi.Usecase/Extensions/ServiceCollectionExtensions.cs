@@ -24,6 +24,10 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ICustomerService, CustomerService>();
         services.AddScoped<IBlogService, BlogService>();
         services.AddScoped<ITagService, TagService>();
+        services.AddScoped<IBlogCategoryService, BlogCategoryService>();
+        services.AddScoped<IBlogRevisionService, BlogRevisionService>();
+        services.AddScoped<IBlogBlockService, BlogBlockService>();
+        services.AddScoped<IBlogSettingService, BlogSettingService>();
 
         return services;
     }

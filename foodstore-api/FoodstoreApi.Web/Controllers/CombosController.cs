@@ -31,9 +31,9 @@ public class CombosController : ControllerBase
         return ApiResult.Success(items);
     }
 
-    [HttpGet("{id:int}")]
+    [HttpGet("{id:guid}")]
     [RequirePermission("combo.view")]
-    public async Task<IActionResult> GetById(int id, CancellationToken cancellationToken)
+    public async Task<IActionResult> GetById(Guid id, CancellationToken cancellationToken)
     {
         var item = await _service.GetByIdAsync(id, cancellationToken);
         if (item == null) return ApiResult.NotFound();
@@ -48,18 +48,18 @@ public class CombosController : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
     }
 
-    [HttpPut("{id:int}")]
+    [HttpPut("{id:guid}")]
     [RequirePermission("combo.update")]
-    public async Task<IActionResult> Update(int id, CreateComboDto dto, CancellationToken cancellationToken)
+    public async Task<IActionResult> Update(Guid id, CreateComboDto dto, CancellationToken cancellationToken)
     {
         var ok = await _service.UpdateAsync(id, dto, cancellationToken);
         if (!ok) return ApiResult.NotFound();
         return NoContent();
     }
 
-    [HttpDelete("{id:int}")]
+    [HttpDelete("{id:guid}")]
     [RequirePermission("combo.delete")]
-    public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
+    public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
         var ok = await _service.DeleteAsync(id, cancellationToken);
         if (!ok) return ApiResult.NotFound();
@@ -76,16 +76,12 @@ public class CombosController : ControllerBase
         return ApiResult.Success(activeCombos);
     }
 
-    [HttpGet("/api/pos/combos/{id:int}")]
+    [HttpGet("/api/pos/combos/{id:guid}")]
     [AllowAnonymous]
-    public async Task<IActionResult> PosGetById(int id, CancellationToken cancellationToken)
+    public async Task<IActionResult> PosGetById(Guid id, CancellationToken cancellationToken)
     {
         var combo = await _service.GetByIdAsync(id, cancellationToken);
         if (combo == null || !combo.IsActive) return ApiResult.NotFound();
         return ApiResult.Success(combo);
     }
 }
-
-
-
-

@@ -2,7 +2,6 @@
 using FoodstoreApi.Usecase.DTOs.Report;
 using FoodstoreApi.Usecase.Utils;
 using FoodstoreApi.Core.Constants;
-using FoodstoreApi.Core.Utils;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.ML;
 using Microsoft.ML.Transforms.TimeSeries;
@@ -37,7 +36,7 @@ public class ReportService : IReportService
     {
         return await _cache.GetOrSetAsync(CacheKeys.Dashboard.Forecast(horizon), async () =>
         {
-            var endDate = TimeUtils.GetVietnamTime().Date;
+            var endDate = DateTime.UtcNow.Date;
             var startDate = endDate.AddDays(-90);
 
             var salesData = await _repository.GetSalesDataAsync(startDate, endDate, cancellationToken);
@@ -83,7 +82,7 @@ public class ReportService : IReportService
             string recommendation = "Dữ liệu chưa đủ để phân tích xu hướng chiến lược.";
             try
             {
-                var stats = await GetStatsAsync(TimeUtils.GetVietnamTime().AddDays(-30), TimeUtils.GetVietnamTime(), "day", cancellationToken);
+                var stats = await GetStatsAsync(DateTime.UtcNow.AddDays(-30), DateTime.UtcNow, "day", cancellationToken);
                 var typeStats = stats.SourceStats;
 
                 if (typeStats != null && typeStats.Count != 0)
@@ -139,11 +138,11 @@ public class ReportService : IReportService
     {
         return await _cache.GetOrSetAsync(CacheKeys.Dashboard.ComboRecommendations, async () =>
         {
-            var cutoffDate = TimeUtils.GetVietnamTime().AddDays(-30);
+            var cutoffDate = DateTime.UtcNow.AddDays(-30);
             var rawData = await _repository.GetComboRecommendationDataAsync(cutoffDate, cancellationToken);
 
-            var pairCounts = new Dictionary<(int, int), int>();
-            var itemInfo = new Dictionary<int, (string Name, decimal Price)>();
+            var pairCounts = new Dictionary<(Guid, Guid), int>();
+            var itemInfo = new Dictionary<Guid, (string Name, decimal Price)>();
 
             var orders = rawData.GroupBy(x => x.OrderId);
 
@@ -163,7 +162,7 @@ public class ReportService : IReportService
                         var id1 = uniqueItems[i].MenuItemId!.Value;
                         var id2 = uniqueItems[j].MenuItemId!.Value;
 
-                        var key = id1 < id2 ? (id1, id2) : (id2, id1);
+                        var key = string.Compare(id1.ToString(), id2.ToString(), StringComparison.Ordinal) < 0 ? (id1, id2) : (id2, id1);
 
                         if (!pairCounts.ContainsKey(key))
                             pairCounts[key] = 0;
