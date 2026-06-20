@@ -90,6 +90,7 @@ Content-Type: application/json
   "name": "Nguyen Van A",
   "email": "customer@example.com",
   "phone": "0901234567",
+  "birthday": "1990-06-15",
   "password": "customerpass"
 }
 ```
@@ -235,7 +236,7 @@ Authorization: Bearer <jwt_token>
 ## CRM — Customers
 | Method | Route | Description | Auth |
 |---|---|---|---|
-| `POST` | `/v2/api/customers/register` | Register | None |
+| `POST` | `/v2/api/customers/register` | Register (`{ username, name, email, phone, birthday?, password }`) | None |
 | `POST` | `/v2/api/customers/login` | Login | None |
 | `GET` | `/v2/api/customers/me` | Get profile | Customer |
 | `PUT` | `/v2/api/customers/me` | Update profile | Customer |
@@ -245,6 +246,9 @@ Authorization: Bearer <jwt_token>
 | `POST` | `/v2/api/customers` | Create (admin) | Employee |
 | `PUT` | `/v2/api/customers/{id}` | Update | Employee |
 | `DELETE` | `/v2/api/customers/{id}` | Delete | Employee |
+| `POST` | `/v2/api/admin/customers/{id}/add-points` | Add points + reason | `customer.edit` |
+| `GET` | `/v2/api/admin/customers/{id}/orders` | Customer order history | `customer.view` |
+| `GET` | `/v2/api/admin/customers/birthdays` | Upcoming birthdays (this week/month) | `customer.view` |
 | `GET` | `/v2/api/admin/customers/leaderboard` | Points leaderboard | Employee |
 
 ---

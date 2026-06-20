@@ -1,5 +1,5 @@
 import { apiClient } from "@/lib/api-client";
-import type { Customer, CreateCustomerDto, UpdateCustomerAdminDto } from "@/lib/types";
+import type { Customer, CreateCustomerDto, UpdateCustomerAdminDto, AddPointsDto, CustomerOrderHistory, UpcomingBirthdays } from "@/lib/types";
 import { authHeaders, type ApiResponse } from "./utils";
 
 export const customerService = {
@@ -31,5 +31,21 @@ export const customerService = {
       method: "DELETE",
       ...authHeaders(),
     });
+  },
+  async addPoints(id: string, dto: AddPointsDto): Promise<Customer> {
+    const res = await apiClient<ApiResponse<Customer>>(`/admin/customers/${id}/add-points`, {
+      method: "POST",
+      body: JSON.stringify(dto),
+      ...authHeaders(),
+    });
+    return res.data;
+  },
+  async getOrderHistory(id: string): Promise<CustomerOrderHistory[]> {
+    const res = await apiClient<ApiResponse<CustomerOrderHistory[]>>(`/admin/customers/${id}/orders`, authHeaders());
+    return res.data;
+  },
+  async getUpcomingBirthdays(): Promise<UpcomingBirthdays> {
+    const res = await apiClient<ApiResponse<UpcomingBirthdays>>("/admin/customers/birthdays", authHeaders());
+    return res.data;
   },
 };

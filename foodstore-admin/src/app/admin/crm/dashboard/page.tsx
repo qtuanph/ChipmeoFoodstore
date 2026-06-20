@@ -1,29 +1,37 @@
 "use client"
 
 import * as React from "react"
-import { Users, ShoppingBag, DollarSign, TrendingUp } from "lucide-react"
+import { Users, ShoppingBag, DollarSign, TrendingUp, Cake, Gift } from "lucide-react"
 import { toast } from "sonner"
 
 import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage } from "@/components/ui/breadcrumb"
+import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { dashboardService } from "@/lib/services/dashboard-service"
-import { formatCurrency } from "@/lib/utils"
+import { customerService } from "@/lib/services/customer-service"
+import { formatCurrency, formatDate } from "@/lib/utils"
+import type { UpcomingBirthdays } from "@/lib/types"
 
 export default function CrmDashboard() {
   const [totalCustomers, setTotalCustomers] = React.useState<number | null>(null)
   const [todayOrders, setTodayOrders] = React.useState<number | null>(null)
   const [todayRevenue, setTodayRevenue] = React.useState<number | null>(null)
   const [totalRevenue, setTotalRevenue] = React.useState<number | null>(null)
+  const [birthdays, setBirthdays] = React.useState<UpcomingBirthdays | null>(null)
 
   React.useEffect(() => {
     (async () => {
       try {
-        const stats = await dashboardService.getStats()
+        const [stats, bdays] = await Promise.all([
+          dashboardService.getStats(),
+          customerService.getUpcomingBirthdays(),
+        ])
         setTotalCustomers(stats.totalCustomers)
         setTodayOrders(stats.today.orders)
         setTodayRevenue(stats.today.revenue)
         setTotalRevenue(stats.total.revenue)
+        setBirthdays(bdays)
       } catch {
         toast.error("Không thể tải thống kê")
       }
@@ -36,6 +44,18 @@ export default function CrmDashboard() {
     { label: "Doanh thu hôm nay", value: todayRevenue !== null ? formatCurrency(todayRevenue) : "…", icon: DollarSign },
     { label: "Tổng doanh thu", value: totalRevenue !== null ? formatCurrency(totalRevenue) : "…", icon: TrendingUp },
   ]
+
+  const levelBadge = (level?: string) => {
+    if (!level) return null
+    const colors: Record<string, string> = {
+      bronze: "bg-amber-100 text-amber-800",
+      silver: "bg-slate-200 text-slate-800",
+      gold: "bg-yellow-100 text-yellow-800",
+      platinum: "bg-indigo-100 text-indigo-800",
+      diamond: "bg-blue-100 text-blue-800",
+    }
+    return <span className={`rounded px-1.5 py-0.5 text-xs font-medium ${colors[level] || "bg-gray-100"}`}>{level}</span>
+  }
 
   return (
     <>
@@ -59,6 +79,39 @@ export default function CrmDashboard() {
               </div>
             </div>
           ))}
+        </div>
+
+        <div className="rounded-xl border p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <Cake className="size-5 text-pink-500" />
+            <h2 className="font-semibold">Sinh nhật khách hàng</h2>
+            {birthdays && birthdays.totalThisWeek > 0 && (
+              <Badge className="ml-auto">{birthdays.totalThisWeek} trong tuần này</Badge>
+            )}
+          </div>
+          {!birthdays ? (
+            <p className="text-sm text-muted-foreground">Đang tải...</p>
+          ) : birthdays.thisWeek.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Không có khách hàng nào sinh nhật trong tuần này</p>
+          ) : (
+            <div className="space-y-2">
+              {birthdays.thisWeek.map((c) => (
+                <div key={c.id} className="flex items-center justify-between rounded-lg border p-3">
+                  <div className="flex items-center gap-3">
+                    <Gift className="size-4 text-pink-400" />
+                    <div>
+                      <p className="text-sm font-medium">{c.name}</p>
+                      <p className="text-xs text-muted-foreground">{c.customerCode} {c.phone ? `• ${c.phone}` : ""}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    {levelBadge(c.membershipLevel)}
+                    <span className="text-xs text-muted-foreground">{c.birthday ? formatDate(c.birthday) : "—"}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </>

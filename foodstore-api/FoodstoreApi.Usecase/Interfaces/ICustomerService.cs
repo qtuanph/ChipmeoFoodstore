@@ -17,5 +17,7 @@ public interface ICustomerService
     Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default);
 
     Task<CustomerDto?> UpdateProfileAsync(Guid id, CustomerUpdateDto dto);
-    Task<bool> AddPointsAsync(Guid customerId, int points);
+    Task<bool> AddPointsAsync(Guid customerId, int points, string? reason = null);
+    Task<List<CustomerOrderHistoryDto>> GetOrderHistoryAsync(Guid customerId);
+    Task<UpcomingBirthdaysDto> GetUpcomingBirthdaysAsync();
 }

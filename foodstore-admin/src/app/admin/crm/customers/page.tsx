@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Edit, Plus, QrCode, Trash2 } from "lucide-react"
+import { Edit, Plus, QrCode, Trash2, Coins, History } from "lucide-react"
 import { QRCodeSVG } from "qrcode.react"
 import { toast } from "sonner"
 import type { ColumnDef } from "@tanstack/react-table"
@@ -10,16 +10,18 @@ import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage } from "@/co
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
+import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { DataTable } from "@/components/data-table"
 import { CrudSheet } from "@/components/crud-sheet"
 import { DeleteConfirmDialog } from "@/components/confirm-dialog"
 import { StatusBadge } from "@/components/status-badge"
 import { customerService } from "@/lib/services/customer-service"
-import { formatDateTime } from "@/lib/utils"
-import type { Customer, CreateCustomerDto, UpdateCustomerAdminDto } from "@/lib/types"
+import { formatDateTime, formatCurrency } from "@/lib/utils"
+import type { Customer, CreateCustomerDto, UpdateCustomerAdminDto, AddPointsDto, CustomerOrderHistory } from "@/lib/types"
 
 export default function CustomersPage() {
   const [data, setData] = React.useState<Customer[]>([])
@@ -31,6 +33,15 @@ export default function CustomersPage() {
   const [deleting, setDeleting] = React.useState(false)
   const [deleteTarget, setDeleteTarget] = React.useState<Customer | null>(null)
   const [qrTarget, setQrTarget] = React.useState<Customer | null>(null)
+  const [pointsOpen, setPointsOpen] = React.useState(false)
+  const [pointsTarget, setPointsTarget] = React.useState<Customer | null>(null)
+  const [pointsAmount, setPointsAmount] = React.useState(0)
+  const [pointsReason, setPointsReason] = React.useState("")
+  const [pointsSubmitting, setPointsSubmitting] = React.useState(false)
+  const [orderHistoryOpen, setOrderHistoryOpen] = React.useState(false)
+  const [orderHistoryTarget, setOrderHistoryTarget] = React.useState<Customer | null>(null)
+  const [orderHistoryData, setOrderHistoryData] = React.useState<CustomerOrderHistory[]>([])
+  const [orderHistoryLoading, setOrderHistoryLoading] = React.useState(false)
 
   const [formName, setFormName] = React.useState("")
   const [formPhone, setFormPhone] = React.useState("")
@@ -78,6 +89,29 @@ export default function CustomersPage() {
     finally { setDeleting(false) }
   }
 
+  const handleAddPoints = async () => {
+    if (!pointsTarget || pointsAmount <= 0) { toast.error("Nhập số điểm hợp lệ"); return }
+    if (!pointsReason.trim()) { toast.error("Nhập lý do"); return }
+    setPointsSubmitting(true)
+    try {
+      await customerService.addPoints(pointsTarget.id, { points: pointsAmount, reason: pointsReason.trim() })
+      toast.success(`Đã cộng ${pointsAmount} điểm cho ${pointsTarget.name}`)
+      setPointsOpen(false); setPointsAmount(0); setPointsReason(""); loadData()
+    } catch (e) { toast.error((e as Error).message) }
+    finally { setPointsSubmitting(false) }
+  }
+
+  const openOrderHistory = async (customer: Customer) => {
+    setOrderHistoryTarget(customer)
+    setOrderHistoryOpen(true)
+    setOrderHistoryLoading(true)
+    try {
+      const orders = await customerService.getOrderHistory(customer.id)
+      setOrderHistoryData(orders)
+    } catch { toast.error("Không thể tải lịch sử đơn hàng") }
+    finally { setOrderHistoryLoading(false) }
+  }
+
   const columns: ColumnDef<Customer>[] = [
     {
       id: "qrCode",
@@ -111,6 +145,8 @@ export default function CustomersPage() {
       header: "",
       cell: ({ row }) => (
         <div className="flex justify-end gap-1">
+          <Button variant="ghost" size="icon-sm" onClick={() => openOrderHistory(row.original)} title="Lịch sử đơn hàng"><History className="size-4" /></Button>
+          <Button variant="ghost" size="icon-sm" onClick={() => { setPointsTarget(row.original); setPointsOpen(true) }} title="Cộng điểm"><Coins className="size-4 text-green-600" /></Button>
           <Button variant="ghost" size="icon-sm" onClick={() => openEdit(row.original)}><Edit className="size-4" /></Button>
           <Button variant="ghost" size="icon-sm" onClick={() => confirmDelete(row.original)}><Trash2 className="size-4 text-destructive" /></Button>
         </div>
@@ -171,6 +207,48 @@ export default function CustomersPage() {
           </div>
         </DialogContent>
       </Dialog>
+      <Dialog open={pointsOpen} onOpenChange={(open) => { if (!open) { setPointsOpen(false); setPointsAmount(0); setPointsReason("") } }}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader><DialogTitle>Cộng điểm - {pointsTarget?.name}</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Số điểm</Label>
+              <Input type="number" min="1" value={pointsAmount || ""} onChange={(e) => setPointsAmount(Number(e.target.value))} placeholder="Nhập số điểm" />
+            </div>
+            <div className="space-y-2">
+              <Label>Lý do</Label>
+              <Input value={pointsReason} onChange={(e) => setPointsReason(e.target.value)} placeholder="VD: Thưởng sinh nhật, tích lũy..." />
+            </div>
+            <Button className="w-full" onClick={handleAddPoints} disabled={pointsSubmitting}>{pointsSubmitting ? "Đang xử lý..." : "Thêm điểm"}</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Sheet open={orderHistoryOpen} onOpenChange={(open) => { if (!open) { setOrderHistoryOpen(false); setOrderHistoryData([]) } }}>
+        <SheetContent className="sm:max-w-xl">
+          <SheetHeader><SheetTitle>Lịch sử đơn hàng - {orderHistoryTarget?.name}</SheetTitle></SheetHeader>
+          <div className="mt-4 space-y-2">
+            {orderHistoryLoading ? (
+              <p className="text-sm text-muted-foreground">Đang tải...</p>
+            ) : orderHistoryData.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Chưa có đơn hàng nào</p>
+            ) : (
+              orderHistoryData.map((order) => (
+                <div key={order.id} className="flex items-center justify-between rounded-lg border p-3">
+                  <div>
+                    <p className="text-sm font-medium">{order.orderCode || "—"}</p>
+                    <p className="text-xs text-muted-foreground">{formatDateTime(order.createdAt)}</p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Badge variant="outline">{order.status}</Badge>
+                    <span className="text-sm font-semibold">{order.totalAmount ? formatCurrency(order.totalAmount) : "—"}</span>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
     </>
   )
 }

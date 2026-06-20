@@ -129,4 +129,33 @@ public class CustomersController : ControllerBase
         if (!ok) return ApiResult.NotFound();
         return NoContent();
     }
+
+    [HttpPost("{id:guid}/add-points")]
+    [RequirePermission("customer.update")]
+    public async Task<IActionResult> AddPoints(Guid id, [FromBody] AddPointsDto dto)
+    {
+        if (dto.Points <= 0)
+            return ApiResult.BadRequest("Số điểm phải lớn hơn 0");
+
+        var ok = await _customerService.AddPointsAsync(id, dto.Points, dto.Reason);
+        if (!ok) return ApiResult.NotFound();
+        var customer = await _customerService.GetByIdAsync(id);
+        return ApiResult.Success(customer);
+    }
+
+    [HttpGet("{id:guid}/orders")]
+    [RequirePermission("customer.view")]
+    public async Task<IActionResult> GetOrderHistory(Guid id)
+    {
+        var orders = await _customerService.GetOrderHistoryAsync(id);
+        return ApiResult.Success(orders);
+    }
+
+    [HttpGet("birthdays")]
+    [RequirePermission("customer.view")]
+    public async Task<IActionResult> GetUpcomingBirthdays()
+    {
+        var data = await _customerService.GetUpcomingBirthdaysAsync();
+        return ApiResult.Success(data);
+    }
 }

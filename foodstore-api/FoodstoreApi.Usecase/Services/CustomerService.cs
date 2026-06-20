@@ -54,6 +54,7 @@ public class CustomerService(
             CustomerCode = $"KH-{DateTime.Now:yyyyMMdd}-{Random.Shared.Next(1000, 9999)}",
             Phone = dto.Phone,
             LoyaltyPoints = 0,
+            MembershipLevel = "bronze",
 
         };
 
@@ -135,7 +136,10 @@ public class CustomerService(
             customer.AvatarUrl = dto.AvatarUrl;
 
         if (dto.Points.HasValue)
+        {
             customer.LoyaltyPoints = dto.Points.Value;
+            customer.MembershipLevel = CalculateMembershipLevel(dto.Points.Value);
+        }
 
         if (dto.IsActive.HasValue)
             user.Banned = !dto.IsActive.Value;
@@ -149,12 +153,14 @@ public class CustomerService(
         return MapToDto(customer, user);
     }
 
-    public async Task<bool> AddPointsAsync(Guid customerId, int points)
+    public async Task<bool> AddPointsAsync(Guid customerId, int points, string? reason = null)
     {
+        if (points <= 0) return false;
         var customer = await _repo.GetByIdAsync(customerId);
         if (customer == null) return false;
 
         customer.LoyaltyPoints += points;
+        customer.MembershipLevel = CalculateMembershipLevel(customer.LoyaltyPoints);
 
         await _repo.UpdateAsync(customer);
         return true;
@@ -204,6 +210,7 @@ public class CustomerService(
             CustomerCode = $"KH-{DateTime.Now:yyyyMMdd}-{Random.Shared.Next(1000, 9999)}",
             Phone = dto.Phone,
             LoyaltyPoints = 0,
+            MembershipLevel = "bronze",
 
         };
 
@@ -222,7 +229,11 @@ public class CustomerService(
         if (dto.Name != null) user.Name = dto.Name;
         if (dto.Phone != null) customer.Phone = dto.Phone;
         if (dto.IsActive.HasValue) user.Banned = !dto.IsActive.Value;
-        if (dto.Points.HasValue) customer.LoyaltyPoints = dto.Points.Value;
+        if (dto.Points.HasValue)
+        {
+            customer.LoyaltyPoints = dto.Points.Value;
+            customer.MembershipLevel = CalculateMembershipLevel(dto.Points.Value);
+        }
 
         if (!string.IsNullOrEmpty(dto.AvatarUrl) && dto.AvatarUrl != customer.AvatarUrl)
         {
@@ -254,6 +265,36 @@ public class CustomerService(
         return true;
     }
 
+    public async Task<List<CustomerOrderHistoryDto>> GetOrderHistoryAsync(Guid customerId)
+    {
+        return await _repo.GetOrderHistoryByCustomerIdAsync(customerId);
+    }
+
+    public async Task<UpcomingBirthdaysDto> GetUpcomingBirthdaysAsync()
+    {
+        var today = DateTime.UtcNow.Date;
+        var weekEnd = today.AddDays(7);
+        var monthEnd = today.AddMonths(1);
+
+        var all = await _repo.GetUpcomingBirthdaysAsync(today, monthEnd);
+
+        var thisWeek = all.Where(c =>
+        {
+            var b = new DateTime(today.Year, c.Birthday!.Value.Month, c.Birthday!.Value.Day);
+            return b >= today && b < weekEnd.AddDays(1);
+        }).Select(MapToBirthdayDto).ToList();
+
+        var thisMonth = all.Select(MapToBirthdayDto).ToList();
+
+        return new UpcomingBirthdaysDto
+        {
+            ThisWeek = thisWeek,
+            ThisMonth = thisMonth,
+            TotalThisWeek = thisWeek.Count,
+            TotalThisMonth = thisMonth.Count,
+        };
+    }
+
     private static CustomerDto MapToDto(Customer customer, ApplicationUser? user)
     {
         return new CustomerDto
@@ -268,6 +309,7 @@ public class CustomerService(
             AvatarUrl = customer.AvatarUrl,
             LoyaltyPoints = customer.LoyaltyPoints,
             MembershipLevel = customer.MembershipLevel,
+            Birthday = customer.Birthday,
             CreatedAt = customer.CreatedAt,
             UpdatedAt = customer.UpdatedAt,
             CreatedBy = customer.CreatedBy,
@@ -298,5 +340,27 @@ public class CustomerService(
         );
 
         return new JwtSecurityTokenHandler().WriteToken(token);
+    }
+
+    private static string CalculateMembershipLevel(int points)
+    {
+        if (points >= 5000) return "diamond";
+        if (points >= 1000) return "platinum";
+        if (points >= 300) return "gold";
+        if (points >= 100) return "silver";
+        return "bronze";
+    }
+
+    private static CustomerBirthdayDto MapToBirthdayDto(Customer c)
+    {
+        return new CustomerBirthdayDto
+        {
+            Id = c.Id,
+            CustomerCode = c.CustomerCode,
+            Name = c.User?.Name ?? "",
+            Phone = c.Phone,
+            Birthday = c.Birthday,
+            MembershipLevel = c.MembershipLevel,
+        };
     }
 }

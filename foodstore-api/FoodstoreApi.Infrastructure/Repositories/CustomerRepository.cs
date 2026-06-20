@@ -1,6 +1,7 @@
 ﻿using FoodstoreApi.Core.Entities;
 using FoodstoreApi.Infrastructure.Data;
 using FoodstoreApi.Usecase.Interfaces;
+using FoodstoreApi.Usecase.DTOs.Customer;
 using Microsoft.EntityFrameworkCore;
 
 namespace FoodstoreApi.Infrastructure.Repositories;
@@ -60,5 +61,38 @@ public class CustomerRepository : ICustomerRepository
     {
         _context.Customers.Remove(customer);
         await _context.SaveChangesAsync();
+    }
+
+    public async Task<List<CustomerOrderHistoryDto>> GetOrderHistoryByCustomerIdAsync(Guid customerId)
+    {
+        return await _context.Orders
+            .AsNoTracking()
+            .Where(o => o.CustomerId == customerId)
+            .OrderByDescending(o => o.CreatedAt)
+            .Select(o => new CustomerOrderHistoryDto
+            {
+                Id = o.Id,
+                OrderCode = o.OrderCode,
+                CreatedAt = o.CreatedAt,
+                TotalAmount = o.TotalAmount,
+                Status = o.Status,
+            })
+            .ToListAsync();
+    }
+
+    public async Task<List<Customer>> GetUpcomingBirthdaysAsync(DateTime from, DateTime to)
+    {
+        var customers = await _context.Customers
+            .AsNoTracking()
+            .Include(c => c.User)
+            .Where(c => c.Birthday != null)
+            .ToListAsync();
+
+        return customers.Where(c =>
+        {
+            var b = c.Birthday!.Value;
+            var thisYear = new DateTime(from.Year, b.Month, b.Day);
+            return thisYear >= from.Date && thisYear <= to.Date;
+        }).ToList();
     }
 }
