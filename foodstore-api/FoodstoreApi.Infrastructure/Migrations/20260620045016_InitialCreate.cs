@@ -12,6 +12,8 @@ namespace FoodstoreApi.Infrastructure.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.Sql("CREATE COLLATION IF NOT EXISTS vi_ci_ai (LOCALE = 'vi-VN-x-icu', PROVIDER = 'icu');");
+
             migrationBuilder.CreateTable(
                 name: "addons",
                 columns: table => new
@@ -1256,6 +1258,8 @@ namespace FoodstoreApi.Infrastructure.Migrations
 
             migrationBuilder.DropTable(
                 name: "AspNetUsers");
+
+            migrationBuilder.Sql("DROP COLLATION IF EXISTS vi_ci_ai;");
         }
     }
 }
