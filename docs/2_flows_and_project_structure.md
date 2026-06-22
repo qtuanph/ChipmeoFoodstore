@@ -10,7 +10,7 @@ ChipmeoFoodstore/
 │   ├── FoodstoreApi.slnx                  # Solution file
 │   │
 │   ├── FoodstoreApi.Core/                 # 🎯 Domain Layer (zero dependencies)
-│   │   ├── Entities/                     #   POCO entities (30+ files)
+│   │   ├── Entities/                     #   POCO entities (35+ files)
 │   │   │   ├── Identity/
 │   │   │   │   ├── ApplicationUser.cs     #     Better Auth user entity
 │   │   │   │   └── ApplicationRole.cs     #     Better Auth role entity
@@ -43,24 +43,39 @@ ChipmeoFoodstore/
 │   │   │   ├── BlogPostTag.cs
 │   │   │   ├── BlogPostRevision.cs
 │   │   │   ├── BlogPostBlock.cs
-│   │   │   └── BlogSetting.cs
+│   │   │   ├── BlogSetting.cs
+│   │   │   ├── EInvoice.cs               #     E-Invoice (order FK, provider FK, status lifecycle)
+│   │   │   ├── EInvoiceProvider.cs       #     Provider config, type, active flag
+│   │   │   └── EInvoiceSetting.cs        #     Global settings (single-row)
 │   │   ├── Configuration/
 │   │   ├── Constants/
 │   │   └── Utils/
 │   │
 │   ├── FoodstoreApi.Usecase/             # 🧠 Application Layer
-│   │   ├── DTOs/                         #   18 DTO subdirectories
+│   │   ├── DTOs/                         #   21 DTO subdirectories
+│   │   │   ├── EInvoice/                 #     EInvoiceDto, IssueInvoiceDto, CancelInvoiceDto
+│   │   │   ├── EInvoiceProvider/         #     Provider DTOs
+│   │   │   └── EInvoiceSetting/          #     Setting DTOs + Dashboard DTO
 │   │   ├── Interfaces/                   #   Service & Repository interfaces
 │   │   │   ├── IBlogService.cs           #     + IBlogBlockService, IBlogCategoryService,
 │   │   │   ├── IBlogBlockService.cs      #       IBlogRevisionService, IBlogSettingService
-│   │   │   └── ...                       #     20+ interfaces total
-│   │   ├── Services/                     #   Service implementations (20+)
+│   │   │   ├── IEInvoiceService.cs       #     E-Invoice service
+│   │   │   ├── IEInvoiceRepository.cs    #     E-Invoice repository
+│   │   │   ├── IEInvoiceProvider.cs      #     Provider abstraction (Viettel, MISA...)
+│   │   │   ├── IEInvoiceProviderFactory.cs#    Factory → resolve provider by type
+│   │   │   └── ...                       #     25+ interfaces total
+│   │   ├── Services/                     #   Service implementations (25+)
+│   │   │   ├── EInvoiceService.cs        #     E-Invoice CRUD + issue/cancel
+│   │   │   ├── EInvoiceProviderFactory.cs#     Provider resolution via DI
+│   │   │   ├── ViettelProvider.cs        #     Viettel e-invoice integration
+│   │   │   └── MisaProvider.cs            #     MISA e-invoice integration
 │   │   ├── Extensions/                   #   DI registration
 │   │   └── Utils/                        #   Shared utilities
 │   │
 │   ├── FoodstoreApi.Infrastructure/       # 📀 Infrastructure Layer
 │   │   ├── Data/                         #   EF Core DbContext + Configurations + Migrations
-│   │   ├── Repositories/                 #   22 repository implementations
+│   │   ├── Repositories/                 #   23 repository implementations
+│   │   │   ├── ...                       #     + EInvoiceRepository
 │   │   ├── Handlers/                     #   Media upload handler (S3/AWS SDK)
 │   │   ├── Caching/                      #   Redis caching implementation
 │   │   └── Extensions/                   #   DI registration
@@ -95,6 +110,11 @@ ChipmeoFoodstore/
 │   │   │   │   │   ├── roles/            #     Vai trò
 │   │   │   │   │   └── role-permissions/ #     Phân quyền
 │   │   │   │   ├── food/                 #   /admin/food — Thực đơn (legacy)
+│   │   │   │   │   ├── e-invoice/        #     /admin/food/e-invoice — Hóa đơn điện tử
+│   │   │   │   │   │   ├── dashboard/    #       Tổng quan stats
+│   │   │   │   │   │   ├── transactions/ #       Danh sách giao dịch
+│   │   │   │   │   │   ├── providers/    #       Quản lý nhà cung cấp
+│   │   │   │   │   │   └── settings/     #       Cài đặt HDDT
 │   │   │   │   ├── layout.tsx            #   SidebarProvider + AppSidebar + Auth guard
 │   │   │   │   └── page.tsx              #   Redirect → /admin/cms/dashboard
 │   │   │   ├── login/                   #   /login — Login page
@@ -145,7 +165,6 @@ ChipmeoFoodstore/
 │   │   └── routes/                      #   File-based routing
 │   │       ├── +layout.svelte
 │   │       ├── +page.svelte
-│   │       ├── admin/                   #   Legacy SvelteKit admin (20+ sub-routes)
 │   │       ├── pos/                     #   /pos — Point of Sale
 │   │       ├── kitchen/                 #   /kitchen — KDS
 │   │       ├── logout/
@@ -155,7 +174,7 @@ ChipmeoFoodstore/
 │   ├── vite.config.ts
 │   └── package.json
 │
-├── foodstore-landingpage/               # 🌐 Landing Page (Astro)
+├── foodstore-landingpage/               # 🌐 Landing Page (Astro 7)
 │   ├── src/
 │   │   ├── components/
 │   │   ├── layouts/
@@ -326,6 +345,33 @@ Permissions follow `"{module}.{action}"`: `menu.view`, `blog.create`, `crm.view`
 │  ApexCharts  │     │  Recommends   │     │  + recommendations│
 └──────────────┘     └───────────────┘     └──────────────────┘
 ```
+
+---
+
+### 9. E-Invoice Lifecycle
+
+```
+                  ┌──────────┐
+                  │  Draft   │
+                  └────┬─────┘
+                       │ Issue invoice
+                  ┌────▼─────┐
+                  │  Issued   │
+                  └────┬─────┘
+                       │
+              ┌────────┴────────┐
+              │                 │
+         ┌────▼─────┐    ┌─────▼──────┐
+         │  Failed   │    │ Cancelled  │
+         └──────────┘    └────────────┘
+```
+
+- POS creates order → admin issues e-invoice via Viettel/MISA provider
+- Supports multiple providers via factory pattern (`IEInvoiceProviderFactory`)
+- Provider config stored as JSON in `e_invoice_providers` table
+- Global settings: auto-issue flag, default template/serial, digital signature
+- PDF/XML invoice files stored on RustFS S3
+- 5 RBAC permissions: `einvoice.view`, `.providers`, `.issue`, `.cancel`, `.settings`
 
 ---
 

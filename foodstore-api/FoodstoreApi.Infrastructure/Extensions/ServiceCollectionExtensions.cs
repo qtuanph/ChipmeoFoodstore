@@ -30,6 +30,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IBlogBlockRepository, BlogBlockRepository>();
         services.AddScoped<IBlogSettingRepository, BlogSettingRepository>();
 
+        services.AddScoped<IEInvoiceRepository, EInvoiceRepository>();
+
         services.AddScoped<IMediaService, MediaHandler>();
 
         return services;

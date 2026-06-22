@@ -23,11 +23,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    authService
-      .getProfile()
-      .then((u) => setUser(u))
-      .catch(() => setUser(null))
-      .finally(() => setIsLoading(false));
+    let retries = 0;
+    const maxRetries = 3;
+    const fetchProfile = () => {
+      authService
+        .getProfile()
+        .then((u) => setUser(u))
+        .catch(() => {
+          if (retries < maxRetries) {
+            retries++;
+            setTimeout(fetchProfile, 2000);
+            return;
+          }
+        })
+        .finally(() => setIsLoading(false));
+    };
+    fetchProfile();
   }, []);
 
   const login = useCallback(async (username: string, password: string) => {

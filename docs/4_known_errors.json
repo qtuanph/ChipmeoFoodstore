@@ -178,10 +178,22 @@
       "severity": "info",
       "title": "No adapter configured for production",
       "file": "svelte.config.js",
-      "description": "Using `@sveltejs/adapter-auto` which auto-detects adapter but warns if platform is not recognized.",
-      "impact": "May need explicit adapter config for target platform (Vercel, Node, etc.).",
-      "resolution": "Install and configure platform-specific adapter: `@sveltejs/adapter-vercel`, `@sveltejs/adapter-node`, etc.",
+      "description": "Using `@sveltejs/adapter-node` for Docker deployment.",
+      "impact": "Resolved — adapter-node is configured and working.",
+      "resolution": "Already using @sveltejs/adapter-node (resolved).",
       "first_seen": "Project inception",
+      "status": "resolved"
+    },
+    {
+      "id": "ERR-016",
+      "type": "config",
+      "severity": "info",
+      "title": "E-Invoice: no provider SDK packages installed",
+      "file": "foodstore-api/FoodstoreApi.Usecase/Services/",
+      "description": "Viettel and MISA e-invoice providers are implemented as placeholder/stub integrations. Real API calls require provider-specific SDK packages or direct SOAP/REST API clients.",
+      "impact": "E-invoice feature works end-to-end in test mode (mock data). Real invoice issuing requires provider SDKs and API keys.",
+      "resolution": "Install Viettel HDDT SDK and MISA e-invoice SDK when production providers are configured. Store provider API keys in environment variables (not appsettings.json).",
+      "first_seen": "E-Invoice feature (2026-06)",
       "status": "accepted"
     }
   ]

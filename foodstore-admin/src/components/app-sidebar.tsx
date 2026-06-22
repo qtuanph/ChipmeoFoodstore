@@ -31,6 +31,7 @@ import {
   UserCogIcon,
   RadioIcon,
   Trophy,
+  ReceiptTextIcon,
 } from "lucide-react"
 
 type Module = "food" | "employees" | "crm" | "cms"
@@ -117,6 +118,16 @@ const foodNav: {
     title: "Thanh toán",
     url: "/admin/food/payment-settings",
     icon: <ClipboardListIcon />,
+  },
+  {
+    title: "Hóa đơn điện tử",
+    icon: <ReceiptTextIcon />,
+    items: [
+      { title: "Tổng quan", url: "/admin/food/e-invoice/dashboard" },
+      { title: "Giao dịch", url: "/admin/food/e-invoice/transactions" },
+      { title: "Nhà cung cấp", url: "/admin/food/e-invoice/providers" },
+      { title: "Cài đặt", url: "/admin/food/e-invoice/settings" },
+    ],
   },
 ]
 

@@ -9,6 +9,11 @@
 	let errorMessage = $state('');
 	let showPassword = $state(false);
 
+	function resolveDefaultRoute(defaultRoute?: string): string {
+		if (!defaultRoute || defaultRoute === '/admin') return '/pos';
+		return defaultRoute;
+	}
+
 	async function handleSubmit(e: Event) {
 		e.preventDefault();
 		errorMessage = '';
@@ -22,7 +27,12 @@
 		try {
 			const result = await auth.loginAPI(username, password);
 			if (result.success) {
-				await goto('/admin');
+				if (result.user?.roleName === 'customer') {
+					errorMessage = 'Tài khoản không có quyền truy cập.';
+					loading = false;
+					return;
+				}
+				await goto(resolveDefaultRoute(result.user?.defaultRoute));
 			} else {
 				errorMessage = result.error || 'Đăng nhập thất bại.';
 			}

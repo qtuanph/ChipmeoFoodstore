@@ -28,6 +28,10 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IBlogRevisionService, BlogRevisionService>();
         services.AddScoped<IBlogBlockService, BlogBlockService>();
         services.AddScoped<IBlogSettingService, BlogSettingService>();
+        services.AddScoped<IEInvoiceService, EInvoiceService>();
+        services.AddScoped<IEInvoiceProviderFactory, EInvoiceProviderFactory>();
+        services.AddTransient<IEInvoiceProvider, MisaProvider>();
+        services.AddTransient<IEInvoiceProvider, ViettelProvider>();
 
         return services;
     }

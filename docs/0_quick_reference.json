@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Foodstore Quick Reference",
   "description": "Quick reference guide for developers working on Foodstore",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "repository": {
     "url": "https://github.com/qtuanph/Foodstore.git",
     "branch": "master"
@@ -55,6 +55,17 @@
         "/api": "http://localhost:5142",
         "/hubs": "http://localhost:5142 (ws)"
       }
+    },
+    "LandingPage": {
+      "path": "foodstore-landingpage",
+      "type": "Astro 7",
+      "description": "Landing Page — static site, SEO-friendly",
+      "commands": {
+        "dev": "npm run dev",
+        "build": "npm run build",
+        "preview": "npm run preview"
+      },
+      "port": 4321
     }
   },
   "environments": {
@@ -77,17 +88,19 @@
     "media_auth": "X-Api-Key header (configured in MediaStorageManagement/appsettings.json)",
     "frontend_config": "Store/src/lib/config/index.ts — auto-detects env",
     "icon_format": "Use <Icon icon=\"tabler:icon-name\" /> — Tabler Icons via @iconify/svelte",
-    "db_connection": "FoodstoreApi/FoodstoreApi.Web/appsettings.json → ConnectionStrings.DefaultConnection"
+    "db_connection": "FoodstoreApi/FoodstoreApi.Web/appsettings.json → ConnectionStrings.DefaultConnection",
+    "e_invoice_provider": "IEInvoiceProvider interface + IEInvoiceProviderFactory — pluggable provider implementations"
   },
   "architecture": {
     "backend": "Clean Architecture (4 layers)",
-    "frontend": "SvelteKit file-based routing",
+    "frontend": "SvelteKit file-based routing + Next.js 16 admin dashboard",
     "realtime": "SignalR hub at /hubs/app (MessagePack protocol)",
     "auth": "JWT Bearer tokens + custom permission-based RBAC",
-    "database": "SQL Server + EF Core 10",
+    "database": "PostgreSQL 18 + EF Core 10 + Npgsql",
     "caching": "IMemoryCache (TTL: 60-300s)",
     "rate_limiting": "Global 100 req/min, Auth 60 req/min",
-    "ml": "ML.NET TimeSeries for sales forecasting"
+    "ml": "ML.NET TimeSeries for sales forecasting",
+    "e_invoice": "Multi-provider factory pattern (Viettel, MISA)"
   },
   "tech_stack": {
     "frontend": {
@@ -105,7 +118,7 @@
     "backend": {
       "framework": "ASP.NET Core 10",
       "orm": "Entity Framework Core 10",
-      "database": "SQL Server",
+      "database": "PostgreSQL 18",
       "auth": "JWT Bearer + BCrypt.Net",
       "realtime": "SignalR + MessagePack",
       "ftp": "FluentFTP 54",

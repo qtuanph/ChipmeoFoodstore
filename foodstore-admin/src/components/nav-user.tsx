@@ -30,8 +30,26 @@ export function NavUser({
   onOpenSettings: (tab: "profile" | "settings") => void
 }) {
   const { isMobile } = useSidebar()
-  const { user, logout } = useAuth()
+  const { user, isLoading, logout } = useAuth()
   const router = useRouter()
+
+  if (isLoading) {
+    return (
+      <SidebarMenu>
+        <SidebarMenuItem>
+          <SidebarMenuButton size="lg" disabled>
+            <div className="flex items-center gap-2 w-full">
+              <div className="h-8 w-8 rounded-full bg-muted animate-pulse" />
+              <div className="grid flex-1 gap-1">
+                <div className="h-3 w-24 bg-muted animate-pulse rounded" />
+                <div className="h-2 w-16 bg-muted animate-pulse rounded" />
+              </div>
+            </div>
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+      </SidebarMenu>
+    )
+  }
 
   if (!user) return null
 

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { kitchenState } from './kitchen.svelte.js';
+	let { children } = $props();
 </script>
 
 <div class="flex h-screen flex-col overflow-hidden bg-gray-100 font-sans text-gray-800">
@@ -20,5 +21,5 @@
 		</div>
 	</header>
 
-	<slot />
+	{@render children()}
 </div>

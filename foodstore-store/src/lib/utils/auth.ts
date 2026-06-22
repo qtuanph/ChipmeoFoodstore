@@ -119,10 +119,8 @@ function createAuthStore() {
 			if (!state.isAuthenticated && browser) {
 				const token = localStorage.getItem(STORAGE_KEYS.TOKEN);
 				if (!token) {
-					// Redirect to login if needed, but be careful about infinite loops
 					const path = window.location.pathname;
-					// Only redirect for protected routes
-					if (path.startsWith('/admin') || path.startsWith('/pos') || path.startsWith('/kitchen')) {
+					if (path.startsWith('/pos') || path.startsWith('/kitchen')) {
 						window.location.href = '/';
 					}
 				}

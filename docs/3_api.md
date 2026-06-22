@@ -282,6 +282,50 @@ folder: "menu-items" | "categories" | "combos" | "blog" | "avatars" | "misc"
 
 ---
 
+## E-Invoice
+
+> Hệ thống hóa đơn điện tử với multi-provider (Viettel, MISA). Tất cả endpoints yêu cầu permission `einvoice.*`.
+
+**Base**: `/api/admin/e-invoice`
+
+### Provider Management
+| Method | Endpoint | Permission | Description |
+|---|---|---|---|
+| `GET` | `/providers` | `einvoice.providers` | List all providers |
+| `POST` | `/providers` | `einvoice.providers` | Create provider |
+| `PUT` | `/providers/{id}` | `einvoice.providers` | Update provider |
+| `DELETE` | `/providers/{id}` | `einvoice.providers` | Delete provider |
+| `POST` | `/providers/{id}/test` | `einvoice.providers` | Test provider connection |
+
+### Invoice Operations
+| Method | Endpoint | Permission | Description |
+|---|---|---|---|
+| `GET` | `/invoices` | `einvoice.view` | List invoices (paginated, filterable) |
+| `GET` | `/invoices/{id}` | `einvoice.view` | Get invoice details |
+| `POST` | `/invoices/issue` | `einvoice.issue` | Issue invoice for an order |
+| `POST` | `/invoices/{id}/cancel` | `einvoice.cancel` | Cancel invoice |
+
+### Settings
+| Method | Endpoint | Permission | Description |
+|---|---|---|---|
+| `GET` | `/settings` | `einvoice.settings` | Get global e-invoice settings |
+| `PUT` | `/settings` | `einvoice.settings` | Update settings |
+
+### Dashboard
+| Method | Endpoint | Permission | Description |
+|---|---|---|---|
+| `GET` | `/dashboard` | `einvoice.view` | Stats: total/draft/issued/failed/cancelled |
+
+### Invoice Status Values
+| Status | Description |
+|---|---|
+| `draft` | Created, not yet issued |
+| `issued` | Successfully issued to provider |
+| `failed` | Provider returned error |
+| `cancelled` | Invoice cancelled |
+
+---
+
 ## SignalR Hub
 
 **Endpoint**: `/hubs/app`

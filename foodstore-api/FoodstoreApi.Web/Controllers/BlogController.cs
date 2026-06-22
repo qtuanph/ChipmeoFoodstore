@@ -51,7 +51,7 @@ public class BlogController : ControllerBase
     {
         var employeeId = User.GetEmployeeId();
         var post = await _blogService.CreatePostAsync(dto, employeeId);
-        return CreatedAtAction(nameof(GetPostById), new { id = post.Id }, post);
+        return CreatedAtAction(nameof(GetPostById), new { id = post.Id }, ApiResult.Success(post));
     }
 
     [HttpPut("{id:guid}")]

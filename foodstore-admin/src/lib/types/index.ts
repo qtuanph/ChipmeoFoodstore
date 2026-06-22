@@ -693,3 +693,96 @@ export interface Recommendation {
   suggestedPrice: number;
   reason: string;
 }
+
+// ============== E-Invoice Types ==============
+export interface EInvoiceProvider {
+  id: string;
+  name: string;
+  providerType: string;
+  isActive: boolean;
+  config: Record<string, unknown>;
+  description?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateEInvoiceProviderDto {
+  name: string;
+  providerType: string;
+  isActive: boolean;
+  config: Record<string, unknown>;
+  description?: string;
+}
+
+export interface UpdateEInvoiceProviderDto {
+  name: string;
+  providerType: string;
+  isActive: boolean;
+  config: Record<string, unknown>;
+  description?: string;
+}
+
+export interface EInvoice {
+  id: string;
+  orderId: string;
+  orderCode?: string;
+  providerId?: string;
+  providerName?: string;
+  invoiceNumber?: string;
+  templateCode?: string;
+  serialNumber?: string;
+  status: string;
+  totalAmount: number;
+  vatAmount: number;
+  buyerName?: string;
+  buyerTaxCode?: string;
+  buyerAddress?: string;
+  pdfUrl?: string;
+  xmlUrl?: string;
+  errorMessage?: string;
+  issuedAt?: string;
+  cancelledAt?: string;
+  cancelReason?: string;
+  createdAt: string;
+}
+
+export interface IssueInvoiceDto {
+  providerId?: string;
+  templateCode?: string;
+  serialNumber?: string;
+  buyerName?: string;
+  buyerTaxCode?: string;
+  buyerAddress?: string;
+}
+
+export interface CancelInvoiceDto {
+  reason: string;
+}
+
+export interface EInvoiceSetting {
+  id: string;
+  defaultProviderId?: string;
+  defaultProviderName?: string;
+  autoIssue: boolean;
+  defaultTemplateCode?: string;
+  defaultSerialNumber?: string;
+  digitalSignatureConfig?: Record<string, unknown>;
+  updatedAt: string;
+}
+
+export interface UpdateEInvoiceSettingDto {
+  defaultProviderId?: string;
+  autoIssue: boolean;
+  defaultTemplateCode?: string;
+  defaultSerialNumber?: string;
+  digitalSignatureConfig?: Record<string, unknown>;
+}
+
+export interface EInvoiceDashboard {
+  totalInvoices: number;
+  draftInvoices: number;
+  issuedInvoices: number;
+  failedInvoices: number;
+  cancelledInvoices: number;
+  activeProviders: number;
+}

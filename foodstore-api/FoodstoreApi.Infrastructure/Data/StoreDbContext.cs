@@ -38,6 +38,9 @@ public partial class StoreDbContext : IdentityDbContext<ApplicationUser, Applica
     public virtual DbSet<BlogPostBlock> BlogPostBlocks => Set<BlogPostBlock>();
     public virtual DbSet<BlogSetting> BlogSettings => Set<BlogSetting>();
     public virtual DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+    public virtual DbSet<EInvoiceProvider> EInvoiceProviders => Set<EInvoiceProvider>();
+    public virtual DbSet<EInvoice> EInvoices => Set<EInvoice>();
+    public virtual DbSet<EInvoiceSetting> EInvoiceSettings => Set<EInvoiceSetting>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -651,6 +654,80 @@ public partial class StoreDbContext : IdentityDbContext<ApplicationUser, Applica
             entity.Property(e => e.CreatedAt).HasColumnName("created_at");
             entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
             entity.HasIndex(e => e.Key).IsUnique();
+        });
+
+        // E-Invoice Providers
+        modelBuilder.Entity<EInvoiceProvider>(entity =>
+        {
+            entity.ToTable("e_invoice_providers");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.Name).HasMaxLength(100).HasColumnName("name").UseCollation("vi_ci_ai");
+            entity.Property(e => e.ProviderType).HasMaxLength(50).HasColumnName("provider_type");
+            entity.Property(e => e.IsActive).HasColumnName("is_active");
+            entity.Property(e => e.ConfigJson).HasColumnName("config_json");
+            entity.Property(e => e.Description).HasMaxLength(255).HasColumnName("description").UseCollation("vi_ci_ai");
+            entity.ConfigureAudit();
+        });
+
+        // E-Invoices
+        modelBuilder.Entity<EInvoice>(entity =>
+        {
+            entity.ToTable("e_invoices");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.OrderId).HasColumnName("order_id");
+            entity.Property(e => e.ProviderId).HasColumnName("provider_id");
+            entity.Property(e => e.InvoiceNumber).HasMaxLength(50).HasColumnName("invoice_number");
+            entity.Property(e => e.TemplateCode).HasMaxLength(20).HasColumnName("template_code");
+            entity.Property(e => e.SerialNumber).HasMaxLength(20).HasColumnName("serial_number");
+            entity.Property(e => e.Status).HasMaxLength(20).HasColumnName("status").HasDefaultValue("draft");
+            entity.Property(e => e.TotalAmount).HasColumnType("decimal(10,0)").HasColumnName("total_amount");
+            entity.Property(e => e.VatAmount).HasColumnType("decimal(10,0)").HasColumnName("vat_amount");
+            entity.Property(e => e.BuyerName).HasMaxLength(255).HasColumnName("buyer_name").UseCollation("vi_ci_ai");
+            entity.Property(e => e.BuyerTaxCode).HasMaxLength(20).HasColumnName("buyer_tax_code");
+            entity.Property(e => e.BuyerAddress).HasMaxLength(500).HasColumnName("buyer_address").UseCollation("vi_ci_ai");
+            entity.Property(e => e.PdfUrl).HasMaxLength(500).HasColumnName("pdf_url");
+            entity.Property(e => e.XmlUrl).HasMaxLength(500).HasColumnName("xml_url");
+            entity.Property(e => e.ProviderResponse).HasColumnName("provider_response");
+            entity.Property(e => e.ErrorMessage).HasMaxLength(500).HasColumnName("error_message");
+            entity.Property(e => e.IssuedAt).HasColumnName("issued_at");
+            entity.Property(e => e.CancelledAt).HasColumnName("cancelled_at");
+            entity.Property(e => e.CancelReason).HasMaxLength(255).HasColumnName("cancel_reason");
+            entity.ConfigureAudit();
+
+            entity.HasIndex(e => e.OrderId).IsUnique();
+            entity.HasIndex(e => e.InvoiceNumber).IsUnique();
+
+            entity.HasOne(e => e.Order)
+                .WithOne()
+                .HasForeignKey<EInvoice>(e => e.OrderId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            entity.HasOne(e => e.Provider)
+                .WithMany()
+                .HasForeignKey(e => e.ProviderId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // E-Invoice Settings
+        modelBuilder.Entity<EInvoiceSetting>(entity =>
+        {
+            entity.ToTable("e_invoice_settings");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.DefaultProviderId).HasColumnName("default_provider_id");
+            entity.Property(e => e.AutoIssue).HasColumnName("auto_issue");
+            entity.Property(e => e.DefaultTemplateCode).HasMaxLength(20).HasColumnName("default_template_code");
+            entity.Property(e => e.DefaultSerialNumber).HasMaxLength(20).HasColumnName("default_serial_number");
+            entity.Property(e => e.DigitalSignatureConfig).HasColumnName("digital_signature_config");
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at");
+            entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
+
+            entity.HasOne(e => e.DefaultProvider)
+                .WithMany()
+                .HasForeignKey(e => e.DefaultProviderId)
+                .OnDelete(DeleteBehavior.SetNull);
         });
 
         OnModelCreatingPartial(modelBuilder);

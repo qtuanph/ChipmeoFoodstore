@@ -191,6 +191,7 @@ app.UseMiddleware<SecurityHeadersMiddleware>();
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<StoreDbContext>();
+    await db.Database.ExecuteSqlRawAsync("CREATE COLLATION IF NOT EXISTS vi_ci_ai (LOCALE = 'vi-VN-x-icu', PROVIDER = 'icu');");
     await db.Database.MigrateAsync();
     await DataSeeder.SeedAsync(scope.ServiceProvider);
 }

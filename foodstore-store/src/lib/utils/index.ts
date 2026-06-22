@@ -38,4 +38,3 @@ export function generateOrderCode(): string {
 export * from './cart.js';
 export * from './auth.js';
 export * from './state.js';
-export * from './category.js';

@@ -89,6 +89,13 @@ public static class Permissions
         // Media
         new("media.upload", "Tải ảnh lên",  "Có thể tải ảnh lên hệ thống",   "media"),
         new("media.delete", "Xóa ảnh",      "Có thể xóa ảnh khỏi hệ thống",  "media"),
+
+        // E-Invoice
+        new("einvoice.view",         "Xem hóa đơn điện tử",    "Có thể xem danh sách hóa đơn điện tử",  "einvoice"),
+        new("einvoice.providers",    "Quản lý nhà cung cấp",   "Có thể xem/quản lý nhà cung cấp HĐĐT", "einvoice"),
+        new("einvoice.issue",        "Phát hành hóa đơn",      "Có thể phát hành hóa đơn điện tử",     "einvoice"),
+        new("einvoice.cancel",       "Hủy hóa đơn",            "Có thể hủy hóa đơn điện tử",           "einvoice"),
+        new("einvoice.settings",     "Cài đặt HĐĐT",           "Có thể xem/sửa cài đặt HĐĐT",          "einvoice"),
     };
 
     public static List<string> AllCodes => All.Select(p => p.Code).ToList();

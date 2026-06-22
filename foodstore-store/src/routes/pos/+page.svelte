@@ -89,39 +89,24 @@
 							Điều hướng
 						</p>
 						<ul class="mt-1 space-y-1">
-							{#if ['Admin', 'Manager'].includes($auth.user?.roleName || '')}
-								<li>
-									<a
-										href="/admin"
-										class="flex items-center gap-2 rounded-md px-2 py-2 text-sm font-medium text-heading hover:bg-neutral-tertiary-medium hover:text-heading"
-									>
-										<Icon name="tabler:home" class="h-4 w-4" />
-										Dashboard
-									</a>
-								</li>
-							{/if}
-							{#if ['Admin', 'Manager', 'Cashier', 'Thu ngân'].includes($auth.user?.roleName || '')}
-								<li>
-									<a
-										href="/pos"
-										class="flex items-center gap-2 rounded-md px-2 py-2 text-sm font-medium text-heading hover:bg-neutral-tertiary-medium hover:text-heading"
-									>
-										<Icon name="tabler:news" class="h-4 w-4" />
-										POS (Thu ngân)
-									</a>
-								</li>
-							{/if}
-							{#if ['Admin', 'Manager', 'Chef', 'Kitchen', 'Cook', 'Bếp'].includes($auth.user?.roleName || '')}
-								<li>
-									<a
-										href="/kitchen"
-										class="flex items-center gap-2 rounded-md px-2 py-2 text-sm font-medium text-heading hover:bg-neutral-tertiary-medium hover:text-heading"
-									>
-										<Icon name="tabler:clock" class="h-4 w-4" />
-										Kitchen (Bếp)
-									</a>
-								</li>
-							{/if}
+							<li>
+								<a
+									href="/pos"
+									class="flex items-center gap-2 rounded-md px-2 py-2 text-sm font-medium text-heading hover:bg-neutral-tertiary-medium hover:text-heading"
+								>
+									<Icon name="tabler:news" class="h-4 w-4" />
+									POS (Thu ngân)
+								</a>
+							</li>
+							<li>
+								<a
+									href="/kitchen"
+									class="flex items-center gap-2 rounded-md px-2 py-2 text-sm font-medium text-heading hover:bg-neutral-tertiary-medium hover:text-heading"
+								>
+									<Icon name="tabler:clock" class="h-4 w-4" />
+									Kitchen (Bếp)
+								</a>
+							</li>
 						</ul>
 					</div>
 

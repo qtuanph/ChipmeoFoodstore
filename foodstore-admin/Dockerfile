@@ -5,7 +5,7 @@ FROM node:alpine AS deps
 WORKDIR /app
 COPY package*.json ./
 RUN --mount=type=cache,id=npm-admin,target=/root/.npm \
-    npm ci --no-audit --no-fund
+    npm install --legacy-peer-deps --no-audit --no-fund
 
 # ============================================
 # Stage 2: Build
