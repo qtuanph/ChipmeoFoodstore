@@ -53,9 +53,9 @@ public class CustomerService(
             UserId = user.Id,
             CustomerCode = $"KH-{DateTime.Now:yyyyMMdd}-{Random.Shared.Next(1000, 9999)}",
             Phone = dto.Phone,
+            Birthday = dto.Birthday,
             LoyaltyPoints = 0,
             MembershipLevel = "bronze",
-
         };
 
         customer = await _repo.AddAsync(customer);
@@ -131,6 +131,9 @@ public class CustomerService(
 
         if (!string.IsNullOrEmpty(dto.Phone))
             customer.Phone = dto.Phone;
+
+        if (dto.Birthday.HasValue)
+            customer.Birthday = dto.Birthday;
 
         if (!string.IsNullOrEmpty(dto.AvatarUrl))
             customer.AvatarUrl = dto.AvatarUrl;
@@ -209,9 +212,9 @@ public class CustomerService(
             UserId = user.Id,
             CustomerCode = $"KH-{DateTime.Now:yyyyMMdd}-{Random.Shared.Next(1000, 9999)}",
             Phone = dto.Phone,
+            Birthday = dto.Birthday,
             LoyaltyPoints = 0,
             MembershipLevel = "bronze",
-
         };
 
         customer = await _repo.AddAsync(customer);
@@ -228,6 +231,7 @@ public class CustomerService(
 
         if (dto.Name != null) user.Name = dto.Name;
         if (dto.Phone != null) customer.Phone = dto.Phone;
+        if (dto.Birthday.HasValue) customer.Birthday = dto.Birthday;
         if (dto.IsActive.HasValue) user.Banned = !dto.IsActive.Value;
         if (dto.Points.HasValue)
         {

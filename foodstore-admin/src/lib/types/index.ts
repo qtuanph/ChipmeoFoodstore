@@ -360,6 +360,7 @@ export interface CreateCustomerDto {
   email?: string;
   password?: string;
   phone?: string;
+  birthday?: string;
   isActive?: boolean;
 }
 
@@ -367,6 +368,7 @@ export interface UpdateCustomerAdminDto {
   name?: string;
   phone?: string;
   avatarUrl?: string;
+  birthday?: string;
   isActive?: boolean;
   points?: number;
 }

@@ -20,7 +20,7 @@ import { CrudSheet } from "@/components/crud-sheet"
 import { DeleteConfirmDialog } from "@/components/confirm-dialog"
 import { StatusBadge } from "@/components/status-badge"
 import { customerService } from "@/lib/services/customer-service"
-import { formatDateTime, formatCurrency } from "@/lib/utils"
+import { formatDateTime, formatCurrency, formatDate } from "@/lib/utils"
 import type { Customer, CreateCustomerDto, UpdateCustomerAdminDto, AddPointsDto, CustomerOrderHistory } from "@/lib/types"
 
 export default function CustomersPage() {
@@ -48,6 +48,7 @@ export default function CustomersPage() {
   const [formEmail, setFormEmail] = React.useState("")
   const [formUsername, setFormUsername] = React.useState("")
   const [formPassword, setFormPassword] = React.useState("")
+  const [formBirthday, setFormBirthday] = React.useState("")
 
   const loadData = React.useCallback(async () => {
     setLoading(true)
@@ -58,10 +59,10 @@ export default function CustomersPage() {
 
   React.useEffect(() => { loadData() }, [loadData])
 
-  const resetForm = () => { setFormName(""); setFormPhone(""); setFormEmail(""); setFormUsername(""); setFormPassword(""); setEditing(null) }
+  const resetForm = () => { setFormName(""); setFormPhone(""); setFormEmail(""); setFormUsername(""); setFormPassword(""); setFormBirthday(""); setEditing(null) }
   const openCreate = () => { resetForm(); setSheetOpen(true) }
   const openEdit = (item: Customer) => {
-    setEditing(item); setFormName(item.name); setFormPhone(item.phone ?? ""); setFormEmail(item.email); setFormUsername(item.username); setFormPassword(""); setSheetOpen(true)
+    setEditing(item); setFormName(item.name); setFormPhone(item.phone ?? ""); setFormEmail(item.email); setFormUsername(item.username); setFormPassword(""); setFormBirthday(item.birthday ? item.birthday.slice(0, 10) : ""); setSheetOpen(true)
   }
 
   const handleSubmit = async () => {
@@ -69,10 +70,10 @@ export default function CustomersPage() {
     setSubmitting(true)
     try {
       if (editing) {
-        await customerService.update(editing.id, { name: formName.trim(), phone: formPhone || undefined } as UpdateCustomerAdminDto)
+        await customerService.update(editing.id, { name: formName.trim(), phone: formPhone || undefined, birthday: formBirthday || undefined } as UpdateCustomerAdminDto)
         toast.success("Cập nhật khách hàng thành công")
       } else {
-        await customerService.create({ name: formName.trim(), phone: formPhone || undefined, username: formUsername || undefined, email: formEmail || undefined, password: formPassword || undefined } as CreateCustomerDto)
+        await customerService.create({ name: formName.trim(), phone: formPhone || undefined, username: formUsername || undefined, email: formEmail || undefined, password: formPassword || undefined, birthday: formBirthday || undefined } as CreateCustomerDto)
         toast.success("Thêm khách hàng thành công")
       }
       setSheetOpen(false); loadData()
@@ -139,6 +140,7 @@ export default function CustomersPage() {
     { id: "customerCode", accessorKey: "customerCode", header: "Mã KH" },
     { id: "loyaltyPoints", accessorKey: "loyaltyPoints", header: "Điểm" },
     { id: "membershipLevel", header: "Hạng", cell: ({ row }) => row.original.membershipLevel ? <StatusBadge status={row.original.membershipLevel} /> : "—" },
+    { id: "birthday", header: "Ngày sinh", cell: ({ row }) => row.original.birthday ? formatDate(row.original.birthday) : "—" },
     { id: "createdAt", header: "Ngày tạo", cell: ({ row }) => formatDateTime(row.original.createdAt) },
     {
       id: "actions",
@@ -180,6 +182,10 @@ export default function CustomersPage() {
           <div className="space-y-2">
             <Label htmlFor="phone">Số điện thoại</Label>
             <Input id="phone" value={formPhone} onChange={(e) => setFormPhone(e.target.value)} placeholder="0123456789" />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="birthday">Ngày sinh</Label>
+            <Input id="birthday" type="date" value={formBirthday} onChange={(e) => setFormBirthday(e.target.value)} />
           </div>
           {!editing && (
             <>

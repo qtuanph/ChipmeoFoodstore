@@ -26,6 +26,7 @@ public class CustomerRegisterDto
     public string Email { get; set; } = null!;
     public string Password { get; set; } = null!;
     public string? Phone { get; set; }
+    public DateTime? Birthday { get; set; }
 }
 
 public class CustomerLoginDto
@@ -45,6 +46,7 @@ public class CustomerUpdateDto
     public string? Name { get; set; }
     public string? Phone { get; set; }
     public string? AvatarUrl { get; set; }
+    public DateTime? Birthday { get; set; }
     public bool? IsActive { get; set; }
     public int? Points { get; set; }
 }
@@ -56,6 +58,7 @@ public class CreateCustomerDto
     public string? Email { get; set; }
     public string? Password { get; set; }
     public string? Phone { get; set; }
+    public DateTime? Birthday { get; set; }
     public bool IsActive { get; set; } = true;
 }
 
@@ -64,6 +67,7 @@ public class UpdateCustomerAdminDto
     public string? Name { get; set; }
     public string? Phone { get; set; }
     public string? AvatarUrl { get; set; }
+    public DateTime? Birthday { get; set; }
     public bool? IsActive { get; set; }
     public int? Points { get; set; }
 }
