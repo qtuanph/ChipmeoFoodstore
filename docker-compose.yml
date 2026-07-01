@@ -2,7 +2,7 @@ name: Foodstore
 
 services:
   traefik:
-    image: traefik:latest
+    image: traefik:v3.7.5
     container_name: traefik
     command:
       - "--api.insecure=true"
@@ -19,7 +19,7 @@ services:
       - app-network
 
   db:
-    image: postgres:18-alpine
+    image: postgres:18.4-trixie
     container_name: db
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
@@ -37,7 +37,7 @@ services:
       - app-network
 
   redis:
-    image: redis:8-alpine
+    image: redis:8.8.0-trixie
     container_name: redis
     volumes:
       - redis_data:/data

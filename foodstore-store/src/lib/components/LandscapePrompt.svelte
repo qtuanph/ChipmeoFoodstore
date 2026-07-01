@@ -42,7 +42,7 @@
 		<div class="mt-8">
 			<Icon
 				name="tabler:refresh"
-				class="animate-spin-slow h-16 w-16 text-gray-500"
+				class="animate-spin h-16 w-16 text-gray-500"
 				style="animation-duration: 3s;"
 			/>
 		</div>
@@ -50,16 +50,4 @@
 {/if}
 
 <style>
-	.animate-spin-slow {
-		animation: spin 3s linear infinite;
-	}
-
-	@keyframes spin {
-		from {
-			transform: rotate(0deg);
-		}
-		to {
-			transform: rotate(90deg);
-		}
-	}
 </style>
