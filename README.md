@@ -12,9 +12,9 @@
     <img src="https://img.shields.io/badge/Svelte-5-FF3E00?logo=svelte" alt="Svelte 5">
     <img src="https://img.shields.io/badge/SvelteKit-2-FF3E00?logo=svelte" alt="SvelteKit 2">
     <img src="https://img.shields.io/badge/Next.js-16-000000?logo=nextdotjs" alt="Next.js 16">
-    <img src="https://img.shields.io/badge/Astro-6-BC52EE?logo=astro" alt="Astro 6">
+    <img src="https://img.shields.io/badge/Astro-7-BC52EE?logo=astro" alt="Astro 7">
     <img src="https://img.shields.io/badge/React-19-61DAFB?logo=react" alt="React 19">
-    <img src="https://img.shields.io/badge/TypeScript-6-3178C6?logo=typescript" alt="TypeScript 6">
+    <img src="https://img.shields.io/badge/TypeScript-6|7-3178C6?logo=typescript" alt="TypeScript 6/7">
     <img src="https://img.shields.io/badge/Tailwind_CSS-4-06B6D4?logo=tailwindcss" alt="Tailwind CSS 4">
     <img src="https://img.shields.io/badge/PostgreSQL-18-4169E1?logo=postgresql" alt="PostgreSQL 18">
     <img src="https://img.shields.io/badge/Redis-8-DC382D?logo=redis" alt="Redis 8">
@@ -97,7 +97,7 @@ Foodstore is a production-ready restaurant management platform designed for smal
 ### Frontend — foodstore-landingpage (`foodstore-landingpage/`)
 | Technology | Purpose |
 |---|---|
-| **Astro 6** | Static content site |
+| **Astro 7** | Static content site |
 | **Tailwind CSS 4** | Utility-first styling |
 
 ### Backend — foodstore-api (`foodstore-api/`)

@@ -2,9 +2,9 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Foodstore Quick Reference",
   "description": "Quick reference guide for developers working on Foodstore",
-  "version": "1.2.0",
+  "version": "2.1.1",
   "repository": {
-    "url": "https://github.com/qtuanph/Foodstore.git",
+    "url": "https://github.com/qtuanph/ChipmeoFoodstore.git",
     "branch": "master"
   },
   "projects": {
@@ -38,7 +38,7 @@
       "solution": "MediaStorageManagement.slnx"
     },
     "Store": {
-      "path": "Store",
+      "path": "foodstore-store",
       "type": "SvelteKit 2 + Svelte 5",
       "description": "Frontend — POS, Admin Dashboard, Kitchen Display",
       "commands": {
@@ -104,24 +104,23 @@
   },
   "tech_stack": {
     "frontend": {
-      "language": "TypeScript 6",
-      "framework": "Svelte 5 + SvelteKit 2",
-      "build_tool": "Vite 8 (Rolldown/Oxc)",
+      "language": "TypeScript 6/7",
+      "framework": "Svelte 5 + SvelteKit 2 / Next.js 16 + React 19",
+      "build_tool": "Vite 8 (Rolldown/Oxc) / Turbopack",
       "styling": "Tailwind CSS 4",
-      "editor": "TipTap 3",
-      "icons": "@iconify/svelte 5 (Tabler Icons)",
-      "charts": "ApexCharts 5",
+      "editor": "TipTap 3.28",
+      "icons": "@iconify/svelte 5 / lucide-react",
+      "charts": "ApexCharts 5 / Recharts 3",
       "realtime": "@microsoft/signalr 10",
     "image_cropping": "Croppie 2",
-    "flowbite": "Vanilla JS (data-* API, initFlowbite)"
+    "flowbite": "Vanilla JS (programmatic API)"
   },
     "backend": {
       "framework": "ASP.NET Core 10",
       "orm": "Entity Framework Core 10",
       "database": "PostgreSQL 18",
-      "auth": "JWT Bearer + BCrypt.Net",
+      "auth": "JWT Bearer + Better Auth (BFF)",
       "realtime": "SignalR + MessagePack",
-      "ftp": "FluentFTP 54",
       "ml": "Microsoft.ML 5"
     }
   }
