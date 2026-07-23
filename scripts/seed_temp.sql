@@ -1,5 +1,5 @@
 -- ============================================================
--- Seed data: Chipmeo Foodstore — restaurant infrastructure
+-- Seed data: Foodstore — restaurant infrastructure
 -- (Categories, Menu Items, Addons, Combos, Discounts, Payments)
 -- Ad-hoc seed, NOT in DataSeeder.cs
 -- ============================================================
@@ -165,7 +165,7 @@ BEGIN
 
   -- ============ PAYMENT SETTINGS ============
   INSERT INTO payment_settings (id, bank_id, bank_account, bank_name, bank_account_name, template, is_default, is_active, created_at, updated_at) VALUES
-    (gen_random_uuid(), '970436', '0123456789', 'Ngân hàng TMCP Ngoại thương Việt Nam (Vietcombank)', 'CHIPMEO FOODSTORE', 'compact2', true, true, now_utc, now_utc);
+    (gen_random_uuid(), '970436', '0123456789', 'Ngân hàng TMCP Ngoại thương Việt Nam (Vietcombank)', 'FOODSTORE', 'compact2', true, true, now_utc, now_utc);
 
   RAISE NOTICE '✓ Seed completed: 6 categories, 22 items, 7 addons, 13 item-addon links, 3 combos, 5 discounts, 1 payment setting';
 END $$;

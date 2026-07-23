@@ -3,7 +3,7 @@
 ## Monorepo Structure
 
 ```
-ChipmeoFoodstore/
+foodstore/
 ├── docker-compose.yml                    # 🐳 Full stack (8 services)
 ├── .env                                  # 🔒 Environment variables
 ├── foodstore-api/                         # 🖥️ Backend (.NET 10 Clean Architecture)

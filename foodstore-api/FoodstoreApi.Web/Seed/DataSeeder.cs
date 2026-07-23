@@ -76,7 +76,7 @@ public static class DataSeeder
             rootUser = new ApplicationUser
             {
                 UserName = "root",
-                Email = "root@chipmeo.vn",
+                Email = "root@foodstore.vn",
                 Name = "Root Administrator",
                 CreatedAt = now,
                 UpdatedAt = now

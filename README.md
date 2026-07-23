@@ -155,7 +155,7 @@ The backend follows **Clean Architecture** with 4 layers:
 ## Project Structure
 
 ```
-ChipmeoFoodstore/
+foodstore/
 ├── foodstore-api/                   # Backend (.NET 10)
 │   ├── FoodstoreApi.Core/           #   Domain entities (30+ entities)
 │   ├── FoodstoreApi.Usecase/        #   Business logic & DTOs
@@ -205,8 +205,8 @@ ChipmeoFoodstore/
 
 ```bash
 # Clone & start full stack
-git clone https://github.com/qtuanph/ChipmeoFoodstore.git
-cd ChipmeoFoodstore
+git clone https://github.com/qtuanph/foodstore.git
+cd foodstore
 
 # Full stack: 8 services
 docker compose up -d
@@ -279,7 +279,7 @@ Settings are overridden by environment variables in Docker (via `docker-compose.
 | **db** | `postgres:18-alpine` | `:5432` | — |
 | **redis** | `redis:8-alpine` | `:6379` | — |
 | **rustfs** | `rustfs/rustfs:latest` | `:9000` (S3) | uploads.localhost |
-| **api** | `chipmeofoodstore-api` (build) | `:8080` | api.localhost |
+| **api** | `foodstore-api` (build) | `:8080` | api.localhost |
 | **store** | `foodstore-store` (build) | `:3000` | store.localhost |
 | **admin** | `foodstore-admin` (build) | `:3000` | admin.localhost |
 | **landingpage** | `foodstore-landingpage` (build) | `:4321` | localhost |
